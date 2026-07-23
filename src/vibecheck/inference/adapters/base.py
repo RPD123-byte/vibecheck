@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from uncover.emotion.schema import EmotionReading
+from vibecheck.emotion.schema import EmotionReading
 
 
 class EmotionAdapter(ABC):

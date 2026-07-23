@@ -14,13 +14,13 @@ from typing import Any
 
 import pytest
 
-from uncover.stream.subscriber import SnapshotSubscriber
+from vibecheck.stream.subscriber import SnapshotSubscriber
 
 pytestmark = [
     pytest.mark.model,
     pytest.mark.skipif(
-        os.environ.get("UNCOVER_RUN_MODEL_TESTS") != "1",
-        reason="set UNCOVER_RUN_MODEL_TESTS=1 to run licensed real-image tests",
+        os.environ.get("VIBECHECK_RUN_MODEL_TESTS") != "1",
+        reason="set VIBECHECK_RUN_MODEL_TESTS=1 to run licensed real-image tests",
     ),
 ]
 
@@ -37,7 +37,7 @@ def fetch_fixture(name: str, cache_dir: Path) -> Path:
     request = urllib.request.Request(
         metadata["url"],
         headers={
-            "User-Agent": "UncoverTests/0.1 (https://github.com/RPD123-byte/uncover)"
+            "User-Agent": "VibecheckTests/0.1 (https://github.com/RPD123-byte/vibecheck)"
         },
     )
     target.write_bytes(urllib.request.urlopen(request, timeout=30).read())
@@ -105,7 +105,7 @@ async def test_disgust_image_drives_notch_and_dry_run_interruption(
     tmp_path: Path,
 ) -> None:
     image = fetch_fixture("disgust", tmp_path)
-    runtime = Path(tempfile.mkdtemp(prefix="uc-model-", dir="/tmp"))
+    runtime = Path(tempfile.mkdtemp(prefix="vc-model-", dir="/tmp"))
     os.chmod(runtime, 0o700)
     emotion_socket = runtime / "emotion.sock"
     status_socket = runtime / "status.sock"
@@ -114,7 +114,7 @@ async def test_disgust_image_drives_notch_and_dry_run_interruption(
         notch = await start_process(
             sys.executable,
             "-m",
-            "uncover.notch.process",
+            "vibecheck.notch.process",
             "--emotion-socket",
             str(emotion_socket),
             "--status-socket",
@@ -142,7 +142,7 @@ async def test_disgust_image_drives_notch_and_dry_run_interruption(
         inference = await start_process(
             sys.executable,
             "-m",
-            "uncover.inference.process",
+            "vibecheck.inference.process",
             "--socket",
             str(emotion_socket),
             "--image",
@@ -167,7 +167,7 @@ async def test_disgust_image_drives_notch_and_dry_run_interruption(
 @pytest.mark.asyncio
 async def test_happy_image_shows_happiness_without_neutral_icon(tmp_path: Path) -> None:
     image = fetch_fixture("happiness", tmp_path)
-    runtime = Path(tempfile.mkdtemp(prefix="uc-model-", dir="/tmp"))
+    runtime = Path(tempfile.mkdtemp(prefix="vc-model-", dir="/tmp"))
     os.chmod(runtime, 0o700)
     emotion_socket = runtime / "emotion.sock"
     status_socket = runtime / "status.sock"
@@ -178,7 +178,7 @@ async def test_happy_image_shows_happiness_without_neutral_icon(tmp_path: Path) 
         notch = await start_process(
             sys.executable,
             "-m",
-            "uncover.notch.process",
+            "vibecheck.notch.process",
             "--emotion-socket",
             str(emotion_socket),
             "--status-socket",
@@ -210,7 +210,7 @@ async def test_happy_image_shows_happiness_without_neutral_icon(tmp_path: Path) 
         inference = await start_process(
             sys.executable,
             "-m",
-            "uncover.inference.process",
+            "vibecheck.inference.process",
             "--socket",
             str(emotion_socket),
             "--image",

@@ -12,16 +12,16 @@ from typing import Any
 import pytest
 import websockets
 
-from uncover.emotion.schema import CANONICAL_EMOTIONS
-from uncover.stream.protocol import EventEnvelope, monotonic_ms
-from uncover.stream.publisher import SnapshotPublisher
-from uncover.stream.subscriber import SnapshotSubscriber
+from vibecheck.emotion.schema import CANONICAL_EMOTIONS
+from vibecheck.stream.protocol import EventEnvelope, monotonic_ms
+from vibecheck.stream.publisher import SnapshotPublisher
+from vibecheck.stream.subscriber import SnapshotSubscriber
 
 pytestmark = [
     pytest.mark.live_codex,
     pytest.mark.skipif(
-        os.environ.get("UNCOVER_RUN_LIVE_CODEX_TESTS") != "1",
-        reason="set UNCOVER_RUN_LIVE_CODEX_TESTS=1 for isolated live mutation",
+        os.environ.get("VIBECHECK_RUN_LIVE_CODEX_TESTS") != "1",
+        reason="set VIBECHECK_RUN_LIVE_CODEX_TESTS=1 for isolated live mutation",
     ),
 ]
 
@@ -106,7 +106,7 @@ async def active_turn_id(rpc: RpcClient, thread_id: str) -> str | None:
 async def test_real_turn_is_interrupted_and_restarted_with_expression_context() -> None:
     if not MANAGED_SOCKET.exists():
         pytest.skip(f"managed Codex socket is unavailable: {MANAGED_SOCKET}")
-    runtime = Path(tempfile.mkdtemp(prefix="uc-live-", dir="/tmp"))
+    runtime = Path(tempfile.mkdtemp(prefix="vc-live-", dir="/tmp"))
     os.chmod(runtime, 0o700)
     emotion_socket = runtime / "emotion.sock"
     status_socket = runtime / "status.sock"
@@ -136,8 +136,8 @@ async def test_real_turn_is_interrupted_and_restarted_with_expression_context() 
                 "initialize",
                 {
                     "clientInfo": {
-                        "name": "uncover-production-live-test",
-                        "title": "Uncover production live fixture",
+                        "name": "vibecheck-production-live-test",
+                        "title": "Vibecheck production live fixture",
                         "version": "0.1.0",
                     }
                 },

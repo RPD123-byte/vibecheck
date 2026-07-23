@@ -15,13 +15,13 @@ async def test_runtime_starts_three_workers_and_ctrl_c_stops_only_owned_workers(
     None
 ):
     root = Path(__file__).resolve().parents[2]
-    before = set(Path("/tmp").glob(f"uncover-{os.getuid()}-*"))
+    before = set(Path("/tmp").glob(f"vibecheck-{os.getuid()}-*"))
     environment = dict(os.environ)
     environment["TMPDIR"] = "/tmp"
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
-        "uncover.runtime.cli",
+        "vibecheck.runtime.cli",
         "--mode",
         "demo",
         "--headless-notch",
@@ -93,5 +93,5 @@ async def test_runtime_starts_three_workers_and_ctrl_c_stops_only_owned_workers(
         if process.returncode is None:
             os.killpg(process.pid, signal.SIGTERM)
             await process.wait()
-    after = set(Path("/tmp").glob(f"uncover-{os.getuid()}-*"))
+    after = set(Path("/tmp").glob(f"vibecheck-{os.getuid()}-*"))
     assert after - before == set(), "runtime must remove its transient directory"

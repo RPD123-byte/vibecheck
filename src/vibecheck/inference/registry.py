@@ -5,13 +5,13 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from uncover.inference.adapters.base import EmotionAdapter
+from vibecheck.inference.adapters.base import EmotionAdapter
 
 AdapterFactory = Callable[..., EmotionAdapter]
 
 
 def _emotiefflib_factory(**kwargs: Any) -> EmotionAdapter:
-    from uncover.inference.adapters.emotiefflib import EmotiEffLibAdapter
+    from vibecheck.inference.adapters.emotiefflib import EmotiEffLibAdapter
 
     return EmotiEffLibAdapter(**kwargs)
 

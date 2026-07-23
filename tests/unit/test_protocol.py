@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from uncover.stream.protocol import (
+from vibecheck.stream.protocol import (
     EventEnvelope,
     ProtocolError,
     decode_event,

@@ -1,8 +1,8 @@
 ## 1. Production Foundation
 
 - [x] 1.1 Publish the current compatible `codex-control` package version `0.1.0` as immutable Git tag `v0.1.0`, verify the tag resolves to the intended tested commit, and record the release/tagging convention
-- [x] 1.2 Add `pyproject.toml` with the installable `uncover` package, supported Python/macOS versions, production dependencies, development dependencies, and CLI entry point
-- [x] 1.3 Create the `src/uncover` package hierarchy and move the existing schema, adapter interface, EmotiEffLib adapter, and registry without importing ignored source
+- [x] 1.2 Add `pyproject.toml` with the installable `vibecheck` package, supported Python/macOS versions, production dependencies, development dependencies, and CLI entry point
+- [x] 1.3 Create the `src/vibecheck` package hierarchy and move the existing schema, adapter interface, EmotiEffLib adapter, and registry without importing ignored source
 - [x] 1.4 Add the `src/native/expression_interruption` Rust workspace/crate skeleton with a reproducible toolchain, `codex-control` Git tag `v0.1.0` plus exact manifest version `=0.1.0`, and a committed `Cargo.lock`
 - [x] 1.5 Add a repository guard test that rejects tracked production imports, Cargo path dependencies, build inputs, or runtime lookups referencing `experimentation/` or `emotiefflib_repo/`
 - [x] 1.6 Add shared test-fixture directories for protocol events, normalized model output, synthetic streams, and process scenarios
@@ -42,7 +42,7 @@
 
 ## 5. macOS Notch Worker
 
-- [x] 5.1 Move pure display threshold, hysteresis, confirmation, reset, and deterministic sorting logic into `uncover.notch.display_policy`
+- [x] 5.1 Move pure display threshold, hysteresis, confirmation, reset, and deterministic sorting logic into `vibecheck.notch.display_policy`
 - [x] 5.2 Move and test only the latest active-left notch geometry, including 32-point cells, 24-point glyphs, corner extensions, and configurable optical overlap; do not copy the experimental all-sides implementation into production
 - [x] 5.3 Implement the separate AppKit notch worker with supported-screen detection and a non-activating transparent panel
 - [x] 5.4 Connect the notch worker to inference snapshots and clear display state on no-face, stale input, disconnect, or producer restart
@@ -75,10 +75,10 @@
 
 ## 8. Runtime Ownership and Recovery
 
-- [x] 8.1 Implement the application's first runtime owner and supervisor; create a fresh `0700` `TMPDIR` directory with an `uncover-<uid>-` prefix per launch, use short socket names, pass absolute paths to workers, and clean up owned transient artifacts
+- [x] 8.1 Implement the application's first runtime owner and supervisor; create a fresh `0700` `TMPDIR` directory with a `vibecheck-<uid>-` prefix per launch, use short socket names, pass absolute paths to workers, and clean up owned transient artifacts
 - [x] 8.2 Implement aggregate readiness from worker lifecycle, terminal configuration errors, stream connection, and freshness state
 - [x] 8.3 Isolate worker signal sessions and implement ordered SIGINT/SIGTERM shutdown through owned control paths
-- [x] 8.4 Implement bounded worker shutdown deadlines and escalation only against validated Uncover worker PIDs
+- [x] 8.4 Implement bounded worker shutdown deadlines and escalation only against validated Vibecheck worker PIDs
 - [x] 8.5 Configure normal Codex startup restart through Launch Services and verify runtime shutdown leaves ChatGPT and the shared daemon running
 - [x] 8.6 Implement per-role crash detection, bounded exponential restart with jitter, restart-rate limits, and terminal failed state
 - [x] 8.7 Ensure inference restart creates a new runtime identifier and every consumer clears temporal state before accepting new readings

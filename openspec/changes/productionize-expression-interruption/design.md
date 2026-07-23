@@ -112,7 +112,7 @@ Python source moves to a conventional package layout:
 
 ```text
 src/
-  uncover/
+  vibecheck/
     emotion/
       schema.py
     inference/
@@ -180,15 +180,15 @@ A typed Python configuration is resolved once by the runtime owner and passed ex
 
 Health is state, not free-form log parsing. Each worker reports role, lifecycle state, readiness, connection/freshness, and most recent structured error. Logs remain useful for history but do not define readiness.
 
-There is no existing application supervisor to reuse. This change creates the first one: the Python runtime owner is responsible for worker launch, readiness aggregation, unexpected-exit detection, bounded restart, terminal failure state, and ordered shutdown. This responsibility is separate from `codex-control`, which remains a Rust library for controlling Codex and is not the Uncover worker daemon or supervisor.
+There is no existing application supervisor to reuse. This change creates the first one: the Python runtime owner is responsible for worker launch, readiness aggregation, unexpected-exit detection, bounded restart, terminal failure state, and ordered shutdown. This responsibility is separate from `codex-control`, which remains a Rust library for controlling Codex and is not the Vibecheck worker daemon or supervisor.
 
-For each launch, the runtime owner creates a fresh directory beneath the macOS per-user temporary directory (`TMPDIR`) using an `uncover-<uid>-` prefix and an unpredictable suffix. It validates that the directory is owned by the current user, applies mode `0700`, uses short filenames such as `emotion.sock` and `interruption-status.sock`, and passes their absolute paths directly to workers. The directory contains only transient IPC/control artifacts, is never used for persistent settings or model data, and is removed after an orderly shutdown. A new launch uses a new directory rather than trusting abandoned endpoints.
+For each launch, the runtime owner creates a fresh directory beneath the macOS per-user temporary directory (`TMPDIR`) using a `vibecheck-<uid>-` prefix and an unpredictable suffix. It validates that the directory is owned by the current user, applies mode `0700`, uses short filenames such as `emotion.sock` and `interruption-status.sock`, and passes their absolute paths directly to workers. The directory contains only transient IPC/control artifacts, is never used for persistent settings or model data, and is removed after an orderly shutdown. A new launch uses a new directory rather than trusting abandoned endpoints.
 
 ### 10. Preserve safe macOS lifecycle ownership
 
-The Rust worker initializes `codex-control` with explicit GUI-management configuration. Normal startup gracefully restarts ChatGPT into daemon mode through Launch Services. Uncover workers run in controlled signal sessions; shutdown first stops monitor/reconnect work, then closes IPC and worker resources. ChatGPT and the shared daemon remain running.
+The Rust worker initializes `codex-control` with explicit GUI-management configuration. Normal startup gracefully restarts ChatGPT into daemon mode through Launch Services. Vibecheck workers run in controlled signal sessions; shutdown first stops monitor/reconnect work, then closes IPC and worker resources. ChatGPT and the shared daemon remain running.
 
-The runtime never recursively signals broad process trees and escalates only against validated Uncover worker PIDs after grace periods.
+The runtime never recursively signals broad process trees and escalates only against validated Vibecheck worker PIDs after grace periods.
 
 ### 11. Test through production seams
 

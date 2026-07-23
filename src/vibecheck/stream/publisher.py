@@ -8,7 +8,7 @@ import stat
 from contextlib import suppress
 from pathlib import Path
 
-from uncover.stream.protocol import EventEnvelope, encode_event, monotonic_ms
+from vibecheck.stream.protocol import EventEnvelope, encode_event, monotonic_ms
 
 
 class SnapshotPublisher:

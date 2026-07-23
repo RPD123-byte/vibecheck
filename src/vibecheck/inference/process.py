@@ -15,12 +15,12 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any, Protocol
 
-from uncover.emotion.schema import CANONICAL_EMOTIONS, EmotionReading
-from uncover.inference.adapters.base import EmotionAdapter
-from uncover.inference.permission import CameraPermission, request_camera_permission
-from uncover.inference.registry import create_adapter
-from uncover.stream.protocol import EventEnvelope, monotonic_ms
-from uncover.stream.publisher import SnapshotPublisher
+from vibecheck.emotion.schema import CANONICAL_EMOTIONS, EmotionReading
+from vibecheck.inference.adapters.base import EmotionAdapter
+from vibecheck.inference.permission import CameraPermission, request_camera_permission
+from vibecheck.inference.registry import create_adapter
+from vibecheck.stream.protocol import EventEnvelope, monotonic_ms
+from vibecheck.stream.publisher import SnapshotPublisher
 
 
 class FrameSource(Protocol):
@@ -83,7 +83,7 @@ class CameraFrameSource:
         if self.opened:
             self._thread = threading.Thread(
                 target=self._capture_latest,
-                name="uncover-camera-capture",
+                name="vibecheck-camera-capture",
                 daemon=True,
             )
             self._thread.start()

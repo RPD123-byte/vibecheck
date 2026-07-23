@@ -5,8 +5,8 @@ import sys
 import numpy as np
 import pytest
 
-from uncover.inference.adapters.emotiefflib import select_largest_face_box
-from uncover.inference.registry import create_adapter
+from vibecheck.inference.adapters.emotiefflib import select_largest_face_box
+from vibecheck.inference.registry import create_adapter
 
 
 def test_largest_face_is_clamped_filtered_and_selected() -> None:

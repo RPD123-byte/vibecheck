@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from uncover.runtime.cli import _config_from_args, _parser
-from uncover.runtime.config import RuntimeConfig
+from vibecheck.runtime.cli import _config_from_args, _parser
+from vibecheck.runtime.config import RuntimeConfig
 
 
 def test_defaults_and_cross_process_serialization() -> None:

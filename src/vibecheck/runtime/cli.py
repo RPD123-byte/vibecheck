@@ -7,8 +7,8 @@ import asyncio
 import sys
 from pathlib import Path
 
-from uncover.runtime.config import RuntimeConfig
-from uncover.runtime.supervisor import RuntimeOwner
+from vibecheck.runtime.config import RuntimeConfig
+from vibecheck.runtime.supervisor import RuntimeOwner
 
 
 def _parser() -> argparse.ArgumentParser:

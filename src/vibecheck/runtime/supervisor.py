@@ -16,8 +16,8 @@ from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from uncover.runtime.config import RuntimeConfig
-from uncover.runtime.health import WorkerHealth
+from vibecheck.runtime.config import RuntimeConfig
+from vibecheck.runtime.health import WorkerHealth
 
 
 @dataclass(slots=True)
@@ -58,7 +58,7 @@ class RuntimeOwner:
 
     def create_runtime_dir(self) -> Path:
         base = Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
-        path = Path(tempfile.mkdtemp(prefix=f"uncover-{os.getuid()}-", dir=str(base)))
+        path = Path(tempfile.mkdtemp(prefix=f"vibecheck-{os.getuid()}-", dir=str(base)))
         os.chmod(path, 0o700)
         info = path.stat()
         if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700:
@@ -73,7 +73,7 @@ class RuntimeOwner:
         inference = [
             self.python,
             "-m",
-            "uncover.inference.process",
+            "vibecheck.inference.process",
             "--socket",
             str(emotion_socket),
             "--runtime-id",
@@ -103,7 +103,7 @@ class RuntimeOwner:
         notch = [
             self.python,
             "-m",
-            "uncover.notch.process",
+            "vibecheck.notch.process",
             "--emotion-socket",
             str(emotion_socket),
             "--freshness",
@@ -160,13 +160,16 @@ class RuntimeOwner:
 
     def _interruption_prefix(self, manifest: Path) -> list[str]:
         configured = self.interruption_binary
-        environment = os.environ.get("UNCOVER_INTERRUPTION_BINARY")
+        environment = os.environ.get("VIBECHECK_INTERRUPTION_BINARY")
         if configured is None and environment:
             configured = Path(environment)
         candidates = [
             configured,
-            manifest.parent / "target" / "release" / "uncover-expression-interruption",
-            manifest.parent / "target" / "debug" / "uncover-expression-interruption",
+            manifest.parent
+            / "target"
+            / "release"
+            / "vibecheck-expression-interruption",
+            manifest.parent / "target" / "debug" / "vibecheck-expression-interruption",
         ]
         for candidate in candidates:
             if (
@@ -186,7 +189,7 @@ class RuntimeOwner:
             ]
         raise FileNotFoundError(
             "expression interruption binary is unavailable; pass "
-            "--interruption-binary or set UNCOVER_INTERRUPTION_BINARY"
+            "--interruption-binary or set VIBECHECK_INTERRUPTION_BINARY"
         )
 
     async def run(self) -> None:

@@ -10,17 +10,17 @@ from pathlib import Path
 
 import pytest
 
-from uncover.emotion.schema import CANONICAL_EMOTIONS
-from uncover.stream.protocol import EventEnvelope, monotonic_ms
-from uncover.stream.publisher import SnapshotPublisher
-from uncover.stream.subscriber import SnapshotSubscriber
+from vibecheck.emotion.schema import CANONICAL_EMOTIONS
+from vibecheck.stream.protocol import EventEnvelope, monotonic_ms
+from vibecheck.stream.publisher import SnapshotPublisher
+from vibecheck.stream.subscriber import SnapshotSubscriber
 
 
 @pytest.mark.asyncio
 async def test_rust_sidecar_consumes_real_socket_and_publishes_would_send() -> None:
     root = Path(__file__).resolve().parents[2]
     manifest = root / "src/native/expression_interruption/Cargo.toml"
-    runtime_dir = Path(tempfile.mkdtemp(prefix="uc-rust-", dir="/tmp"))
+    runtime_dir = Path(tempfile.mkdtemp(prefix="vc-rust-", dir="/tmp"))
     os.chmod(runtime_dir, 0o700)
     emotion_socket = runtime_dir / "emotion.sock"
     status_socket = runtime_dir / "status.sock"

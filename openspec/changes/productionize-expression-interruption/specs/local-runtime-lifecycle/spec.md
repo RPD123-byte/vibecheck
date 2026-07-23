@@ -23,7 +23,7 @@ The runtime SHALL create its private runtime directory, establish configuration,
 - **THEN** aggregate readiness fails with that worker and reason identified
 
 ### Requirement: Ephemeral per-launch runtime directory
-For every launch, the runtime owner SHALL create a fresh directory beneath the macOS per-user temporary directory using an `uncover-<uid>-` prefix and unpredictable suffix. It SHALL validate current-user ownership, enforce mode `0700`, keep Unix-socket filenames short, pass absolute endpoint paths directly to workers, and remove its transient IPC artifacts after orderly shutdown. It MUST NOT store persistent configuration, models, frames, or expression history there and MUST NOT reuse an abandoned directory on a later launch.
+For every launch, the runtime owner SHALL create a fresh directory beneath the macOS per-user temporary directory using a `vibecheck-<uid>-` prefix and unpredictable suffix. It SHALL validate current-user ownership, enforce mode `0700`, keep Unix-socket filenames short, pass absolute endpoint paths directly to workers, and remove its transient IPC artifacts after orderly shutdown. It MUST NOT store persistent configuration, models, frames, or expression history there and MUST NOT reuse an abandoned directory on a later launch.
 
 #### Scenario: Runtime starts normally
 - **WHEN** the runtime owner prepares local IPC
@@ -45,18 +45,18 @@ The runtime SHALL provide one typed configuration source for camera, adapter/mod
 - **THEN** startup fails with a field-specific validation error
 
 ### Requirement: Safe Codex GUI initialization
-When Codex GUI management is enabled, the interruption process SHALL initialize `codex-control` so ChatGPT is gracefully restarted into managed-daemon mode through macOS Launch Services. The GUI MUST not remain a descendant of the Uncover runtime process tree. GUI management MAY be disabled explicitly for tests or externally managed environments.
+When Codex GUI management is enabled, the interruption process SHALL initialize `codex-control` so ChatGPT is gracefully restarted into managed-daemon mode through macOS Launch Services. The GUI MUST not remain a descendant of the Vibecheck runtime process tree. GUI management MAY be disabled explicitly for tests or externally managed environments.
 
 #### Scenario: GUI management is enabled
 - **WHEN** interruption initializes in normal mode
 - **THEN** `codex-control` performs the configured startup restart and verifies daemon attachment
 
 #### Scenario: Runtime process tree is terminated
-- **WHEN** the terminal or operating system tears down Uncover descendants
+- **WHEN** the terminal or operating system tears down Vibecheck descendants
 - **THEN** ChatGPT is not killed as an owned child of that process tree
 
 ### Requirement: Graceful shutdown ownership
-Shutdown SHALL stop new inference, close streams, terminate notch presentation, drain or cancel interruption work conservatively, unsubscribe Codex control, and exit all Uncover workers within bounded time. It MUST leave the ChatGPT GUI and shared Codex daemon running.
+Shutdown SHALL stop new inference, close streams, terminate notch presentation, drain or cancel interruption work conservatively, unsubscribe Codex control, and exit all Vibecheck workers within bounded time. It MUST leave the ChatGPT GUI and shared Codex daemon running.
 
 #### Scenario: User presses Ctrl-C
 - **WHEN** the runtime receives SIGINT
@@ -64,7 +64,7 @@ Shutdown SHALL stop new inference, close streams, terminate notch presentation, 
 
 #### Scenario: Worker exceeds shutdown deadline
 - **WHEN** a worker does not exit within its configured grace period
-- **THEN** the runtime escalates termination only against that Uncover worker and never targets ChatGPT or the shared daemon
+- **THEN** the runtime escalates termination only against that Vibecheck worker and never targets ChatGPT or the shared daemon
 
 ### Requirement: Signal isolation
 Child workers SHALL run in signal groups or sessions that allow the runtime owner to coordinate graceful shutdown rather than receiving an uncontrolled terminal signal cascade. Launching and stopping workers MUST not make the Codex GUI their process-tree child.
@@ -74,7 +74,7 @@ Child workers SHALL run in signal groups or sessions that allow the runtime owne
 - **THEN** workers receive explicit shutdown through their owned control path instead of an unordered group-wide interruption
 
 ### Requirement: Worker recovery
-This feature SHALL implement the application's first worker supervisor in the runtime owner; it SHALL NOT assume an existing app-level health or restart service. The runtime owner SHALL detect unexpected worker exit, report it, and restart recoverable workers with bounded exponential backoff and a restart-rate limit. Restarting inference SHALL establish a new runtime identifier; restarting any consumer SHALL not require replaying historical emotion events. `codex-control` SHALL remain a controlled Rust library dependency and SHALL NOT be treated as the Uncover worker supervisor.
+This feature SHALL implement the application's first worker supervisor in the runtime owner; it SHALL NOT assume an existing app-level health or restart service. The runtime owner SHALL detect unexpected worker exit, report it, and restart recoverable workers with bounded exponential backoff and a restart-rate limit. Restarting inference SHALL establish a new runtime identifier; restarting any consumer SHALL not require replaying historical emotion events. `codex-control` SHALL remain a controlled Rust library dependency and SHALL NOT be treated as the Vibecheck worker supervisor.
 
 #### Scenario: Notch process crashes
 - **WHEN** inference and interruption remain healthy

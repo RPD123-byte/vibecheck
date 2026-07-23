@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "uncover"
+name = "vibecheck"
 version = "0.1.0"
 description = "On-device facial-expression inference, notch presentation, and Codex interruption"
 readme = "README.md"
@@ -31,18 +31,18 @@ test = [
 ]
 
 [project.scripts]
-uncover-expression = "uncover.runtime.cli:main"
-uncover-inference = "uncover.inference.process:main"
-uncover-notch = "uncover.notch.process:main"
+vibecheck = "vibecheck.runtime.cli:main"
+vibecheck-inference = "vibecheck.inference.process:main"
+vibecheck-notch = "vibecheck.notch.process:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/uncover"]
+packages = ["src/vibecheck"]
 
 [tool.hatch.build.targets.sdist]
 include = [
   "/README.md",
   "/pyproject.toml",
-  "/src/uncover",
+  "/src/vibecheck",
   "/src/native/expression_interruption",
 ]
 

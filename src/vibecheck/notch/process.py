@@ -12,10 +12,10 @@ from contextlib import suppress
 from pathlib import Path
 from typing import TextIO
 
-from uncover.notch.display_policy import DisplayPolicy
-from uncover.notch.state import NotchProjection, RenderState
-from uncover.stream.protocol import EventEnvelope
-from uncover.stream.subscriber import SnapshotSubscriber
+from vibecheck.notch.display_policy import DisplayPolicy
+from vibecheck.notch.state import NotchProjection, RenderState
+from vibecheck.stream.protocol import EventEnvelope
+from vibecheck.stream.subscriber import SnapshotSubscriber
 
 
 class SharedProjection:
@@ -194,7 +194,7 @@ def main() -> None:
         raise SystemExit(
             "AppKit notch presentation requires macOS; use --headless in tests"
         )
-    from uncover.notch.appkit import run_appkit
+    from vibecheck.notch.appkit import run_appkit
 
     run_appkit(args)
 

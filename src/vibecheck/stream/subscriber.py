@@ -9,7 +9,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-from uncover.stream.protocol import (
+from vibecheck.stream.protocol import (
     MAX_EVENT_BYTES,
     EventEnvelope,
     ProtocolError,

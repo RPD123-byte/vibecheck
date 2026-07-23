@@ -7,9 +7,9 @@ import threading
 from functools import lru_cache
 from typing import Any
 
-from uncover.notch.layout import EMOJI_CELL_WIDTH, calculate_notch_layout
-from uncover.notch.process import SharedProjection, consume_streams
-from uncover.notch.state import ICONS, NotchProjection, RenderState
+from vibecheck.notch.layout import EMOJI_CELL_WIDTH, calculate_notch_layout
+from vibecheck.notch.process import SharedProjection, consume_streams
+from vibecheck.notch.state import ICONS, NotchProjection, RenderState
 
 WING_WIDTH = 184.0
 PANEL_WIDTH = 640.0
@@ -338,7 +338,7 @@ def run_appkit(args: object) -> None:
             self.panel.setBackgroundColor_(NSColor.clearColor())
             self.panel.setHasShadow_(False)
             self.panel.setFloatingPanel_(True)
-            self.panel.setTitle_("Uncover Notch Expressions")
+            self.panel.setTitle_("Vibecheck Notch Expressions")
             self.panel.setHidesOnDeactivate_(False)
             self.panel.setReleasedWhenClosed_(False)
             self.panel.setLevel_(NSMainMenuWindowLevel + 3)

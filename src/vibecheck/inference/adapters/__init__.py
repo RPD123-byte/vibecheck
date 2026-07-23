@@ -1,5 +1,5 @@
 """Inference provider adapters."""
 
-from uncover.inference.adapters.base import EmotionAdapter
+from vibecheck.inference.adapters.base import EmotionAdapter
 
 __all__ = ["EmotionAdapter"]

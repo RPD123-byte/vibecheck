@@ -1,6 +1,6 @@
-# Uncover
+# Vibecheck
 
-Uncover gives the Codex desktop app limited nonverbal context from your facial
+Vibecheck gives the Codex desktop app limited nonverbal context from your facial
 expression.
 
 It runs facial-expression detection locally, shows the strongest current
@@ -16,7 +16,7 @@ The goal is to help Codex notice reactions that are normally lost in a text-only
 conversation without recording or uploading camera footage.
 
 > [!IMPORTANT]
-> Uncover currently runs from source. It is not yet packaged as a signed macOS
+> Vibecheck currently runs from source. It is not yet packaged as a signed macOS
 > app or installer.
 
 ## Current behavior
@@ -27,7 +27,7 @@ conversation without recording or uploading camera footage.
 - Happiness and surprise may appear in the notch but never interrupt Codex.
 - Only anger, contempt, disgust, fear, and sadness can trigger an interruption.
 - A negative expression must remain above the threshold for one second.
-- Uncover acts once per expression episode rather than repeatedly interrupting.
+- Vibecheck acts once per expression episode rather than repeatedly interrupting.
 - Camera frames and face crops are not saved or sent through the local event
   stream.
 
@@ -36,7 +36,7 @@ Codex explicitly describes the result as an imperfect inference.
 
 ## Requirements
 
-Before installing Uncover, you need:
+Before installing Vibecheck, you need:
 
 - macOS
 - A Mac with a built-in display notch for the visual overlay
@@ -76,11 +76,11 @@ rustup default 1.91.1
 rustc --version
 ```
 
-### 4. Clone Uncover
+### 4. Clone Vibecheck
 
 ```bash
-git clone https://github.com/RPD123-byte/uncover.git
-cd uncover
+git clone https://github.com/RPD123-byte/vibecheck.git
+cd vibecheck
 ```
 
 ### 5. Create a Python environment
@@ -112,7 +112,7 @@ You only need to repeat this after the Rust code changes.
 
 ```bash
 source .venv/bin/activate
-uncover-expression \
+vibecheck \
   --mode demo \
   --no-manage-codex-gui
 ```
@@ -125,7 +125,7 @@ Press `Ctrl-C` to stop.
 If your current display does not support the notch overlay, use:
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode demo \
   --headless-notch \
   --no-manage-codex-gui
@@ -136,7 +136,7 @@ This prints the current state in the terminal instead.
 ### Test your camera without changing Codex
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode dry-run \
   --no-manage-codex-gui
 ```
@@ -153,7 +153,7 @@ If camera access is denied or the prompt does not appear, open:
 
 **System Settings → Privacy & Security → Camera**
 
-Enable access for the terminal or Python host used to launch Uncover, then
+Enable access for the terminal or Python host used to launch Vibecheck, then
 restart the command.
 
 Do not run the historical experiment and the production app at the same time.
@@ -165,7 +165,7 @@ Two processes competing for the camera can cause failures or delayed frames.
 
 ```bash
 source .venv/bin/activate
-uncover-expression --mode display-only
+vibecheck --mode display-only
 ```
 
 This starts camera inference and the notch display only.
@@ -176,24 +176,24 @@ Open the Codex desktop app, then run:
 
 ```bash
 source .venv/bin/activate
-uncover-expression --mode normal
+vibecheck --mode normal
 ```
 
 Normal mode enables both the notch and live Codex interruption.
 
-By default, Uncover may gracefully relaunch the Codex desktop app once during
-startup so it can connect to Codex control. Stopping Uncover does not quit or
+By default, Vibecheck may gracefully relaunch the Codex desktop app once during
+startup so it can connect to Codex control. Stopping Vibecheck does not quit or
 relaunch Codex.
 
 If Codex control is already being managed elsewhere, run:
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode normal \
   --no-manage-codex-gui
 ```
 
-Press `Ctrl-C` to stop Uncover. Its camera, notch, and interruption processes
+Press `Ctrl-C` to stop Vibecheck. Its camera, notch, and interruption processes
 will exit while the Codex desktop app remains running.
 
 ## When interruption can happen
@@ -204,15 +204,15 @@ An interruption occurs only when:
    threshold;
 2. the detected negative expression remains stable for the full hold time;
 3. a Codex response is currently running; and
-4. Uncover can identify exactly one active Codex task.
+4. Vibecheck can identify exactly one active Codex task.
 
-If multiple Codex tasks are generating at once, Uncover refuses to guess which
+If multiple Codex tasks are generating at once, Vibecheck refuses to guess which
 one to interrupt.
 
 You can target a known task explicitly:
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode normal \
   --thread-id YOUR_CODEX_THREAD_ID
 ```
@@ -231,7 +231,7 @@ uncover-expression \
 ### Choose a different camera
 
 ```bash
-uncover-expression --mode dry-run --camera 1 --no-manage-codex-gui
+vibecheck --mode dry-run --camera 1 --no-manage-codex-gui
 ```
 
 The default camera index is `0`.
@@ -239,7 +239,7 @@ The default camera index is `0`.
 ### Adjust the expression threshold
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode dry-run \
   --threshold 0.25 \
   --no-manage-codex-gui
@@ -252,7 +252,7 @@ entry and negative-expression interruption eligibility.
 ### Adjust the negative-expression hold
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode normal \
   --hold-seconds 1.5
 ```
@@ -263,7 +263,7 @@ conservative.
 ### Test saved images
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode dry-run \
   --image /absolute/path/to/face.jpg \
   --headless-notch \
@@ -275,12 +275,12 @@ uncover-expression \
 ### View every available option
 
 ```bash
-uncover-expression --help
+vibecheck --help
 ```
 
 ## Troubleshooting
 
-### `uncover-expression: command not found`
+### `vibecheck: command not found`
 
 Activate the environment:
 
@@ -291,13 +291,13 @@ source .venv/bin/activate
 Or use:
 
 ```bash
-.venv/bin/uncover-expression --mode demo --no-manage-codex-gui
+.venv/bin/vibecheck --mode demo --no-manage-codex-gui
 ```
 
 ### `Camera denied` or `Allow camera access`
 
 Enable camera access under **System Settings → Privacy & Security → Camera**,
-then restart Uncover.
+then restart Vibecheck.
 
 ### `Camera unavailable`
 
@@ -320,7 +320,7 @@ print state in the terminal.
 Try dry-run mode with a lower threshold while tuning:
 
 ```bash
-uncover-expression \
+vibecheck \
   --mode dry-run \
   --threshold 0.25 \
   --no-manage-codex-gui

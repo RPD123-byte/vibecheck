@@ -6,8 +6,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from uncover.notch.display_policy import DisplayPolicy
-from uncover.stream.protocol import EventEnvelope
+from vibecheck.notch.display_policy import DisplayPolicy
+from vibecheck.stream.protocol import EventEnvelope
 
 ICONS = {
     "anger": "😠",

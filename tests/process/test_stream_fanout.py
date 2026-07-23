@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-from uncover.stream.protocol import EventEnvelope, monotonic_ms
-from uncover.stream.publisher import SnapshotPublisher
-from uncover.stream.subscriber import SnapshotSubscriber
+from vibecheck.stream.protocol import EventEnvelope, monotonic_ms
+from vibecheck.stream.publisher import SnapshotPublisher
+from vibecheck.stream.subscriber import SnapshotSubscriber
 
 
 @pytest.fixture
 def socket_dir() -> Path:
-    path = Path(tempfile.mkdtemp(prefix="uc-test-", dir="/tmp"))
+    path = Path(tempfile.mkdtemp(prefix="vc-test-", dir="/tmp"))
     os.chmod(path, 0o700)
     try:
         yield path

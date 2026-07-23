@@ -11,14 +11,14 @@ from pathlib import Path
 
 import pytest
 
-from uncover.emotion.schema import CANONICAL_EMOTIONS
-from uncover.stream.protocol import EventEnvelope, monotonic_ms
-from uncover.stream.publisher import SnapshotPublisher
+from vibecheck.emotion.schema import CANONICAL_EMOTIONS
+from vibecheck.stream.protocol import EventEnvelope, monotonic_ms
+from vibecheck.stream.publisher import SnapshotPublisher
 
 
 @pytest.mark.asyncio
 async def test_headless_notch_clears_icons_when_real_stream_stalls() -> None:
-    runtime = Path(tempfile.mkdtemp(prefix="uc-stale-", dir="/tmp"))
+    runtime = Path(tempfile.mkdtemp(prefix="vc-stale-", dir="/tmp"))
     os.chmod(runtime, 0o700)
     socket = runtime / "emotion.sock"
     publisher = SnapshotPublisher(socket, current_ttl_ms=200)
@@ -26,7 +26,7 @@ async def test_headless_notch_clears_icons_when_real_stream_stalls() -> None:
     process = await asyncio.create_subprocess_exec(
         sys.executable,
         "-m",
-        "uncover.notch.process",
+        "vibecheck.notch.process",
         "--emotion-socket",
         str(socket),
         "--freshness",

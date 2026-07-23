@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from uncover.emotion.schema import CANONICAL_EMOTIONS, EmotionReading
+from vibecheck.emotion.schema import CANONICAL_EMOTIONS, EmotionReading
 
 
 def scores(**overrides: float) -> dict[str, float]:

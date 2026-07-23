@@ -8,8 +8,8 @@ from typing import Any
 
 import numpy as np
 
-from uncover.emotion.schema import EmotionReading
-from uncover.inference.adapters.base import EmotionAdapter
+from vibecheck.emotion.schema import EmotionReading
+from vibecheck.inference.adapters.base import EmotionAdapter
 
 
 def bounded_face_boxes(

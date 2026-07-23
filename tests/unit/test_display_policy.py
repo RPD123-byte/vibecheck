@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from uncover.notch.display_policy import DisplayPolicy
-from uncover.notch.layout import calculate_notch_layout
-from uncover.notch.state import NotchProjection
-from uncover.stream.protocol import EventEnvelope
+from vibecheck.notch.display_policy import DisplayPolicy
+from vibecheck.notch.layout import calculate_notch_layout
+from vibecheck.notch.state import NotchProjection
+from vibecheck.stream.protocol import EventEnvelope
 
 
 def test_show_and_switch_need_two_samples_but_clear_is_immediate() -> None:

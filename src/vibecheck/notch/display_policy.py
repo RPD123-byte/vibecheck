@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-from uncover.emotion.schema import CANONICAL_EMOTIONS
+from vibecheck.emotion.schema import CANONICAL_EMOTIONS
 
 DISPLAY_EMOTIONS = tuple(name for name in CANONICAL_EMOTIONS if name != "neutral")
 

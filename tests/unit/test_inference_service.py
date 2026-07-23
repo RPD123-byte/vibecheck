@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from uncover.inference.process import InferenceService, LatestFrameBuffer
+from vibecheck.inference.process import InferenceService, LatestFrameBuffer
 
 
 class ClosingPublisher:

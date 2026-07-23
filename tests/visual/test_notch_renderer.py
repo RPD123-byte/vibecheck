@@ -10,8 +10,8 @@ import pytest
 pytestmark = [
     pytest.mark.visual,
     pytest.mark.skipif(
-        sys.platform != "darwin" or os.environ.get("UNCOVER_RUN_VISUAL_TESTS") != "1",
-        reason="set UNCOVER_RUN_VISUAL_TESTS=1 on the target Mac",
+        sys.platform != "darwin" or os.environ.get("VIBECHECK_RUN_VISUAL_TESTS") != "1",
+        reason="set VIBECHECK_RUN_VISUAL_TESTS=1 on the target Mac",
     ),
 ]
 
@@ -70,8 +70,8 @@ def test_active_left_renderer_matches_validated_experiment(
 ) -> None:
     from AppKit import NSApplication, NSBitmapImageFileTypePNG, NSMakeRect
 
-    from uncover.notch.appkit import notch_view_class
-    from uncover.notch.state import RenderState
+    from vibecheck.notch.appkit import notch_view_class
+    from vibecheck.notch.state import RenderState
 
     NSApplication.sharedApplication()
     view = notch_view_class().alloc().initWithFrame_(NSMakeRect(0, 0, 640, 210))
