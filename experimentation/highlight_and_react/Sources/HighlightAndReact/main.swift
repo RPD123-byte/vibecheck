@@ -8,6 +8,7 @@ private struct Options {
     var demo = false
     var demoSeconds: TimeInterval?
     var debugCandidates = false
+    var fixture = false
     var requestPermission = false
 
     static func parse(_ arguments: [String]) -> Options {
@@ -22,6 +23,8 @@ private struct Options {
                 options.requestPermission = true
             case "--debug-candidates":
                 options.debugCandidates = true
+            case "--fixture":
+                options.fixture = true
             case "--demo-seconds":
                 if arguments.indices.contains(index + 1) {
                     options.demoSeconds = TimeInterval(arguments[index + 1])
@@ -35,6 +38,7 @@ private struct Options {
                       --demo                    Show the overlay without Accessibility access
                       --demo-seconds SECONDS    Exit automatically after a demo
                       --debug-candidates        Log the Accessibility candidates and scores
+                      --fixture                 Open a selectable keyboard-shortcut test window
                       --request-permission      Ask macOS for Accessibility permission
                       --help                    Show this help
                     """
@@ -82,15 +86,9 @@ private enum AccessibilityValue {
 
     static func frame(from element: AXUIElement) -> CGRect? {
         if let value = copy("AXFrame", from: element),
-           CFGetTypeID(value) == AXValueGetTypeID()
+           let frame = rect(from: value)
         {
-            var frame = CGRect.zero
-            let axValue = unsafeBitCast(value, to: AXValue.self)
-            if AXValueGetType(axValue) == .cgRect,
-               AXValueGetValue(axValue, .cgRect, &frame)
-            {
-                return frame
-            }
+            return frame
         }
 
         guard
@@ -115,11 +113,33 @@ private enum AccessibilityValue {
         return CGRect(origin: position, size: size)
     }
 
+    static func rect(from value: CFTypeRef) -> CGRect? {
+        guard CFGetTypeID(value) == AXValueGetTypeID() else {
+            return nil
+        }
+        var frame = CGRect.zero
+        let axValue = unsafeBitCast(value, to: AXValue.self)
+        guard
+            AXValueGetType(axValue) == .cgRect,
+            AXValueGetValue(axValue, .cgRect, &frame)
+        else {
+            return nil
+        }
+        return frame
+    }
+
     static func parent(of element: AXUIElement) -> AXUIElement? {
         guard let value = copy(kAXParentAttribute, from: element) else {
             return nil
         }
         return unsafeBitCast(value, to: AXUIElement.self)
+    }
+
+    static func children(of element: AXUIElement) -> [AXUIElement] {
+        guard let value = copy(kAXChildrenAttribute, from: element) else {
+            return []
+        }
+        return value as? [AXUIElement] ?? []
     }
 
     static func bestText(from element: AXUIElement) -> String {
@@ -144,6 +164,153 @@ private enum AccessibilityValue {
 
 private final class TargetResolver {
     private let systemWide = AXUIElementCreateSystemWide()
+
+    func resolveSelection(debugCandidates: Bool) -> HighlightTarget? {
+        let focusedValue = AccessibilityValue.copy(
+            kAXFocusedUIElementAttribute,
+            from: systemWide
+        )
+
+        if let focusedValue {
+            var current: AXUIElement? = unsafeBitCast(
+                focusedValue,
+                to: AXUIElement.self
+            )
+            for depth in 0..<9 {
+                guard let element = current else {
+                    break
+                }
+
+                logSelectionElement(element, depth: depth, enabled: debugCandidates)
+                if let target = selection(from: element) {
+                    logResolvedSelection(
+                        target,
+                        source: "focused-chain depth=\(depth)",
+                        enabled: debugCandidates
+                    )
+                    return target
+                }
+                current = AccessibilityValue.parent(of: element)
+            }
+        } else {
+            debugSelection("No focused Accessibility element.", enabled: debugCandidates)
+        }
+
+        if let target = searchActiveWindowForSelection(
+            debugCandidates: debugCandidates
+        ) {
+            return target
+        }
+
+        debugSelection(
+            "No non-empty Accessibility selection with usable bounds.",
+            enabled: debugCandidates
+        )
+        return nil
+    }
+
+    private func selection(from element: AXUIElement) -> HighlightTarget? {
+        rangeSelection(from: element) ?? markerSelection(from: element)
+    }
+
+    private func searchActiveWindowForSelection(
+        debugCandidates: Bool
+    ) -> HighlightTarget? {
+        guard let applicationValue = AccessibilityValue.copy(
+            kAXFocusedApplicationAttribute,
+            from: systemWide
+        ) else {
+            return nil
+        }
+        let application = unsafeBitCast(applicationValue, to: AXUIElement.self)
+        let root: AXUIElement
+        if let windowValue = AccessibilityValue.copy(
+            kAXFocusedWindowAttribute,
+            from: application
+        ) {
+            root = unsafeBitCast(windowValue, to: AXUIElement.self)
+        } else {
+            root = application
+        }
+
+        var queue: [AXUIElement] = [root]
+        var index = 0
+        let maximumElements = 600
+
+        while index < queue.count, index < maximumElements {
+            let element = queue[index]
+            index += 1
+
+            if let target = selection(from: element) {
+                logResolvedSelection(
+                    target,
+                    source: "active-window-search element=\(index)",
+                    enabled: debugCandidates
+                )
+                return target
+            }
+            queue.append(contentsOf: AccessibilityValue.children(of: element))
+        }
+
+        debugSelection(
+            "Active-window selection search inspected \(min(index, maximumElements)) elements.",
+            enabled: debugCandidates
+        )
+        return nil
+    }
+
+    private func logResolvedSelection(
+        _ target: HighlightTarget,
+        source: String,
+        enabled: Bool
+    ) {
+        debugSelection(
+            "selection source=\(source) role=\(target.role) " +
+                "frame=(\(Int(target.quartzFrame.minX))," +
+                "\(Int(target.quartzFrame.minY))," +
+                "\(Int(target.quartzFrame.width))," +
+                "\(Int(target.quartzFrame.height))) " +
+                "text=\(target.text.prefix(120))",
+            enabled: enabled
+        )
+    }
+
+    private func logSelectionElement(
+        _ element: AXUIElement,
+        depth: Int,
+        enabled: Bool
+    ) {
+        guard enabled else {
+            return
+        }
+
+        let role = AccessibilityValue.string(kAXRoleAttribute, from: element)
+            ?? "AXUnknown"
+        let selectedText = AccessibilityValue.string(
+            kAXSelectedTextAttribute,
+            from: element
+        ) ?? ""
+        let hasRange = AccessibilityValue.copy(
+            kAXSelectedTextRangeAttribute,
+            from: element
+        ) != nil
+        let hasMarkerRange = AccessibilityValue.copy(
+            "AXSelectedTextMarkerRange",
+            from: element
+        ) != nil
+        var parameterizedNames: CFArray?
+        AXUIElementCopyParameterizedAttributeNames(element, &parameterizedNames)
+        let names = (parameterizedNames as? [String] ?? [])
+            .joined(separator: ",")
+
+        fputs(
+            "selection-element depth=\(depth) role=\(role) " +
+                "selected-length=\(selectedText.count) range=\(hasRange) " +
+                "marker-range=\(hasMarkerRange) parameterized=[\(names)]\n",
+            stderr
+        )
+        fflush(stderr)
+    }
 
     func resolve(at point: CGPoint, debugCandidates: Bool) -> HighlightTarget? {
         var hitElement: AXUIElement?
@@ -188,6 +355,118 @@ private final class TargetResolver {
             text: best.text,
             applicationName: appName
         )
+    }
+
+    private func rangeSelection(from element: AXUIElement) -> HighlightTarget? {
+        guard
+            let text = AccessibilityValue.string(kAXSelectedTextAttribute, from: element)?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+            !text.isEmpty,
+            let selectedRange = AccessibilityValue.copy(
+                kAXSelectedTextRangeAttribute,
+                from: element
+            ),
+            let frame = parameterizedFrame(
+                attribute: "AXBoundsForRange",
+                parameter: selectedRange,
+                element: element
+            )
+        else {
+            return nil
+        }
+
+        return selectionTarget(element: element, text: text, frame: frame)
+    }
+
+    private func markerSelection(from element: AXUIElement) -> HighlightTarget? {
+        guard
+            let markerRange = AccessibilityValue.copy(
+                "AXSelectedTextMarkerRange",
+                from: element
+            ),
+            let frame = parameterizedFrame(
+                attribute: "AXBoundsForTextMarkerRange",
+                parameter: markerRange,
+                element: element
+            ),
+            let textValue = parameterizedValue(
+                attribute: "AXStringForTextMarkerRange",
+                parameter: markerRange,
+                element: element
+            ) as? String
+        else {
+            return nil
+        }
+
+        let text = textValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            return nil
+        }
+        return selectionTarget(element: element, text: text, frame: frame)
+    }
+
+    private func parameterizedFrame(
+        attribute: String,
+        parameter: CFTypeRef,
+        element: AXUIElement
+    ) -> CGRect? {
+        guard let value = parameterizedValue(
+            attribute: attribute,
+            parameter: parameter,
+            element: element
+        ) else {
+            return nil
+        }
+        return AccessibilityValue.rect(from: value)
+    }
+
+    private func parameterizedValue(
+        attribute: String,
+        parameter: CFTypeRef,
+        element: AXUIElement
+    ) -> CFTypeRef? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyParameterizedAttributeValue(
+            element,
+            attribute as CFString,
+            parameter,
+            &value
+        ) == .success else {
+            return nil
+        }
+        return value
+    }
+
+    private func selectionTarget(
+        element: AXUIElement,
+        text: String,
+        frame: CGRect
+    ) -> HighlightTarget? {
+        guard frame.width >= 1, frame.height >= 1 else {
+            return nil
+        }
+
+        var pid: pid_t = 0
+        AXUIElementGetPid(element, &pid)
+        let applicationName = NSRunningApplication(processIdentifier: pid)?
+            .localizedName ?? "Unknown app"
+        let role = AccessibilityValue.string(kAXRoleAttribute, from: element)
+            ?? "AXUnknown"
+
+        return HighlightTarget(
+            quartzFrame: frame,
+            role: role,
+            text: String(text.prefix(280)),
+            applicationName: applicationName
+        )
+    }
+
+    private func debugSelection(_ message: String, enabled: Bool) {
+        guard enabled else {
+            return
+        }
+        fputs("\(message)\n", stderr)
+        fflush(stderr)
     }
 
     private func log(candidates: [Candidate]) {
@@ -342,11 +621,12 @@ private final class OverlayController: NSObject {
         configurePanels()
     }
 
-    func show(target: HighlightTarget) {
+    @discardableResult
+    func show(target: HighlightTarget) -> Bool {
         guard let (targetFrame, screen) = ScreenCoordinates.appKitRect(
             fromQuartz: target.quartzFrame
         ) else {
-            return
+            return false
         }
 
         currentTarget = target
@@ -364,6 +644,7 @@ private final class OverlayController: NSObject {
         reactionPanel.setFrame(barFrame, display: true)
         highlightPanel.orderFrontRegardless()
         reactionPanel.orderFrontRegardless()
+        return true
     }
 
     func hide() {
@@ -461,32 +742,66 @@ private final class OverlayController: NSObject {
     }
 }
 
-private final class DoubleClickMonitor {
+private final class InputMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var localKeyMonitor: Any?
     private let onDoubleClick: (CGPoint) -> Void
+    private let onKeyboardShortcut: () -> Void
     private let debugEvents: Bool
     private var previousClick: (time: TimeInterval, point: CGPoint)?
+    private var previousShortcutTime: TimeInterval = 0
 
-    init(debugEvents: Bool, onDoubleClick: @escaping (CGPoint) -> Void) {
+    init(
+        debugEvents: Bool,
+        onDoubleClick: @escaping (CGPoint) -> Void,
+        onKeyboardShortcut: @escaping () -> Void
+    ) {
         self.debugEvents = debugEvents
         self.onDoubleClick = onDoubleClick
+        self.onKeyboardShortcut = onKeyboardShortcut
     }
 
     func start() -> Bool {
-        let mask = CGEventMask(1 << CGEventType.leftMouseDown.rawValue)
+        let mask =
+            CGEventMask(1 << CGEventType.leftMouseDown.rawValue) |
+            CGEventMask(1 << CGEventType.keyDown.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, userInfo in
-            guard type == .leftMouseDown, let userInfo else {
+            guard let userInfo else {
                 return Unmanaged.passUnretained(event)
             }
 
-            let monitor = Unmanaged<DoubleClickMonitor>
+            let monitor = Unmanaged<InputMonitor>
                 .fromOpaque(userInfo)
                 .takeUnretainedValue()
-            let clickCount = event.getIntegerValueField(.mouseEventClickState)
-            let point = event.location
-            DispatchQueue.main.async {
-                monitor.receiveMouseDown(point: point, clickCount: clickCount)
+
+            switch type {
+            case .leftMouseDown:
+                let clickCount = event.getIntegerValueField(.mouseEventClickState)
+                let point = event.location
+                DispatchQueue.main.async {
+                    monitor.receiveMouseDown(point: point, clickCount: clickCount)
+                }
+            case .keyDown:
+                let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+                let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+                let flags = event.flags
+                let isShortcut = monitor.isKeyboardShortcut(
+                    keyCode: keyCode,
+                    flags: flags
+                )
+                DispatchQueue.main.async {
+                    monitor.receiveKeyDown(
+                        keyCode: keyCode,
+                        flags: flags,
+                        isRepeat: isRepeat
+                    )
+                }
+                if isShortcut {
+                    return nil
+                }
+            default:
+                break
             }
             return Unmanaged.passUnretained(event)
         }
@@ -494,7 +809,7 @@ private final class DoubleClickMonitor {
         eventTap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .listenOnly,
+            options: .defaultTap,
             eventsOfInterest: mask,
             callback: callback,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
@@ -506,6 +821,27 @@ private final class DoubleClickMonitor {
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: eventTap, enable: true)
+        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
+            [weak self] event in
+            guard let self else {
+                return event
+            }
+            let relevantModifiers = event.modifierFlags.intersection([
+                .control,
+                .option,
+                .command,
+                .shift,
+            ])
+            let isShortcut =
+                event.keyCode == 15 &&
+                relevantModifiers == [.control, .option]
+            guard isShortcut else {
+                return event
+            }
+
+            self.triggerKeyboardShortcut(source: "app-local", isRepeat: event.isARepeat)
+            return nil
+        }
         return true
     }
 
@@ -541,14 +877,69 @@ private final class DoubleClickMonitor {
             previousClick = (now, point)
         }
     }
+
+    private func receiveKeyDown(
+        keyCode: Int64,
+        flags: CGEventFlags,
+        isRepeat: Bool
+    ) {
+        let isShortcut = isKeyboardShortcut(keyCode: keyCode, flags: flags)
+
+        if debugEvents, isShortcut {
+            fputs("keyboard-shortcut source=event-tap control-option-r\n", stderr)
+        }
+
+        if isShortcut {
+            triggerKeyboardShortcut(source: "event-tap", isRepeat: isRepeat)
+        }
+    }
+
+    private func isKeyboardShortcut(
+        keyCode: Int64,
+        flags: CGEventFlags
+    ) -> Bool {
+        let shortcutModifiers: CGEventFlags = [.maskControl, .maskAlternate]
+        let relevantModifiers = flags.intersection([
+            .maskControl,
+            .maskAlternate,
+            .maskCommand,
+            .maskShift,
+        ])
+        return keyCode == 15 && relevantModifiers == shortcutModifiers
+    }
+
+    private func triggerKeyboardShortcut(source: String, isRepeat: Bool) {
+        guard !isRepeat else {
+            return
+        }
+
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now - previousShortcutTime > 0.15 else {
+            return
+        }
+        previousShortcutTime = now
+
+        if debugEvents {
+            fputs("keyboard-shortcut accepted source=\(source)\n", stderr)
+            fflush(stderr)
+        }
+        onKeyboardShortcut()
+    }
+
+    deinit {
+        if let localKeyMonitor {
+            NSEvent.removeMonitor(localKeyMonitor)
+        }
+    }
 }
 
 private final class AppDelegate: NSObject, NSApplicationDelegate {
     private let options: Options
     private let resolver = TargetResolver()
     private var overlay: OverlayController?
-    private var monitor: DoubleClickMonitor?
+    private var monitor: InputMonitor?
     private var statusItem: NSStatusItem?
+    private var fixtureWindow: NSWindow?
 
     init(options: Options) {
         self.options = options
@@ -563,6 +954,9 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         if options.demo {
             showDemo(using: overlay)
             return
+        }
+        if options.fixture {
+            showFixture()
         }
 
         guard accessibilityIsTrusted(prompt: options.requestPermission) else {
@@ -580,18 +974,24 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        let monitor = DoubleClickMonitor(debugEvents: options.debugCandidates) { [weak self] point in
-            guard
-                let self,
-                let target = self.resolver.resolve(
-                    at: point,
-                    debugCandidates: self.options.debugCandidates
-                )
-            else {
-                return
+        let monitor = InputMonitor(
+            debugEvents: options.debugCandidates,
+            onDoubleClick: { [weak self] point in
+                guard
+                    let self,
+                    let target = self.resolver.resolve(
+                        at: point,
+                        debugCandidates: self.options.debugCandidates
+                    )
+                else {
+                    return
+                }
+                self.overlay?.show(target: target)
+            },
+            onKeyboardShortcut: { [weak self] in
+                self?.showOverlayForSelection()
             }
-            self.overlay?.show(target: target)
-        }
+        )
         self.monitor = monitor
 
         guard monitor.start() else {
@@ -608,8 +1008,35 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        print("Highlight & React is listening. Double-click accessible content in any app.")
+        print(
+            "Highlight & React is listening. Select text and press Control-Option-R, " +
+                "or double-click accessible content."
+        )
         fflush(stdout)
+    }
+
+    private func showOverlayForSelection() {
+        guard let target = resolver.resolveSelection(
+            debugCandidates: options.debugCandidates
+        ) else {
+            fputs(
+                "Control-Option-R: no accessible text selection found. " +
+                    "Select text first and try again.\n",
+                stderr
+            )
+            fflush(stderr)
+            return
+        }
+        if overlay?.show(target: target) == true {
+            print(
+                "Selection overlay shown for \(target.applicationName): " +
+                    "\(target.text.prefix(120))"
+            )
+            fflush(stdout)
+        } else {
+            fputs("Could not map the selected bounds to a display.\n", stderr)
+            fflush(stderr)
+        }
     }
 
     private func showDemo(using overlay: OverlayController) {
@@ -644,12 +1071,59 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func showFixture() {
+        NSApp.setActivationPolicy(.regular)
+        let window = NSWindow(
+            contentRect: CGRect(x: 0, y: 0, width: 680, height: 340),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Highlight & React Keyboard Fixture"
+        window.center()
+
+        let scrollView = NSScrollView(frame: window.contentView?.bounds ?? .zero)
+        scrollView.autoresizingMask = [.width, .height]
+        scrollView.hasVerticalScroller = true
+        scrollView.drawsBackground = true
+
+        let textView = NSTextView(frame: scrollView.bounds)
+        textView.isEditable = true
+        textView.isSelectable = true
+        textView.isRichText = false
+        textView.font = .systemFont(ofSize: 21)
+        textView.textContainerInset = CGSize(width: 28, height: 28)
+        textView.string =
+            """
+            Highlight & React keyboard fixture
+
+            Select this sentence, then press Control–Option–R.
+
+            Expected result: a yellow outline hugs the selected text and the emoji reaction bar appears above it. The shortcut is global, so the same interaction can be tried in Codex without restarting or modifying Codex.
+            """
+        textView.setAccessibilityIdentifier("KeyboardFixtureText")
+        scrollView.documentView = textView
+        window.contentView = scrollView
+
+        fixtureWindow = window
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     private func configureStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.title = "✦"
         item.button?.toolTip = "Highlight & React"
 
         let menu = NSMenu()
+        let shortcutItem = NSMenuItem(
+            title: "Shortcut: ⌃⌥R",
+            action: nil,
+            keyEquivalent: ""
+        )
+        shortcutItem.isEnabled = false
+        menu.addItem(shortcutItem)
+        menu.addItem(.separator())
         menu.addItem(
             withTitle: "Show Demo Overlay",
             action: #selector(showDemoFromMenu),
