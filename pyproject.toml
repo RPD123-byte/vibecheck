@@ -9,15 +9,15 @@ description = "On-device facial-expression inference, notch presentation, and Co
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "numpy>=1.26",
+  "numpy==1.26.4",
 ]
 
 [project.optional-dependencies]
 inference = [
-  "emotiefflib>=1.0.0",
-  "facenet-pytorch>=2.6.0",
-  "opencv-python>=4.10",
-  "onnxruntime>=1.20",
+  "emotiefflib==1.1.1",
+  "facenet-pytorch==2.6.0",
+  "opencv-python==4.11.0.86",
+  "onnxruntime==1.27.0",
 ]
 macos = [
   "pyobjc-framework-AVFoundation>=10.3; sys_platform == 'darwin'",

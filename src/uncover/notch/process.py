@@ -34,11 +34,17 @@ class SharedProjection:
             return self._state
 
     def apply_emotion(
-        self, event: EventEnvelope, *, discontinuity: bool = False
+        self,
+        event: EventEnvelope,
+        *,
+        discontinuity: bool = False,
+        producer_restart: bool = False,
     ) -> RenderState:
         with self._lock:
             self._state = self.projection.apply_emotion(
-                event, discontinuity=discontinuity
+                event,
+                discontinuity=discontinuity,
+                producer_restart=producer_restart,
             )
             return self._state
 
@@ -113,7 +119,13 @@ async def consume_streams(
                     ),
                     flush=True,
                 )
-            publish(shared.apply_emotion(item.event, discontinuity=item.discontinuity))
+            publish(
+                shared.apply_emotion(
+                    item.event,
+                    discontinuity=item.discontinuity,
+                    producer_restart=item.runtime_changed,
+                )
+            )
             if stop.is_set():
                 break
         subscriber.close()

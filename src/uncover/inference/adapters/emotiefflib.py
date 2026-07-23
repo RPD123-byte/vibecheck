@@ -19,7 +19,6 @@ def bounded_face_boxes(
     width: int,
     height: int,
     confidence_threshold: float,
-    minimum_size: int,
 ) -> list[tuple[int, int, int, int]]:
     if boxes is None or probabilities is None:
         return []
@@ -30,7 +29,7 @@ def bounded_face_boxes(
         x1, y1, x2, y2 = (int(value) for value in box)
         x1, x2 = sorted((max(0, min(width, x1)), max(0, min(width, x2))))
         y1, y2 = sorted((max(0, min(height, y1)), max(0, min(height, y2))))
-        if x2 - x1 < minimum_size or y2 - y1 < minimum_size:
+        if x2 <= x1 or y2 <= y1:
             continue
         candidates.append((x1, y1, x2, y2))
     return candidates
@@ -43,7 +42,6 @@ def select_largest_face_box(
     width: int,
     height: int,
     confidence_threshold: float,
-    minimum_size: int,
 ) -> tuple[int, int, int, int] | None:
     candidates = bounded_face_boxes(
         boxes,
@@ -51,7 +49,6 @@ def select_largest_face_box(
         width=width,
         height=height,
         confidence_threshold=confidence_threshold,
-        minimum_size=minimum_size,
     )
     return max(
         candidates, key=lambda box: (box[2] - box[0]) * (box[3] - box[1]), default=None
@@ -96,7 +93,6 @@ class EmotiEffLibAdapter(EmotionAdapter):
             width=width,
             height=height,
             confidence_threshold=self.face_threshold,
-            minimum_size=self.minimum_face_size,
         )
         if face_box is None:
             return None

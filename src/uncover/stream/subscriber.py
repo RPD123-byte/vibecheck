@@ -22,6 +22,8 @@ from uncover.stream.protocol import (
 class StreamItem:
     event: EventEnvelope
     discontinuity: bool
+    sequence_gap: bool
+    runtime_changed: bool
 
 
 class SnapshotSubscriber:
@@ -91,21 +93,28 @@ class SnapshotSubscriber:
                             self._runtime_id = None
                             self._sequence = None
                             continue
+                        runtime_changed = (
+                            self._runtime_id is not None
+                            and event.runtime_id != self._runtime_id
+                        )
+                        sequence_gap = False
                         if (
                             event.runtime_id == self._runtime_id
                             and self._sequence is not None
                         ):
                             if event.sequence <= self._sequence:
                                 continue
-                            discontinuity = event.sequence != self._sequence + 1
-                        else:
-                            discontinuity = self._runtime_id is not None
-                        if event.runtime_id != self._runtime_id:
-                            discontinuity = self._runtime_id is not None
+                            sequence_gap = event.sequence != self._sequence + 1
+                        discontinuity = runtime_changed or sequence_gap
                         self._runtime_id = event.runtime_id
                         self._sequence = event.sequence
                         self.stale = False
-                        yield StreamItem(event, discontinuity)
+                        yield StreamItem(
+                            event,
+                            discontinuity,
+                            sequence_gap,
+                            runtime_changed,
+                        )
                 finally:
                     writer.close()
                     await writer.wait_closed()

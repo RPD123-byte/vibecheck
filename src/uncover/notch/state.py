@@ -68,10 +68,16 @@ class NotchProjection:
         self._status_expires_at = 0.0
 
     def apply_emotion(
-        self, event: EventEnvelope, *, discontinuity: bool = False
+        self,
+        event: EventEnvelope,
+        *,
+        discontinuity: bool = False,
+        producer_restart: bool = False,
     ) -> RenderState:
-        if discontinuity:
+        if producer_restart:
             self.policy.reset()
+        elif discontinuity:
+            self.policy.reset_pending()
         if event.kind == "producer_state":
             state = str(event.payload.get("state", "inference-error"))
             self.health = HEALTH_LABELS.get(state, state.replace("-", " ").title())

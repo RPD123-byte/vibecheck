@@ -7,6 +7,7 @@ import asyncio
 import json
 import signal
 import sys
+import threading
 import time
 import uuid
 from collections.abc import Iterable
@@ -28,22 +29,96 @@ class FrameSource(Protocol):
     def close(self) -> None: ...
 
 
+class LatestFrameBuffer:
+    """Thread-safe one-frame buffer that never queues stale camera frames."""
+
+    def __init__(self) -> None:
+        self._condition = threading.Condition()
+        self._sequence = 0
+        self._frame: Any | None = None
+        self._closed = False
+
+    def put(self, frame: Any) -> None:
+        with self._condition:
+            if self._closed:
+                return
+            self._sequence += 1
+            self._frame = frame
+            self._condition.notify_all()
+
+    def take_after(
+        self, sequence: int, *, timeout_seconds: float
+    ) -> tuple[int, Any] | None:
+        deadline = time.monotonic() + timeout_seconds
+        with self._condition:
+            while not self._closed and self._sequence <= sequence:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return None
+                self._condition.wait(remaining)
+            if self._frame is None or self._sequence <= sequence:
+                return None
+            return self._sequence, self._frame
+
+    def close(self) -> None:
+        with self._condition:
+            self._closed = True
+            self._frame = None
+            self._condition.notify_all()
+
+
 class CameraFrameSource:
-    def __init__(self, camera: int) -> None:
+    def __init__(self, camera: int, *, capture: Any | None = None) -> None:
         import cv2
 
-        backend = cv2.CAP_AVFOUNDATION if sys.platform == "darwin" else cv2.CAP_ANY
-        self.capture = cv2.VideoCapture(camera, backend)
+        if capture is None:
+            backend = cv2.CAP_AVFOUNDATION if sys.platform == "darwin" else cv2.CAP_ANY
+            capture = cv2.VideoCapture(camera, backend)
+        self.capture = capture
+        self._buffer = LatestFrameBuffer()
+        self._last_sequence = 0
+        self._stop = threading.Event()
+        self._closed = False
+        self._thread: threading.Thread | None = None
+        if self.opened:
+            self._thread = threading.Thread(
+                target=self._capture_latest,
+                name="uncover-camera-capture",
+                daemon=True,
+            )
+            self._thread.start()
 
     @property
     def opened(self) -> bool:
         return bool(self.capture.isOpened())
 
     def read(self) -> tuple[bool, Any]:
-        return self.capture.read()
+        item = self._buffer.take_after(
+            self._last_sequence,
+            timeout_seconds=2.0,
+        )
+        if item is None:
+            return False, None
+        self._last_sequence, frame = item
+        return True, frame.copy()
 
     def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        self._stop.set()
         self.capture.release()
+        self._buffer.close()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+
+    def _capture_latest(self) -> None:
+        while not self._stop.is_set():
+            ok, frame = self.capture.read()
+            if not ok:
+                self._buffer.close()
+                return
+            self._buffer.put(frame)
 
 
 class ImageSequenceFrameSource:
@@ -97,8 +172,14 @@ class InferenceService:
     def _now_ms(self) -> int:
         return monotonic_ms()
 
-    async def publish_state(self, state: str, detail: str | None = None) -> None:
-        if state == self._last_state and detail is None:
+    async def publish_state(
+        self,
+        state: str,
+        detail: str | None = None,
+        *,
+        force: bool = False,
+    ) -> None:
+        if not force and state == self._last_state and detail is None:
             return
         now_ms = self._now_ms()
         payload: dict[str, Any] = {"state": state}
@@ -143,7 +224,7 @@ class InferenceService:
                     if captured_at_ms - self._last_face_ms >= int(
                         self.no_face_timeout_seconds * 1000
                     ):
-                        await self.publish_state("no-face")
+                        await self.publish_state("no-face", force=True)
                 else:
                     self._last_face_ms = captured_at_ms
                     self._last_state = "active"
@@ -209,6 +290,35 @@ async def _wait_or_stop(stop: asyncio.Event, seconds: float) -> None:
         await asyncio.wait_for(stop.wait(), timeout=seconds)
 
 
+async def _publish_state_heartbeat(
+    publisher: SnapshotPublisher,
+    *,
+    runtime_id: str,
+    state: str,
+    stop: asyncio.Event,
+    freshness_seconds: float,
+) -> None:
+    sequence = 0
+    await publisher.start()
+    try:
+        while not stop.is_set():
+            now_ms = monotonic_ms()
+            await publisher.publish(
+                EventEnvelope(
+                    "producer_state",
+                    runtime_id,
+                    sequence,
+                    now_ms,
+                    now_ms,
+                    {"state": state},
+                )
+            )
+            sequence += 1
+            await _wait_or_stop(stop, max(0.05, freshness_seconds / 2))
+    finally:
+        await publisher.close()
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--socket", type=Path, required=True)
@@ -252,36 +362,23 @@ async def _run_cli(args: argparse.Namespace) -> int:
         else:
             permission = await asyncio.to_thread(request_camera_permission)
             if permission is not CameraPermission.GRANTED:
-                await publisher.start()
-                now_ms = monotonic_ms()
-                await publisher.publish(
-                    EventEnvelope(
-                        "producer_state",
-                        args.runtime_id or str(uuid.uuid4()),
-                        0,
-                        now_ms,
-                        now_ms,
-                        {"state": permission.value},
-                    )
+                await _publish_state_heartbeat(
+                    publisher,
+                    runtime_id=args.runtime_id or str(uuid.uuid4()),
+                    state=permission.value,
+                    stop=stop,
+                    freshness_seconds=args.freshness,
                 )
-                await stop.wait()
-                await publisher.close()
                 return 2
             frames = CameraFrameSource(args.camera)
             if not frames.opened:
-                await publisher.start()
-                now_ms = monotonic_ms()
-                await publisher.publish(
-                    EventEnvelope(
-                        "producer_state",
-                        args.runtime_id or str(uuid.uuid4()),
-                        0,
-                        now_ms,
-                        now_ms,
-                        {"state": "camera-unavailable"},
-                    )
+                await _publish_state_heartbeat(
+                    publisher,
+                    runtime_id=args.runtime_id or str(uuid.uuid4()),
+                    state="camera-unavailable",
+                    stop=stop,
+                    freshness_seconds=args.freshness,
                 )
-                await publisher.close()
                 return 2
         adapter = create_adapter(
             args.adapter,

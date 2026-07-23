@@ -83,3 +83,35 @@ async def test_second_publisher_never_unlinks_a_live_socket(socket_dir: Path) ->
         await contender.start()
     assert socket.exists()
     await owner.close()
+
+
+@pytest.mark.asyncio
+async def test_subscriber_distinguishes_sequence_gap_from_runtime_restart(
+    socket_dir: Path,
+) -> None:
+    socket = socket_dir / "emotion.sock"
+    publisher = SnapshotPublisher(socket)
+    await publisher.start()
+    subscriber = SnapshotSubscriber(socket)
+    iterator = subscriber.events()
+    try:
+        first = asyncio.create_task(anext(iterator))
+        while publisher.subscriber_count < 1:
+            await asyncio.sleep(0.01)
+        await publisher.publish(event("runtime-a", 0))
+        assert not (await asyncio.wait_for(first, 1)).discontinuity
+
+        gap = asyncio.create_task(anext(iterator))
+        await publisher.publish(event("runtime-a", 2))
+        gap_item = await asyncio.wait_for(gap, 1)
+        assert gap_item.sequence_gap
+        assert not gap_item.runtime_changed
+
+        restarted = asyncio.create_task(anext(iterator))
+        await publisher.publish(event("runtime-b", 0))
+        restarted_item = await asyncio.wait_for(restarted, 1)
+        assert restarted_item.runtime_changed
+    finally:
+        subscriber.close()
+        await iterator.aclose()
+        await publisher.close()

@@ -18,8 +18,17 @@ def test_largest_face_is_clamped_filtered_and_selected() -> None:
         width=90,
         height=80,
         confidence_threshold=0.90,
-        minimum_size=40,
     ) == (20, 20, 90, 80)
+
+
+def test_post_detection_crop_matches_experiment_without_second_size_filter() -> None:
+    assert select_largest_face_box(
+        np.array([[0, 0, 10, 10]]),
+        np.array([0.99]),
+        width=100,
+        height=100,
+        confidence_threshold=0.90,
+    ) == (0, 0, 10, 10)
 
 
 def test_unknown_adapter_fails_without_importing_heavy_provider() -> None:

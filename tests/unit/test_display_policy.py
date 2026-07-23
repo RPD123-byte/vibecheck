@@ -5,6 +5,8 @@ from pathlib import Path
 
 from uncover.notch.display_policy import DisplayPolicy
 from uncover.notch.layout import calculate_notch_layout
+from uncover.notch.state import NotchProjection
+from uncover.stream.protocol import EventEnvelope
 
 
 def test_show_and_switch_need_two_samples_but_clear_is_immediate() -> None:
@@ -66,3 +68,30 @@ def test_display_smoothing_matches_frozen_scenario() -> None:
     assert [list(policy.observe(scores)) for scores in fixture["readings"]] == fixture[
         "expected"
     ]
+
+
+def test_dropped_snapshot_preserves_committed_expression() -> None:
+    scores = {"anger": 0.8}
+    projection = NotchProjection()
+
+    def reading(sequence: int, runtime_id: str = "runtime") -> EventEnvelope:
+        return EventEnvelope(
+            "reading",
+            runtime_id,
+            sequence,
+            sequence * 160,
+            sequence * 160,
+            {"scores": scores},
+        )
+
+    assert projection.apply_emotion(reading(1)).emotions == ()
+    assert projection.apply_emotion(reading(2)).emotions == ("anger",)
+    assert projection.apply_emotion(
+        reading(4), discontinuity=True, producer_restart=False
+    ).emotions == ("anger",)
+    assert (
+        projection.apply_emotion(
+            reading(0, "replacement"), discontinuity=True, producer_restart=True
+        ).emotions
+        == ()
+    )
