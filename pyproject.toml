@@ -52,6 +52,7 @@ testpaths = ["tests"]
 markers = [
   "model: exercises the real EmotiEffLib model",
   "live_codex: mutates an isolated live Codex fixture thread",
+  "visual: renders target-Mac AppKit pixels against the validated reference",
 ]
 
 [tool.ruff]

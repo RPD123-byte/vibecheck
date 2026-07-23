@@ -37,6 +37,8 @@ class RenderState:
     emotions: tuple[str, ...] = ()
     icons: tuple[str, ...] = ()
     scores: dict[str, float] = field(default_factory=dict)
+    emphasized_emotions: tuple[str, ...] = ()
+    emphasis_scores: dict[str, float] = field(default_factory=dict)
     health: str | None = "Loading…"
     emphasis: str | None = None
     detail: str | None = None
@@ -46,6 +48,8 @@ class RenderState:
             "emotions": list(self.emotions),
             "icons": list(self.icons),
             "scores": dict(self.scores),
+            "emphasized_emotions": list(self.emphasized_emotions),
+            "emphasis_scores": dict(self.emphasis_scores),
             "health": self.health,
             "emphasis": self.emphasis,
             "detail": self.detail,
@@ -58,6 +62,8 @@ class NotchProjection:
         self.scores: dict[str, float] = {}
         self.health: str | None = "Loading…"
         self.emphasis: str | None = None
+        self.emphasized_emotions: tuple[str, ...] = ()
+        self.emphasis_scores: dict[str, float] = {}
         self.detail: str | None = None
         self._status_expires_at = 0.0
 
@@ -97,6 +103,23 @@ class NotchProjection:
         if event.kind != "interruption_status":
             return self.render()
         state = str(event.payload.get("state", ""))
+        raw_emotions = event.payload.get("emotions", [])
+        emphasized = []
+        for item in raw_emotions if isinstance(raw_emotions, list) else []:
+            name = item.get("name") if isinstance(item, dict) else item
+            if isinstance(name, str) and name in ICONS:
+                emphasized.append(name)
+        raw_scores = event.payload.get("scores", {})
+        self.emphasized_emotions = tuple(emphasized)
+        self.emphasis_scores = (
+            {
+                str(name): float(score)
+                for name, score in raw_scores.items()
+                if str(name) in ICONS
+            }
+            if isinstance(raw_scores, dict)
+            else {}
+        )
         if state in {"interrupting", "restarting"}:
             self.emphasis = "in-progress"
             self._status_expires_at = float("inf")
@@ -108,6 +131,8 @@ class NotchProjection:
             self._status_expires_at = float("inf")
         elif state in {"ready", "dry_run_ready", "connecting"}:
             self.emphasis = None
+            self.emphasized_emotions = ()
+            self.emphasis_scores = {}
             self._status_expires_at = 0.0
         self.detail = (
             str(event.payload.get("detail"))
@@ -125,12 +150,16 @@ class NotchProjection:
     def render(self) -> RenderState:
         if self._status_expires_at and time.monotonic() >= self._status_expires_at:
             self.emphasis = None
+            self.emphasized_emotions = ()
+            self.emphasis_scores = {}
             self._status_expires_at = 0.0
         emotions = self.policy.committed if self.health is None else ()
         return RenderState(
             emotions=emotions,
             icons=tuple(ICONS[name] for name in emotions),
             scores={name: self.scores.get(name, 0.0) for name in emotions},
+            emphasized_emotions=self.emphasized_emotions,
+            emphasis_scores=dict(self.emphasis_scores),
             health=self.health,
             emphasis=self.emphasis,
             detail=self.detail,

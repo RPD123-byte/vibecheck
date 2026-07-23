@@ -21,6 +21,13 @@ EmotiEffLib model and both consumer processes, then removes the images:
 UNCOVER_RUN_MODEL_TESTS=1 pytest tests/model
 ```
 
+The target-Mac visual suite renders the real AppKit view offscreen and compares
+active, empty, health, dispatch, and error pixels with the validated experiment:
+
+```bash
+UNCOVER_RUN_VISUAL_TESTS=1 pytest tests/visual
+```
+
 The live Codex verification creates an isolated fixture task, performs a real
 interrupt/restart through `codex-control`, and always archives the fixture. It
 does not manage or restart the Codex GUI:
