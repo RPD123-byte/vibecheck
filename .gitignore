@@ -1,0 +1,41 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python environments and generated files
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# JavaScript tooling
+node_modules/
+
+# Rust tooling
+target/
+
+# Experimental and vendored research work must not become core dependencies
+/experimentation/
+/emotiefflib_repo/
+
+# Local biometric/model data and captured test images
+/face_database/*
+!/face_database/.gitkeep
+/image.png
+/image copy.png
+/image copy 2.png
+/rithvik_disgust.png
+/rithvik_disgust_retry.png
+*.pkl
+
+# macOS and editor state
+.DS_Store
+.idea/
+.vscode/
+*.swp
