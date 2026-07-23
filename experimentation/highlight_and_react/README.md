@@ -30,7 +30,7 @@ Use `--demo-seconds 10` to make the demo exit automatically.
 cd experimentation/highlight_and_react
 ./scripts/build_app.sh
 build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
-  --fixture --debug-candidates
+  --fixture --debug-accessibility
 ```
 
 In the fixture window:
@@ -38,6 +38,7 @@ In the fixture window:
 1. Select `Select this sentence, then press Control–Option–R.`
 2. Press `Control–Option–R` (`⌃⌥R`).
 3. The selection should get a yellow outline and the emoji bar should appear.
+4. Click elsewhere in the window; both overlay panels should disappear.
 
 This is the same selection and shortcut path used in Codex.
 
@@ -50,7 +51,7 @@ open build/HighlightAndReact.app
 ```
 
 The app needs Accessibility access to resolve UI elements and Input Monitoring
-access to observe double-clicks outside itself:
+access to observe the global shortcut and outside clicks:
 
 - System Settings > Privacy & Security > Accessibility
 - System Settings > Privacy & Security > Input Monitoring
@@ -64,28 +65,27 @@ build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
   --request-permission
 ```
 
-After permission is granted, select text in Codex and press `⌃⌥R`. Double-click
-remains available as the earlier pointer-based experiment. The shortcut itself
-is consumed so it cannot replace the selection; every other keyboard and mouse
-event passes through unchanged.
+After permission is granted, select text in Codex and press `⌃⌥R`. Press the
+shortcut again to hide the overlay, or click anywhere outside the selected text
+and reaction bar. The shortcut itself is consumed so it cannot replace the
+selection; every other keyboard and mouse event passes through unchanged.
 
-For the first live Codex run, add `--debug-candidates`. It prints the role,
-bounds, text preview, and score for each Accessibility ancestor under the
-double-click. That makes tuning Codex message selection empirical:
+For the first live Codex run, add `--debug-accessibility`. It prints the role,
+bounds, text preview, and supported selection attributes. That makes tuning
+Codex selection handling empirical:
 
 ```bash
 build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
-  --debug-candidates
+  --debug-accessibility
 ```
 
 ## Why this can be app-independent
 
 The overlay uses three OS-level contracts rather than Codex internals:
 
-- `CGEventTap` identifies `⌃⌥R` or a double-click.
+- `CGEventTap` identifies `⌃⌥R` and outside clicks.
 - `AXSelectedText` plus parameterized bounds resolves the selected text;
   Electron/WebKit text-marker attributes are supported as a fallback.
-- `AXUIElementCopyElementAtPosition` supports the earlier double-click flow.
 - `NSPanel` draws above other applications without taking keyboard focus.
 
 The app-independent portion is the event monitor, target resolver, coordinate
@@ -94,17 +94,16 @@ improve target selection or decide what a reaction means.
 
 ## Codex-specific uncertainty to test
 
-Codex is Electron-based, and the useful Accessibility ancestor may be a text
-node, a message-sized group, or a much larger conversation container depending
-on how its accessibility tree is authored. The current resolver scores the
-first nine ancestors and prefers text-bearing, message-sized elements. The next
-useful experiment is to log that candidate chain on an authorized machine and
-tune the scoring without introducing any Codex process injection.
+Codex is Electron-based, and the useful Accessibility selection may belong to a
+text node or a larger web-area ancestor depending on how its accessibility tree
+is authored. The next useful experiment is to inspect those selection
+attributes on an authorized machine without introducing any Codex process
+injection.
 
 ## Safety and current limitations
 
 - No process injection, private Codex API, screen scraping, or target-app restart.
-- The app only resolves content after the explicit shortcut or double-click.
+- The app only resolves selected content after the explicit shortcut.
 - Reactions are local JSON events; they do not alter Codex messages.
 - Secure text fields can expose little or no Accessibility text, by design.
 - Some apps flatten their Accessibility trees, so exact message bounds may need

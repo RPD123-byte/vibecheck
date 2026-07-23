@@ -40,4 +40,15 @@ public enum OverlayLayout {
             .insetBy(dx: -outset, dy: -outset)
             .intersection(visibleScreen)
     }
+
+    public static func shouldDismiss(
+        pointer: CGPoint,
+        target: CGRect,
+        reactionBar: CGRect,
+        targetTolerance: CGFloat = 6
+    ) -> Bool {
+        !target.insetBy(dx: -targetTolerance, dy: -targetTolerance)
+            .contains(pointer)
+            && !reactionBar.insetBy(dx: -2, dy: -2).contains(pointer)
+    }
 }

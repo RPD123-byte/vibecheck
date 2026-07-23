@@ -50,4 +50,34 @@ final class OverlayLayoutTests: XCTestCase {
         XCTAssertEqual(frame.minX, 0)
         XCTAssertEqual(frame.width, 102)
     }
+
+    func testPointerOnSelectedTextKeepsOverlayVisible() {
+        XCTAssertFalse(
+            OverlayLayout.shouldDismiss(
+                pointer: CGPoint(x: 300, y: 320),
+                target: CGRect(x: 200, y: 300, width: 300, height: 30),
+                reactionBar: CGRect(x: 204, y: 340, width: 292, height: 48)
+            )
+        )
+    }
+
+    func testPointerOnReactionBarKeepsOverlayVisible() {
+        XCTAssertFalse(
+            OverlayLayout.shouldDismiss(
+                pointer: CGPoint(x: 250, y: 360),
+                target: CGRect(x: 200, y: 300, width: 300, height: 30),
+                reactionBar: CGRect(x: 204, y: 340, width: 292, height: 48)
+            )
+        )
+    }
+
+    func testPointerAwayFromSelectionAndBarDismissesOverlay() {
+        XCTAssertTrue(
+            OverlayLayout.shouldDismiss(
+                pointer: CGPoint(x: 700, y: 600),
+                target: CGRect(x: 200, y: 300, width: 300, height: 30),
+                reactionBar: CGRect(x: 204, y: 340, width: 292, height: 48)
+            )
+        )
+    }
 }

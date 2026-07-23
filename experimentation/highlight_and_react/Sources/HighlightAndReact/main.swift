@@ -7,7 +7,7 @@ import HighlightCore
 private struct Options {
     var demo = false
     var demoSeconds: TimeInterval?
-    var debugCandidates = false
+    var debugAccessibility = false
     var fixture = false
     var requestPermission = false
 
@@ -21,8 +21,8 @@ private struct Options {
                 options.demo = true
             case "--request-permission":
                 options.requestPermission = true
-            case "--debug-candidates":
-                options.debugCandidates = true
+            case "--debug-accessibility":
+                options.debugAccessibility = true
             case "--fixture":
                 options.fixture = true
             case "--demo-seconds":
@@ -37,7 +37,7 @@ private struct Options {
 
                       --demo                    Show the overlay without Accessibility access
                       --demo-seconds SECONDS    Exit automatically after a demo
-                      --debug-candidates        Log the Accessibility candidates and scores
+                      --debug-accessibility     Log selection Accessibility details
                       --fixture                 Open a selectable keyboard-shortcut test window
                       --request-permission      Ask macOS for Accessibility permission
                       --help                    Show this help
@@ -62,15 +62,6 @@ private struct HighlightTarget {
     let applicationName: String
 }
 
-private struct Candidate {
-    let element: AXUIElement
-    let frame: CGRect
-    let role: String
-    let text: String
-    let depth: Int
-    let score: Int
-}
-
 private enum AccessibilityValue {
     static func copy(_ attribute: String, from element: AXUIElement) -> CFTypeRef? {
         var value: CFTypeRef?
@@ -82,35 +73,6 @@ private enum AccessibilityValue {
 
     static func string(_ attribute: String, from element: AXUIElement) -> String? {
         copy(attribute, from: element) as? String
-    }
-
-    static func frame(from element: AXUIElement) -> CGRect? {
-        if let value = copy("AXFrame", from: element),
-           let frame = rect(from: value)
-        {
-            return frame
-        }
-
-        guard
-            let positionValue = copy(kAXPositionAttribute, from: element),
-            let sizeValue = copy(kAXSizeAttribute, from: element),
-            CFGetTypeID(positionValue) == AXValueGetTypeID(),
-            CFGetTypeID(sizeValue) == AXValueGetTypeID()
-        else {
-            return nil
-        }
-
-        var position = CGPoint.zero
-        var size = CGSize.zero
-        let axPosition = unsafeBitCast(positionValue, to: AXValue.self)
-        let axSize = unsafeBitCast(sizeValue, to: AXValue.self)
-        guard
-            AXValueGetValue(axPosition, .cgPoint, &position),
-            AXValueGetValue(axSize, .cgSize, &size)
-        else {
-            return nil
-        }
-        return CGRect(origin: position, size: size)
     }
 
     static func rect(from value: CFTypeRef) -> CGRect? {
@@ -142,30 +104,12 @@ private enum AccessibilityValue {
         return value as? [AXUIElement] ?? []
     }
 
-    static func bestText(from element: AXUIElement) -> String {
-        let attributes = [
-            kAXValueAttribute,
-            kAXTitleAttribute,
-            kAXDescriptionAttribute,
-            kAXHelpAttribute,
-        ]
-
-        for attribute in attributes {
-            if let value = string(attribute, from: element)?
-                .trimmingCharacters(in: .whitespacesAndNewlines),
-               !value.isEmpty
-            {
-                return String(value.prefix(280))
-            }
-        }
-        return ""
-    }
 }
 
 private final class TargetResolver {
     private let systemWide = AXUIElementCreateSystemWide()
 
-    func resolveSelection(debugCandidates: Bool) -> HighlightTarget? {
+    func resolveSelection(debugAccessibility: Bool) -> HighlightTarget? {
         let focusedValue = AccessibilityValue.copy(
             kAXFocusedUIElementAttribute,
             from: systemWide
@@ -181,30 +125,30 @@ private final class TargetResolver {
                     break
                 }
 
-                logSelectionElement(element, depth: depth, enabled: debugCandidates)
+                logSelectionElement(element, depth: depth, enabled: debugAccessibility)
                 if let target = selection(from: element) {
                     logResolvedSelection(
                         target,
                         source: "focused-chain depth=\(depth)",
-                        enabled: debugCandidates
+                        enabled: debugAccessibility
                     )
                     return target
                 }
                 current = AccessibilityValue.parent(of: element)
             }
         } else {
-            debugSelection("No focused Accessibility element.", enabled: debugCandidates)
+            debugSelection("No focused Accessibility element.", enabled: debugAccessibility)
         }
 
         if let target = searchActiveWindowForSelection(
-            debugCandidates: debugCandidates
+            debugAccessibility: debugAccessibility
         ) {
             return target
         }
 
         debugSelection(
             "No non-empty Accessibility selection with usable bounds.",
-            enabled: debugCandidates
+            enabled: debugAccessibility
         )
         return nil
     }
@@ -214,7 +158,7 @@ private final class TargetResolver {
     }
 
     private func searchActiveWindowForSelection(
-        debugCandidates: Bool
+        debugAccessibility: Bool
     ) -> HighlightTarget? {
         guard let applicationValue = AccessibilityValue.copy(
             kAXFocusedApplicationAttribute,
@@ -245,7 +189,7 @@ private final class TargetResolver {
                 logResolvedSelection(
                     target,
                     source: "active-window-search element=\(index)",
-                    enabled: debugCandidates
+                    enabled: debugAccessibility
                 )
                 return target
             }
@@ -254,7 +198,7 @@ private final class TargetResolver {
 
         debugSelection(
             "Active-window selection search inspected \(min(index, maximumElements)) elements.",
-            enabled: debugCandidates
+            enabled: debugAccessibility
         )
         return nil
     }
@@ -310,51 +254,6 @@ private final class TargetResolver {
             stderr
         )
         fflush(stderr)
-    }
-
-    func resolve(at point: CGPoint, debugCandidates: Bool) -> HighlightTarget? {
-        var hitElement: AXUIElement?
-        guard AXUIElementCopyElementAtPosition(
-            systemWide,
-            Float(point.x),
-            Float(point.y),
-            &hitElement
-        ) == .success, let hitElement else {
-            return nil
-        }
-
-        var candidates: [Candidate] = []
-        var current: AXUIElement? = hitElement
-
-        for depth in 0..<9 {
-            guard let element = current else {
-                break
-            }
-            if let candidate = candidate(for: element, point: point, depth: depth) {
-                candidates.append(candidate)
-            }
-            current = AccessibilityValue.parent(of: element)
-        }
-
-        if debugCandidates {
-            log(candidates: candidates)
-        }
-
-        guard let best = candidates.max(by: { $0.score < $1.score }) else {
-            return nil
-        }
-
-        var pid: pid_t = 0
-        AXUIElementGetPid(best.element, &pid)
-        let appName = NSRunningApplication(processIdentifier: pid)?
-            .localizedName ?? "Unknown app"
-
-        return HighlightTarget(
-            quartzFrame: best.frame,
-            role: best.role,
-            text: best.text,
-            applicationName: appName
-        )
     }
 
     private func rangeSelection(from element: AXUIElement) -> HighlightTarget? {
@@ -469,88 +368,6 @@ private final class TargetResolver {
         fflush(stderr)
     }
 
-    private func log(candidates: [Candidate]) {
-        for candidate in candidates.sorted(by: { $0.score > $1.score }) {
-            let frame = candidate.frame
-            let preview = candidate.text
-                .replacingOccurrences(of: "\n", with: " ")
-                .prefix(90)
-            fputs(
-                "candidate score=\(candidate.score) depth=\(candidate.depth) " +
-                    "role=\(candidate.role) " +
-                    "frame=(\(Int(frame.minX)),\(Int(frame.minY))," +
-                    "\(Int(frame.width)),\(Int(frame.height))) " +
-                    "text=\(preview)\n",
-                stderr
-            )
-        }
-        fflush(stderr)
-    }
-
-    private func candidate(
-        for element: AXUIElement,
-        point: CGPoint,
-        depth: Int
-    ) -> Candidate? {
-        guard let frame = AccessibilityValue.frame(from: element),
-              frame.width >= 16,
-              frame.height >= 12,
-              frame.width <= 1_600,
-              frame.height <= 500,
-              frame.insetBy(dx: -2, dy: -2).contains(point)
-        else {
-            return nil
-        }
-
-        let role = AccessibilityValue.string(kAXRoleAttribute, from: element) ?? "AXUnknown"
-        guard role != kAXWindowRole, role != kAXApplicationRole else {
-            return nil
-        }
-
-        let text = AccessibilityValue.bestText(from: element)
-        var score = max(0, 10 - depth)
-
-        switch role {
-        case kAXStaticTextRole:
-            score += 26
-        case kAXTextAreaRole:
-            score += 24
-        case kAXGroupRole:
-            score += 24
-        case kAXButtonRole:
-            score += 8
-        default:
-            score += 4
-        }
-
-        if !text.isEmpty {
-            score += 18
-        }
-        if frame.width >= 140 {
-            score += 10
-        }
-        if (28...240).contains(frame.height) {
-            score += 12
-        }
-        if role == kAXGroupRole,
-           (200...1_200).contains(frame.width),
-           (32...280).contains(frame.height)
-        {
-            score += 24
-        }
-        if frame.width > 1_200 || frame.height > 350 {
-            score -= 20
-        }
-
-        return Candidate(
-            element: element,
-            frame: frame,
-            role: role,
-            text: text,
-            depth: depth,
-            score: score
-        )
-    }
 }
 
 private enum ScreenCoordinates {
@@ -566,6 +383,55 @@ private enum ScreenCoordinates {
         let x = screen.frame.minX + (rect.minX - quartzScreen.minX)
         let y = screen.frame.maxY - (rect.minY - quartzScreen.minY) - rect.height
         return (CGRect(x: x, y: y, width: rect.width, height: rect.height), screen)
+    }
+
+    static func appKitPoint(fromQuartz point: CGPoint) -> CGPoint? {
+        guard let screen = screen(containingQuartzPoint: point),
+              let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                as? CGDirectDisplayID
+        else {
+            return nil
+        }
+
+        let quartzScreen = CGDisplayBounds(displayID)
+        return CGPoint(
+            x: screen.frame.minX + (point.x - quartzScreen.minX),
+            y: screen.frame.maxY - (point.y - quartzScreen.minY)
+        )
+    }
+
+    static func quartzPoint(fromAppKit point: CGPoint) -> CGPoint? {
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }),
+              let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                as? CGDirectDisplayID
+        else {
+            return nil
+        }
+
+        let quartzScreen = CGDisplayBounds(displayID)
+        return CGPoint(
+            x: quartzScreen.minX + (point.x - screen.frame.minX),
+            y: quartzScreen.minY + (screen.frame.maxY - point.y)
+        )
+    }
+
+    static func quartzRect(fromAppKit rect: CGRect) -> CGRect? {
+        guard let screen = NSScreen.screens.first(where: {
+            $0.frame.contains(CGPoint(x: rect.midX, y: rect.midY))
+        }),
+              let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
+                as? CGDirectDisplayID
+        else {
+            return nil
+        }
+
+        let quartzScreen = CGDisplayBounds(displayID)
+        return CGRect(
+            x: quartzScreen.minX + (rect.minX - screen.frame.minX),
+            y: quartzScreen.minY + (screen.frame.maxY - rect.maxY),
+            width: rect.width,
+            height: rect.height
+        )
     }
 
     private static func screen(containingQuartzPoint point: CGPoint) -> NSScreen? {
@@ -601,6 +467,7 @@ private final class OverlayController: NSObject {
     private let reactionPanel: NSPanel
     private let stackView: NSStackView
     private var currentTarget: HighlightTarget?
+    private var currentTargetFrame: CGRect?
     private let reactions = ["❤️", "👍", "👎", "😂", "‼️", "❓"]
 
     override init() {
@@ -621,6 +488,10 @@ private final class OverlayController: NSObject {
         configurePanels()
     }
 
+    var isVisible: Bool {
+        currentTarget != nil
+    }
+
     @discardableResult
     func show(target: HighlightTarget) -> Bool {
         guard let (targetFrame, screen) = ScreenCoordinates.appKitRect(
@@ -630,6 +501,7 @@ private final class OverlayController: NSObject {
         }
 
         currentTarget = target
+        currentTargetFrame = targetFrame
         let highlightFrame = OverlayLayout.highlightFrame(
             target: targetFrame,
             visibleScreen: screen.visibleFrame
@@ -651,6 +523,27 @@ private final class OverlayController: NSObject {
         highlightPanel.orderOut(nil)
         reactionPanel.orderOut(nil)
         currentTarget = nil
+        currentTargetFrame = nil
+    }
+
+    @discardableResult
+    func dismissIfPointerIsOutside(quartzPoint: CGPoint) -> Bool {
+        guard currentTarget != nil,
+              let currentTargetFrame,
+              let appKitPoint = ScreenCoordinates.appKitPoint(fromQuartz: quartzPoint)
+        else {
+            return false
+        }
+        guard OverlayLayout.shouldDismiss(
+            pointer: appKitPoint,
+            target: currentTargetFrame,
+            reactionBar: reactionPanel.frame
+        ) else {
+            return false
+        }
+
+        hide()
+        return true
     }
 
     private func configurePanels() {
@@ -746,19 +639,19 @@ private final class InputMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var localKeyMonitor: Any?
-    private let onDoubleClick: (CGPoint) -> Void
+    private var localPointerMonitor: Any?
+    private let onPointerDown: (CGPoint) -> Void
     private let onKeyboardShortcut: () -> Void
     private let debugEvents: Bool
-    private var previousClick: (time: TimeInterval, point: CGPoint)?
     private var previousShortcutTime: TimeInterval = 0
 
     init(
         debugEvents: Bool,
-        onDoubleClick: @escaping (CGPoint) -> Void,
+        onPointerDown: @escaping (CGPoint) -> Void,
         onKeyboardShortcut: @escaping () -> Void
     ) {
         self.debugEvents = debugEvents
-        self.onDoubleClick = onDoubleClick
+        self.onPointerDown = onPointerDown
         self.onKeyboardShortcut = onKeyboardShortcut
     }
 
@@ -777,10 +670,9 @@ private final class InputMonitor {
 
             switch type {
             case .leftMouseDown:
-                let clickCount = event.getIntegerValueField(.mouseEventClickState)
                 let point = event.location
                 DispatchQueue.main.async {
-                    monitor.receiveMouseDown(point: point, clickCount: clickCount)
+                    monitor.receivePointerDown(point: point)
                 }
             case .keyDown:
                 let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
@@ -842,40 +734,27 @@ private final class InputMonitor {
             self.triggerKeyboardShortcut(source: "app-local", isRepeat: event.isARepeat)
             return nil
         }
+        localPointerMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) {
+            [weak self] event in
+            if let point = ScreenCoordinates.quartzPoint(
+                fromAppKit: NSEvent.mouseLocation
+            ) {
+                self?.receivePointerDown(point: point)
+            }
+            return event
+        }
         return true
     }
 
-    private func receiveMouseDown(point: CGPoint, clickCount: Int64) {
-        let now = ProcessInfo.processInfo.systemUptime
-        let isTimingFallbackDoubleClick: Bool
-
-        if let previousClick {
-            let elapsed = now - previousClick.time
-            let distance = hypot(
-                point.x - previousClick.point.x,
-                point.y - previousClick.point.y
-            )
-            isTimingFallbackDoubleClick =
-                elapsed <= NSEvent.doubleClickInterval && distance <= 6
-        } else {
-            isTimingFallbackDoubleClick = false
-        }
-
+    private func receivePointerDown(point: CGPoint) {
         if debugEvents {
             fputs(
-                "mouse-down count=\(clickCount) x=\(Int(point.x)) y=\(Int(point.y)) " +
-                    "fallback-double=\(isTimingFallbackDoubleClick)\n",
+                "pointer-down x=\(Int(point.x)) y=\(Int(point.y))\n",
                 stderr
             )
             fflush(stderr)
         }
-
-        if clickCount >= 2 || isTimingFallbackDoubleClick {
-            previousClick = nil
-            onDoubleClick(point)
-        } else {
-            previousClick = (now, point)
-        }
+        onPointerDown(point)
     }
 
     private func receiveKeyDown(
@@ -930,6 +809,9 @@ private final class InputMonitor {
         if let localKeyMonitor {
             NSEvent.removeMonitor(localKeyMonitor)
         }
+        if let localPointerMonitor {
+            NSEvent.removeMonitor(localPointerMonitor)
+        }
     }
 }
 
@@ -940,6 +822,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     private var monitor: InputMonitor?
     private var statusItem: NSStatusItem?
     private var fixtureWindow: NSWindow?
+    private weak var fixtureTextView: NSTextView?
 
     init(options: Options) {
         self.options = options
@@ -975,18 +858,15 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let monitor = InputMonitor(
-            debugEvents: options.debugCandidates,
-            onDoubleClick: { [weak self] point in
-                guard
-                    let self,
-                    let target = self.resolver.resolve(
-                        at: point,
-                        debugCandidates: self.options.debugCandidates
-                    )
-                else {
+            debugEvents: options.debugAccessibility,
+            onPointerDown: { [weak self] point in
+                guard let self else {
                     return
                 }
-                self.overlay?.show(target: target)
+                if self.overlay?.dismissIfPointerIsOutside(quartzPoint: point) == true {
+                    print("Selection overlay dismissed by outside click.")
+                    fflush(stdout)
+                }
             },
             onKeyboardShortcut: { [weak self] in
                 self?.showOverlayForSelection()
@@ -997,7 +877,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         guard monitor.start() else {
             fputs(
                 """
-                Could not install the read-only mouse event tap.
+                Could not install the input event tap.
                 Enable Highlight & React in:
                 System Settings > Privacy & Security > Input Monitoring
 
@@ -1009,15 +889,21 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         print(
-            "Highlight & React is listening. Select text and press Control-Option-R, " +
-                "or double-click accessible content."
+            "Highlight & React is listening. Select text and press Control-Option-R."
         )
         fflush(stdout)
     }
 
     private func showOverlayForSelection() {
-        guard let target = resolver.resolveSelection(
-            debugCandidates: options.debugCandidates
+        if overlay?.isVisible == true {
+            overlay?.hide()
+            print("Selection overlay hidden by Control-Option-R.")
+            fflush(stdout)
+            return
+        }
+
+        guard let target = fixtureSelectionTarget() ?? resolver.resolveSelection(
+            debugAccessibility: options.debugAccessibility
         ) else {
             fputs(
                 "Control-Option-R: no accessible text selection found. " +
@@ -1039,6 +925,47 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func fixtureSelectionTarget() -> HighlightTarget? {
+        guard options.fixture,
+              let textView = fixtureTextView,
+              textView.selectedRange().length > 0
+        else {
+            return nil
+        }
+
+        let range = textView.selectedRange()
+        let text = (textView.string as NSString).substring(with: range)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        var actualRange = NSRange()
+        let appKitFrame = textView.firstRect(
+            forCharacterRange: range,
+            actualRange: &actualRange
+        )
+        guard !text.isEmpty,
+              let quartzFrame = ScreenCoordinates.quartzRect(
+                fromAppKit: appKitFrame
+              )
+        else {
+            return nil
+        }
+
+        if options.debugAccessibility {
+            fputs(
+                "fixture-selection frame=(\(Int(quartzFrame.minX))," +
+                    "\(Int(quartzFrame.minY)),\(Int(quartzFrame.width))," +
+                    "\(Int(quartzFrame.height))) text=\(text.prefix(120))\n",
+                stderr
+            )
+            fflush(stderr)
+        }
+        return HighlightTarget(
+            quartzFrame: quartzFrame,
+            role: "AXTextArea",
+            text: String(text.prefix(280)),
+            applicationName: "Highlight & React"
+        )
+    }
+
     private func showDemo(using overlay: OverlayController) {
         guard let screen = NSScreen.main,
               let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")]
@@ -1057,7 +984,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
                 height: 110
             ),
             role: "AXGroup",
-            text: "Demo message: double-click a Codex response to place this overlay.",
+            text: "Demo selection: click elsewhere to dismiss this overlay.",
             applicationName: "Highlight & React Demo"
         )
         overlay.show(target: target)
@@ -1102,6 +1029,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             Expected result: a yellow outline hugs the selected text and the emoji reaction bar appears above it. The shortcut is global, so the same interaction can be tried in Codex without restarting or modifying Codex.
             """
         textView.setAccessibilityIdentifier("KeyboardFixtureText")
+        fixtureTextView = textView
         scrollView.documentView = textView
         window.contentView = scrollView
 
