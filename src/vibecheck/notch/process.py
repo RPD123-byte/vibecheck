@@ -14,7 +14,7 @@ from typing import TextIO
 
 from vibecheck.notch.display_policy import DisplayPolicy
 from vibecheck.notch.state import NotchProjection, RenderState
-from vibecheck.stream.protocol import EventEnvelope
+from vibecheck.stream.protocol import DEFAULT_FRESHNESS_SECONDS, EventEnvelope
 from vibecheck.stream.subscriber import SnapshotSubscriber
 
 
@@ -155,13 +155,29 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--emotion-socket", type=Path, required=True)
     parser.add_argument("--status-socket", type=Path)
-    parser.add_argument("--freshness", type=float, default=0.75)
-    parser.add_argument("--entry-threshold", type=float, default=0.30)
-    parser.add_argument("--exit-threshold", type=float, default=0.25)
+    parser.add_argument(
+        "--freshness",
+        type=float,
+        default=DEFAULT_FRESHNESS_SECONDS,
+    )
+    parser.add_argument("--entry-threshold", type=float, default=0.50)
+    parser.add_argument("--exit-threshold", type=float, default=0.45)
+    parser.add_argument("--surprise-entry-threshold", type=float, default=0.30)
+    parser.add_argument("--surprise-exit-threshold", type=float, default=0.25)
     parser.add_argument("--confirmations", type=int, default=2)
     parser.add_argument("--camera-overlap", type=float, default=4.0)
     parser.add_argument("--headless", action="store_true")
     return parser
+
+
+def _display_policy_from_args(args: argparse.Namespace) -> DisplayPolicy:
+    return DisplayPolicy(
+        entry_threshold=args.entry_threshold,
+        exit_threshold=args.exit_threshold,
+        confirmations=args.confirmations,
+        surprise_entry_threshold=args.surprise_entry_threshold,
+        surprise_exit_threshold=args.surprise_exit_threshold,
+    )
 
 
 async def _headless(args: argparse.Namespace) -> None:
@@ -170,11 +186,7 @@ async def _headless(args: argparse.Namespace) -> None:
     for name in (signal.SIGINT, signal.SIGTERM):
         with suppress(NotImplementedError):
             loop.add_signal_handler(name, stop.set)
-    shared = SharedProjection(
-        NotchProjection(
-            DisplayPolicy(args.entry_threshold, args.exit_threshold, args.confirmations)
-        )
-    )
+    shared = SharedProjection(NotchProjection(_display_policy_from_args(args)))
     await consume_streams(
         emotion_socket=args.emotion_socket,
         status_socket=args.status_socket,

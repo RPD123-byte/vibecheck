@@ -27,6 +27,8 @@
 - [x] 3.7 Implement graceful adapter/camera release and verify close occurs once during cancellation and ordinary shutdown
 - [x] 3.8 Add synthetic adapter and camera seams used only by production tests and demo mode
 - [x] 3.9 Add privacy tests proving events and logs never contain image bytes or create frame/crop artifacts
+- [x] 3.10 Bind the emotion stream before heavyweight initialization, keep loading fresh through the first producer result, and add a delayed-startup process regression test
+- [x] 3.11 Increase the default stream freshness deadline to 1.5 seconds across runtime and standalone workers, verify cold-start loading does not flip to stale, and document that heartbeat scheduling must remain independent of slow initialization
 
 ## 4. Realtime Emotion Protocol and Fan-Out
 
@@ -46,11 +48,12 @@
 - [x] 5.2 Move and test only the latest active-left notch geometry, including 32-point cells, 24-point glyphs, corner extensions, and configurable optical overlap; do not copy the experimental all-sides implementation into production
 - [x] 5.3 Implement the separate AppKit notch worker with supported-screen detection and a non-activating transparent panel
 - [x] 5.4 Connect the notch worker to inference snapshots and clear display state on no-face, stale input, disconnect, or producer restart
-- [x] 5.5 Implement neutral suppression, single highest-scoring emotion selection, deterministic tie-breaking, two-reading show/switch confirmation, 0.30 entry, and 0.25 exit hysteresis
+- [x] 5.5 Implement neutral suppression, single highest-scoring emotion selection, deterministic tie-breaking, two-reading show/switch confirmation, and display hysteresis
 - [x] 5.6 Implement loading, permission, camera, protocol, stale-stream, and inference health presentation distinct from emotion icons
 - [x] 5.7 Connect interruption status snapshots and implement in-progress, success/uncertain-success, bounded four-second sent, and error visual emphasis
 - [x] 5.8 Implement timer/socket/panel cleanup and verify notch shutdown never targets ChatGPT
 - [x] 5.9 Add screenshot/layout fixtures and a macOS visual acceptance check for active-left, empty, health, dispatch, and error states
+- [x] 5.10 Apply 0.30/0.25 surprise display thresholds and 0.50/0.45 thresholds for every other non-neutral emotion after primary-candidate selection, without changing interruption eligibility
 
 ## 6. Rust Interruption Policy
 

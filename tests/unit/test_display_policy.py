@@ -21,16 +21,30 @@ def test_show_and_switch_need_two_samples_but_clear_is_immediate() -> None:
 def test_hysteresis_and_neutral_suppression() -> None:
     policy = DisplayPolicy(confirmations=1)
     assert policy.observe({"anger": 0.30, "neutral": 0.99}) == ()
-    assert policy.observe({"anger": 0.31, "neutral": 0.99}) == ("anger",)
-    assert policy.observe({"anger": 0.27}) == ("anger",)
-    assert policy.observe({"anger": 0.24}) == ()
+    assert policy.observe({"anger": 0.50, "neutral": 0.99}) == ()
+    assert policy.observe({"anger": 0.51, "neutral": 0.99}) == ("anger",)
+    assert policy.observe({"anger": 0.47}) == ("anger",)
+    assert policy.observe({"anger": 0.44}) == ()
     assert policy.observe({"neutral": 1.0}) == ()
 
 
 def test_only_highest_scoring_eligible_emotion_is_displayed() -> None:
     policy = DisplayPolicy(confirmations=1)
     assert policy.observe({"surprise": 0.42, "happiness": 0.35}) == ("surprise",)
-    assert policy.observe({"anger": 0.40, "disgust": 0.40}) == ("anger",)
+    assert policy.observe({"anger": 0.60, "disgust": 0.60}) == ("anger",)
+
+
+def test_surprise_uses_lower_threshold_only_when_it_is_primary() -> None:
+    policy = DisplayPolicy(confirmations=1)
+    assert policy.observe({"surprise": 0.30, "happiness": 0.20}) == ()
+    assert policy.observe({"surprise": 0.31, "happiness": 0.20}) == ("surprise",)
+    assert policy.observe({"surprise": 0.25, "happiness": 0.20}) == ("surprise",)
+    assert policy.observe({"surprise": 0.24, "happiness": 0.20}) == ()
+
+
+def test_ineligible_primary_does_not_fall_through_to_surprise() -> None:
+    policy = DisplayPolicy(confirmations=1)
+    assert policy.observe({"happiness": 0.45, "surprise": 0.35}) == ()
 
 
 def test_interruption_emphasis_also_displays_only_highest_scoring_emotion() -> None:
@@ -42,7 +56,7 @@ def test_interruption_emphasis_also_displays_only_highest_scoring_emotion() -> N
             0,
             0,
             0,
-            {"scores": {"sadness": 0.35, "anger": 0.31}},
+            {"scores": {"sadness": 0.55, "anger": 0.51}},
         )
     )
     state = projection.apply_status(
@@ -55,7 +69,7 @@ def test_interruption_emphasis_also_displays_only_highest_scoring_emotion() -> N
             {
                 "state": "sent",
                 "emotions": [{"name": "anger"}, {"name": "sadness"}],
-                "scores": {"anger": 0.31, "sadness": 0.35},
+                "scores": {"anger": 0.51, "sadness": 0.55},
             },
         )
     )

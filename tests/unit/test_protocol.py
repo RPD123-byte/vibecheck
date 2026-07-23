@@ -10,6 +10,8 @@ from vibecheck.stream.protocol import (
     decode_event,
     encode_event,
 )
+from vibecheck.stream.publisher import SnapshotPublisher
+from vibecheck.stream.subscriber import SnapshotSubscriber
 
 
 def event(sequence: int = 1) -> EventEnvelope:
@@ -20,6 +22,14 @@ def event(sequence: int = 1) -> EventEnvelope:
 
 def test_protocol_round_trip() -> None:
     assert decode_event(encode_event(event())) == event()
+
+
+def test_transport_defaults_allow_for_cold_start_scheduler_contention(
+    tmp_path: Path,
+) -> None:
+    socket = tmp_path / "emotion.sock"
+    assert SnapshotPublisher(socket).current_ttl_ms == 1_500
+    assert SnapshotSubscriber(socket).freshness_ms == 1_500
 
 
 def test_protocol_rejects_version_malformed_and_oversized() -> None:

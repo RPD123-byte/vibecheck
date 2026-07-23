@@ -38,10 +38,10 @@ The runtime SHALL provide one typed configuration source for camera, adapter/mod
 
 #### Scenario: Defaults are used
 - **WHEN** no overrides are supplied
-- **THEN** all workers receive one consistent set of documented defaults, including the shared 0.30 entry/interruption threshold
+- **THEN** all workers receive one consistent set of documented defaults, including a 1.5-second stream freshness timeout, surprise display entry/exit thresholds of 0.30/0.25, other-emotion display entry/exit thresholds of 0.50/0.45, and an interruption threshold of 0.30
 
 #### Scenario: Invalid thresholds are configured
-- **WHEN** the exit threshold exceeds the entry threshold or a score threshold lies outside 0.0 through 1.0
+- **WHEN** either emotion-specific exit threshold exceeds its matching entry threshold or a score threshold lies outside 0.0 through 1.0
 - **THEN** startup fails with a field-specific validation error
 
 ### Requirement: Safe Codex GUI initialization

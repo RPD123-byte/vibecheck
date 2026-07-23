@@ -8,7 +8,11 @@ from functools import lru_cache
 from typing import Any
 
 from vibecheck.notch.layout import EMOJI_CELL_WIDTH, calculate_notch_layout
-from vibecheck.notch.process import SharedProjection, consume_streams
+from vibecheck.notch.process import (
+    SharedProjection,
+    _display_policy_from_args,
+    consume_streams,
+)
 from vibecheck.notch.state import ICONS, NotchProjection, RenderState
 
 WING_WIDTH = 184.0
@@ -254,7 +258,7 @@ def run_appkit(args: object) -> None:
     )
     from Foundation import NSObject, NSTimer
 
-    shared = SharedProjection(NotchProjection())
+    shared = SharedProjection(NotchProjection(_display_policy_from_args(args)))
     stop_flag = threading.Event()
 
     def consume() -> None:

@@ -236,18 +236,31 @@ vibecheck --mode dry-run --camera 1 --no-manage-codex-gui
 
 The default camera index is `0`.
 
-### Adjust the expression threshold
+### Adjust notch expression thresholds
 
 ```bash
 vibecheck \
   --mode dry-run \
-  --threshold 0.25 \
+  --threshold 0.55 \
+  --surprise-threshold 0.35 \
   --no-manage-codex-gui
 ```
 
-The default threshold is `0.30`. Lower values make expressions appear more
-easily but may increase false detections. The same threshold is used for notch
-entry and negative-expression interruption eligibility.
+The notch first finds the strongest non-neutral expression. Surprise must be
+above `0.30` to appear; every other expression must be above `0.50`. The
+`--surprise-threshold` option changes the surprise threshold, while
+`--threshold` changes the threshold for all other expressions. Lower values
+make an expression appear more easily but may increase false detections.
+
+The interruption threshold is independent and remains `0.30` by default. To
+change it:
+
+```bash
+vibecheck \
+  --mode dry-run \
+  --interruption-threshold 0.40 \
+  --no-manage-codex-gui
+```
 
 ### Adjust the negative-expression hold
 
@@ -313,16 +326,18 @@ print state in the terminal.
 ### No expression appears
 
 - Neutral is intentionally hidden.
-- The strongest non-neutral expression must exceed the threshold.
+- The strongest non-neutral expression must exceed its threshold: `0.30` for
+  surprise and `0.50` for every other expression by default.
 - A new expression must be detected consistently before it appears.
 - Only one expression is shown at a time.
 
-Try dry-run mode with a lower threshold while tuning:
+Try dry-run mode with lower thresholds while tuning:
 
 ```bash
 vibecheck \
   --mode dry-run \
-  --threshold 0.25 \
+  --threshold 0.40 \
+  --surprise-threshold 0.25 \
   --no-manage-codex-gui
 ```
 

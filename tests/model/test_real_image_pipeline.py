@@ -159,6 +159,7 @@ async def test_disgust_image_drives_notch_and_dry_run_interruption(
         assert state["icons"] == ["🤢"]
         assert state["scores"]["disgust"] > 0.5
         assert any(value["emotions"] == ["disgust"] for value in seen)
+        assert all(value["health"] != "stale" for value in seen)
     finally:
         await stop_processes(processes)
         shutil.rmtree(runtime, ignore_errors=True)
@@ -218,13 +219,14 @@ async def test_happy_image_shows_happiness_without_neutral_icon(tmp_path: Path) 
         )
         processes.append(inference)
 
-        state, _ = await wait_for_state(
+        state, seen = await wait_for_state(
             notch, lambda value: value["emotions"] == ["happiness"]
         )
         assert state["icons"] == ["😊"]
         assert state["scores"]["happiness"] > 0.5
         assert "😐" not in state["icons"]
         assert state["emphasis"] is None
+        assert all(value["health"] != "stale" for value in seen)
         with pytest.raises(TimeoutError):
             await asyncio.wait_for(anext(statuses), 1.3)
     finally:

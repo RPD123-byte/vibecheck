@@ -24,7 +24,9 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--interruption-binary", type=Path)
     parser.add_argument("--thread-id")
     parser.add_argument("--no-manage-codex-gui", action="store_true")
-    parser.add_argument("--threshold", type=float, default=0.30)
+    parser.add_argument("--threshold", type=float, default=0.50)
+    parser.add_argument("--surprise-threshold", type=float, default=0.30)
+    parser.add_argument("--interruption-threshold", type=float, default=0.30)
     parser.add_argument("--hold-seconds", type=float, default=1.0)
     return parser
 
@@ -37,7 +39,9 @@ def _config_from_args(args: argparse.Namespace) -> RuntimeConfig:
         manage_codex_gui=not args.no_manage_codex_gui,
         display_entry_threshold=args.threshold,
         display_exit_threshold=max(0.0, args.threshold - 0.05),
-        interruption_threshold=args.threshold,
+        surprise_display_entry_threshold=args.surprise_threshold,
+        surprise_display_exit_threshold=max(0.0, args.surprise_threshold - 0.05),
+        interruption_threshold=args.interruption_threshold,
         interruption_hold_seconds=args.hold_seconds,
     )
 

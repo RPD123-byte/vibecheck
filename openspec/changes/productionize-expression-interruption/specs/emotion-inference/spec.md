@@ -45,7 +45,19 @@ The inference process SHALL own exactly one camera capture and one loaded EmotiE
 - **THEN** the next inference begins only after the current inference completes using the newest available frame
 
 ### Requirement: Camera permission and failure states
-The inference process SHALL request macOS camera permission through AVFoundation before worker capture, SHALL distinguish loading, permission-required, permission-denied, camera-unavailable, active, no-face, and inference-error states, and SHALL publish state changes to consumers.
+The inference process SHALL request macOS camera permission through AVFoundation before worker capture, SHALL distinguish loading, permission-required, permission-denied, camera-unavailable, active, no-face, and inference-error states, and SHALL publish state changes to consumers. It SHALL bind the emotion stream and begin publishing a freshness-preserving loading heartbeat before permission checks, camera opening, heavyweight provider imports, or model construction. Heartbeat publication MUST NOT be sequenced behind those operations or first-frame inference. Loading SHALL remain current through first-frame processing and SHALL end only when the producer publishes its first active reading, no-face state, permission state, camera error, or inference error.
+
+#### Scenario: Cold startup initializes the emotion stack
+- **WHEN** provider imports and model construction take longer than the stream freshness deadline
+- **THEN** consumers remain connected to fresh loading events and the notch continues to show loading throughout initialization
+
+#### Scenario: Startup work delays the Python scheduler
+- **WHEN** provider initialization temporarily delays a scheduled loading heartbeat
+- **THEN** the default 1.5-second freshness window tolerates the measured cold-start scheduling gap without presenting a false stale state
+
+#### Scenario: First inference is still pending
+- **WHEN** camera and adapter initialization has completed but no active, no-face, or error result has been published
+- **THEN** loading remains fresh until that first result replaces it
 
 #### Scenario: Permission has not been decided
 - **WHEN** the runtime first accesses a camera requiring user authorization

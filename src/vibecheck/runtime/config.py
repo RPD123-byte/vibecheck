@@ -7,6 +7,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
+from vibecheck.stream.protocol import DEFAULT_FRESHNESS_SECONDS
+
 
 @dataclass(frozen=True, slots=True)
 class RuntimeConfig:
@@ -17,9 +19,11 @@ class RuntimeConfig:
     face_threshold: float = 0.90
     minimum_face_size: int = 40
     no_face_timeout_seconds: float = 0.8
-    freshness_seconds: float = 0.75
-    display_entry_threshold: float = 0.30
-    display_exit_threshold: float = 0.25
+    freshness_seconds: float = DEFAULT_FRESHNESS_SECONDS
+    display_entry_threshold: float = 0.50
+    display_exit_threshold: float = 0.45
+    surprise_display_entry_threshold: float = 0.30
+    surprise_display_exit_threshold: float = 0.25
     display_confirmations: int = 2
     camera_overlap: float = 4.0
     interruption_threshold: float = 0.30
@@ -37,6 +41,8 @@ class RuntimeConfig:
             "face_threshold",
             "display_entry_threshold",
             "display_exit_threshold",
+            "surprise_display_entry_threshold",
+            "surprise_display_exit_threshold",
             "interruption_threshold",
         ):
             value = getattr(self, name)
@@ -46,8 +52,14 @@ class RuntimeConfig:
             raise ValueError(
                 "display_exit_threshold cannot exceed display_entry_threshold"
             )
-        if self.display_entry_threshold != self.interruption_threshold:
-            raise ValueError("display and interruption entry thresholds must match")
+        if (
+            self.surprise_display_exit_threshold
+            > self.surprise_display_entry_threshold
+        ):
+            raise ValueError(
+                "surprise_display_exit_threshold cannot exceed "
+                "surprise_display_entry_threshold"
+            )
         if self.interval_seconds <= 0:
             raise ValueError("interval_seconds must be positive")
         if self.freshness_seconds <= self.interval_seconds:

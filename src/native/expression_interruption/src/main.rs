@@ -39,7 +39,7 @@ impl Cli {
             threshold: 0.30,
             hold_ms: 1_000,
             cooldown_ms: 15_000,
-            freshness_ms: 750,
+            freshness_ms: 1_500,
             thread_id: None,
         };
         while let Some(argument) = args.next() {

@@ -63,6 +63,22 @@ The inference worker hosts `emotion.sock` and accepts independent subscriber con
 
 The Rust worker hosts `interruption-status.sock`; the notch subscribes when enabled. Status is also non-durable because old visual feedback has no value after reconnect.
 
+The inference worker binds `emotion.sock` before camera authorization, camera
+opening, heavyweight provider imports, or model construction. It publishes a
+fresh, sequenced `loading` heartbeat throughout initialization and first-frame
+processing so consumers connect promptly and the notch never falls through to
+an empty or stale presentation during a cold start. Loading ends only when the
+producer publishes its first active reading, no-face state, permission state,
+camera error, or inference error.
+
+Loading heartbeat publication MUST begin before and remain logically independent
+from camera access, provider import, model construction, and inference. It MUST
+NOT be sequenced after any of those slow operations. Since CPython background
+threads do not guarantee scheduler isolation when native imports or model setup
+contend for the GIL, consumers use a 1.5-second freshness deadline that exceeds
+the observed cold-start scheduling gap while remaining short enough to detect a
+failed producer promptly.
+
 JSON Lines is selected for protocol version 1 because the event rate and payload are small, both Python and Rust support it directly, and fixtures remain human-readable. Each receiver enforces a maximum frame size. A future binary codec can be introduced only behind a new protocol version.
 
 Alternative considered: NATS Core. It provides mature pub/sub and reconnects but adds a fourth daemon, packaging burden, and an availability dependency for a tiny local topology.
@@ -83,7 +99,7 @@ Inference transport provides freshness, sequencing, bounded memory, current-stat
 - monotonic `published_at_ms`
 - validated payload
 
-Consumers reject unsupported versions, duplicate/out-of-order sequences, and stale events. A sequence gap or runtime identifier change resets every temporal policy. The freshness deadline is configurable, exceeds the inference interval, and defaults to 750 milliseconds. A retained current state may be sent to a new connection only while it remains within that deadline.
+Consumers reject unsupported versions, duplicate/out-of-order sequences, and stale events. A sequence gap or runtime identifier change resets every temporal policy. The freshness deadline is configurable, exceeds the inference interval, and defaults to 1.5 seconds. A retained current state may be sent to a new connection only while it remains within that deadline.
 
 Codex action reliability remains inside `codex-control`. `Confirmed`, `Rejected`, and `OutcomeUnknown` have different retry semantics. An unknown write is latched and never blindly resent.
 
@@ -157,10 +173,19 @@ Multi-face identity continuity is a future capability requiring tracking and use
 
 ### 7. Preserve independent display and interruption temporal policies
 
-Both consumers receive the same raw normalized scores and share the 0.30 entry/eligibility threshold, but their time behavior differs intentionally:
+Both consumers receive the same raw normalized scores, but their thresholds and
+time behavior differ intentionally:
 
-- Notch: select only the highest-scoring eligible non-neutral emotion, apply 0.25 exit hysteresis and two consecutive candidates to show or switch, and clear immediately on no eligible emotion/no-face/stale input.
-- Interruption: same negative set continuously over 0.30 for one second, reset on any set change/dip/gap, one dispatch per episode, one-second baseline rearm, and 15-second cooldown between different dispatched sets.
+- Notch: first select the highest-scoring non-neutral emotion. Surprise enters
+  strictly above 0.30 and exits below 0.25; every other non-neutral emotion
+  enters strictly above 0.50 and exits below 0.45. A lower-scoring emotion is
+  not substituted when the primary candidate misses its own entry threshold.
+  Two consecutive candidates are required to show or switch, while no eligible
+  emotion, no-face, or stale input clears immediately.
+- Interruption: the same negative set remains continuously over 0.30 for one
+  second, resets on any set change/dip/gap, dispatches once per episode, requires
+  a one-second baseline rearm, and applies a 15-second cooldown between
+  different dispatched sets.
 
 The inference worker does not smooth scores. It publishes source-of-truth snapshots so each consumer applies policy appropriate to its purpose.
 
@@ -179,6 +204,11 @@ The worker continues observing a bounded latest state while an action is running
 A typed Python configuration is resolved once by the runtime owner and passed explicitly to workers. Rust receives its relevant subset through command arguments or a generated runtime config file. Duplicate defaults in multiple processes are prohibited; protocol fixtures verify cross-language interpretation.
 
 Health is state, not free-form log parsing. Each worker reports role, lifecycle state, readiness, connection/freshness, and most recent structured error. Logs remain useful for history but do not define readiness.
+
+Inference reports its stream as loading and not ready as soon as the socket is
+bound. It becomes ready only after camera and adapter initialization succeeds;
+the user-facing loading state remains independently active until the first
+usable or terminal inference event.
 
 There is no existing application supervisor to reuse. This change creates the first one: the Python runtime owner is responsible for worker launch, readiness aggregation, unexpected-exit detection, bounded restart, terminal failure state, and ordered shutdown. This responsibility is separate from `codex-control`, which remains a Rust library for controlling Codex and is not the Vibecheck worker daemon or supervisor.
 

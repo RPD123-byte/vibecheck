@@ -19,7 +19,11 @@ from vibecheck.emotion.schema import CANONICAL_EMOTIONS, EmotionReading
 from vibecheck.inference.adapters.base import EmotionAdapter
 from vibecheck.inference.permission import CameraPermission, request_camera_permission
 from vibecheck.inference.registry import create_adapter
-from vibecheck.stream.protocol import EventEnvelope, monotonic_ms
+from vibecheck.stream.protocol import (
+    DEFAULT_FRESHNESS_SECONDS,
+    EventEnvelope,
+    monotonic_ms,
+)
 from vibecheck.stream.publisher import SnapshotPublisher
 
 
@@ -147,6 +151,97 @@ class ImageSequenceFrameSource:
         self.closed = True
 
 
+class InferenceEventStream:
+    """Sequenced inference events with a freshness-preserving loading state."""
+
+    def __init__(
+        self,
+        publisher: SnapshotPublisher,
+        *,
+        runtime_id: str | None = None,
+        freshness_seconds: float = DEFAULT_FRESHNESS_SECONDS,
+    ) -> None:
+        self.publisher = publisher
+        self.runtime_id = runtime_id or str(uuid.uuid4())
+        self.freshness_seconds = freshness_seconds
+        self.sequence = 0
+        self._started = False
+        self._closed = False
+        self._loading_task: asyncio.Task[None] | None = None
+
+    async def start_loading(self) -> None:
+        if self._started:
+            return
+        await self.publisher.start()
+        self._started = True
+        await self._emit_state("loading")
+        self._loading_task = asyncio.create_task(self._loading_heartbeat())
+
+    async def publish(
+        self,
+        kind: str,
+        payload: dict[str, Any],
+        captured_at_ms: int,
+    ) -> None:
+        if kind != "producer_state" or payload.get("state") != "loading":
+            await self.stop_loading()
+        await self._emit(kind, payload, captured_at_ms)
+
+    async def publish_state(
+        self,
+        state: str,
+        detail: str | None = None,
+    ) -> None:
+        payload: dict[str, Any] = {"state": state}
+        if detail:
+            payload["detail"] = detail
+        await self.publish("producer_state", payload, monotonic_ms())
+
+    async def stop_loading(self) -> None:
+        task = self._loading_task
+        self._loading_task = None
+        if task is None:
+            return
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    async def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        await self.stop_loading()
+        await self.publisher.close()
+
+    async def _loading_heartbeat(self) -> None:
+        interval = max(0.05, self.freshness_seconds / 2)
+        while True:
+            await asyncio.sleep(interval)
+            await self._emit_state("loading")
+
+    async def _emit_state(self, state: str) -> None:
+        now_ms = monotonic_ms()
+        await self._emit("producer_state", {"state": state}, now_ms)
+
+    async def _emit(
+        self,
+        kind: str,
+        payload: dict[str, Any],
+        captured_at_ms: int,
+    ) -> None:
+        sequence = self.sequence
+        self.sequence += 1
+        await self.publisher.publish(
+            EventEnvelope(
+                kind=kind,
+                runtime_id=self.runtime_id,
+                sequence=sequence,
+                captured_at_ms=captured_at_ms,
+                published_at_ms=monotonic_ms(),
+                payload=payload,
+            )
+        )
+
+
 class InferenceService:
     def __init__(
         self,
@@ -157,14 +252,19 @@ class InferenceService:
         runtime_id: str | None = None,
         interval_seconds: float = 0.16,
         no_face_timeout_seconds: float = 0.8,
+        freshness_seconds: float = DEFAULT_FRESHNESS_SECONDS,
+        event_stream: InferenceEventStream | None = None,
     ) -> None:
         self.publisher = publisher
         self.adapter = adapter
         self.frames = frames
-        self.runtime_id = runtime_id or str(uuid.uuid4())
+        self.event_stream = event_stream or InferenceEventStream(
+            publisher,
+            runtime_id=runtime_id,
+            freshness_seconds=freshness_seconds,
+        )
         self.interval_seconds = interval_seconds
         self.no_face_timeout_seconds = no_face_timeout_seconds
-        self.sequence = 0
         self._closed = False
         self._last_face_ms: int | None = None
         self._last_state: str | None = None
@@ -185,11 +285,11 @@ class InferenceService:
         payload: dict[str, Any] = {"state": state}
         if detail:
             payload["detail"] = detail
-        await self._publish("producer_state", payload, now_ms)
+        await self.event_stream.publish("producer_state", payload, now_ms)
         self._last_state = state
 
     async def run(self, stop: asyncio.Event) -> None:
-        await self.publisher.start()
+        await self.event_stream.start_loading()
         print(
             json.dumps(
                 {
@@ -201,7 +301,6 @@ class InferenceService:
             ),
             flush=True,
         )
-        await self.publish_state("loading")
         try:
             while not stop.is_set():
                 cycle_started = time.monotonic()
@@ -237,16 +336,7 @@ class InferenceService:
     async def _publish(
         self, kind: str, payload: dict[str, Any], captured_at_ms: int
     ) -> None:
-        event = EventEnvelope(
-            kind=kind,
-            runtime_id=self.runtime_id,
-            sequence=self.sequence,
-            captured_at_ms=captured_at_ms,
-            published_at_ms=self._now_ms(),
-            payload=payload,
-        )
-        self.sequence += 1
-        await self.publisher.publish(event)
+        await self.event_stream.publish(kind, payload, captured_at_ms)
 
     async def close(self) -> None:
         if self._closed:
@@ -254,7 +344,7 @@ class InferenceService:
         self._closed = True
         await asyncio.to_thread(self.frames.close)
         await asyncio.to_thread(self.adapter.close)
-        await self.publisher.close()
+        await self.event_stream.close()
 
 
 class SyntheticAdapter(EmotionAdapter):
@@ -291,32 +381,19 @@ async def _wait_or_stop(stop: asyncio.Event, seconds: float) -> None:
 
 
 async def _publish_state_heartbeat(
-    publisher: SnapshotPublisher,
+    event_stream: InferenceEventStream,
     *,
-    runtime_id: str,
     state: str,
     stop: asyncio.Event,
     freshness_seconds: float,
+    detail: str | None = None,
 ) -> None:
-    sequence = 0
-    await publisher.start()
     try:
         while not stop.is_set():
-            now_ms = monotonic_ms()
-            await publisher.publish(
-                EventEnvelope(
-                    "producer_state",
-                    runtime_id,
-                    sequence,
-                    now_ms,
-                    now_ms,
-                    {"state": state},
-                )
-            )
-            sequence += 1
+            await event_stream.publish_state(state, detail)
             await _wait_or_stop(stop, max(0.05, freshness_seconds / 2))
     finally:
-        await publisher.close()
+        await event_stream.close()
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -327,7 +404,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", default="enet_b0_8_best_afew")
     parser.add_argument("--camera", type=int, default=0)
     parser.add_argument("--interval", type=float, default=0.16)
-    parser.add_argument("--freshness", type=float, default=0.75)
+    parser.add_argument(
+        "--freshness",
+        type=float,
+        default=DEFAULT_FRESHNESS_SECONDS,
+    )
     parser.add_argument("--face-threshold", type=float, default=0.90)
     parser.add_argument("--minimum-face-size", type=int, default=40)
     parser.add_argument("--no-face-timeout", type=float, default=0.8)
@@ -336,56 +417,96 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-async def _run_cli(args: argparse.Namespace) -> int:
-    stop = asyncio.Event()
-    loop = asyncio.get_running_loop()
-    for name in (signal.SIGINT, signal.SIGTERM):
-        with suppress(NotImplementedError):
-            loop.add_signal_handler(name, stop.set)
-
+async def _run_worker(args: argparse.Namespace, stop: asyncio.Event) -> int:
     publisher = SnapshotPublisher(
         args.socket, current_ttl_ms=round(args.freshness * 1000)
     )
-    if args.demo:
-        patterns = [
-            {"happiness": 0.75, "neutral": 0.15},
-            {"anger": 0.92, "neutral": 0.04},
-            {"neutral": 0.90},
-        ]
-        adapter: EmotionAdapter = SyntheticAdapter(
-            [pattern for pattern in patterns for _ in range(8)]
-        )
-        frames: FrameSource = SyntheticFrames()
-    else:
-        if args.image:
-            frames = ImageSequenceFrameSource(args.image)
+    event_stream = InferenceEventStream(
+        publisher,
+        runtime_id=args.runtime_id,
+        freshness_seconds=args.freshness,
+    )
+    await event_stream.start_loading()
+    print(
+        json.dumps(
+            {
+                "type": "worker_health",
+                "role": "inference",
+                "ready": False,
+                "stream": "loading",
+            }
+        ),
+        flush=True,
+    )
+    frames: FrameSource | None = None
+    adapter: EmotionAdapter | None = None
+    try:
+        if args.demo:
+            patterns = [
+                {"happiness": 0.75, "neutral": 0.15},
+                {"anger": 0.92, "neutral": 0.04},
+                {"neutral": 0.90},
+            ]
+            adapter = SyntheticAdapter(
+                [pattern for pattern in patterns for _ in range(8)]
+            )
+            frames = SyntheticFrames()
         else:
-            permission = await asyncio.to_thread(request_camera_permission)
-            if permission is not CameraPermission.GRANTED:
-                await _publish_state_heartbeat(
-                    publisher,
-                    runtime_id=args.runtime_id or str(uuid.uuid4()),
-                    state=permission.value,
-                    stop=stop,
-                    freshness_seconds=args.freshness,
-                )
-                return 2
-            frames = CameraFrameSource(args.camera)
-            if not frames.opened:
-                await _publish_state_heartbeat(
-                    publisher,
-                    runtime_id=args.runtime_id or str(uuid.uuid4()),
-                    state="camera-unavailable",
-                    stop=stop,
-                    freshness_seconds=args.freshness,
-                )
-                return 2
-        adapter = create_adapter(
-            args.adapter,
-            model_name=args.model,
-            face_threshold=args.face_threshold,
-            minimum_face_size=args.minimum_face_size,
+            if args.image:
+                frames = await asyncio.to_thread(ImageSequenceFrameSource, args.image)
+            else:
+                permission = await asyncio.to_thread(request_camera_permission)
+                if permission is not CameraPermission.GRANTED:
+                    await _publish_state_heartbeat(
+                        event_stream,
+                        state=permission.value,
+                        stop=stop,
+                        freshness_seconds=args.freshness,
+                    )
+                    return 2
+                frames = await asyncio.to_thread(CameraFrameSource, args.camera)
+                if not frames.opened:
+                    try:
+                        await _publish_state_heartbeat(
+                            event_stream,
+                            state="camera-unavailable",
+                            stop=stop,
+                            freshness_seconds=args.freshness,
+                        )
+                    finally:
+                        await asyncio.to_thread(frames.close)
+                    return 2
+            adapter = await asyncio.to_thread(
+                create_adapter,
+                args.adapter,
+                model_name=args.model,
+                face_threshold=args.face_threshold,
+                minimum_face_size=args.minimum_face_size,
+            )
+    except Exception as exc:
+        detail = f"{type(exc).__name__}: {exc}"
+        print(
+            json.dumps(
+                {
+                    "type": "worker_health",
+                    "role": "inference",
+                    "ready": False,
+                    "stream": "error",
+                    "error": detail,
+                }
+            ),
+            flush=True,
         )
+        await event_stream.publish_state("inference-error", detail)
+        await _wait_or_stop(stop, min(0.10, args.freshness / 2))
+        if adapter is not None:
+            await asyncio.to_thread(adapter.close)
+        if frames is not None:
+            await asyncio.to_thread(frames.close)
+        await event_stream.close()
+        return 2
+    assert frames is not None
+    assert adapter is not None
     service = InferenceService(
         publisher=publisher,
         adapter=adapter,
@@ -393,9 +514,20 @@ async def _run_cli(args: argparse.Namespace) -> int:
         runtime_id=args.runtime_id,
         interval_seconds=args.interval,
         no_face_timeout_seconds=args.no_face_timeout,
+        freshness_seconds=args.freshness,
+        event_stream=event_stream,
     )
     await service.run(stop)
     return 0
+
+
+async def _run_cli(args: argparse.Namespace) -> int:
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for name in (signal.SIGINT, signal.SIGTERM):
+        with suppress(NotImplementedError):
+            loop.add_signal_handler(name, stop.set)
+    return await _run_worker(args, stop)
 
 
 def main() -> None:

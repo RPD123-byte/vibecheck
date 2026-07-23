@@ -11,6 +11,8 @@ from typing import Any
 
 SCHEMA_VERSION = 1
 MAX_EVENT_BYTES = 64 * 1024
+DEFAULT_FRESHNESS_MS = 1_500
+DEFAULT_FRESHNESS_SECONDS = DEFAULT_FRESHNESS_MS / 1_000
 EVENT_KINDS = frozenset({"reading", "producer_state", "interruption_status"})
 
 

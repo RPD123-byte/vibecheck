@@ -34,7 +34,7 @@ The emotion stream SHALL be non-durable and MUST NOT provide historical replay o
 - **THEN** it receives only the current in-memory state if that state is still fresh and receives no historical sequence replay
 
 ### Requirement: Stale and discontinuous input handling
-Consumers SHALL compare runtime identifiers, sequence numbers, and monotonic timestamps. They MUST ignore duplicate or out-of-order events, MUST reset temporal smoothing or hold state after a sequence gap, runtime change, or freshness timeout, and MUST NOT count disconnected time toward a hold duration. The freshness timeout SHALL be configurable, SHALL exceed the configured inference interval, and SHALL default to 0.75 seconds.
+Consumers SHALL compare runtime identifiers, sequence numbers, and monotonic timestamps. They MUST ignore duplicate or out-of-order events, MUST reset temporal smoothing or hold state after a sequence gap, runtime change, or freshness timeout, and MUST NOT count disconnected time toward a hold duration. The freshness timeout SHALL be configurable, SHALL exceed the configured inference interval, and SHALL default to 1.5 seconds so expected cold-start scheduler contention does not produce a false stale state.
 
 #### Scenario: Sequence gap occurs within freshness limit
 - **WHEN** a consumer receives a newer sequence after one or more readings were dropped but the new event is fresh

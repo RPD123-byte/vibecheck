@@ -8,11 +8,21 @@ import stat
 from contextlib import suppress
 from pathlib import Path
 
-from vibecheck.stream.protocol import EventEnvelope, encode_event, monotonic_ms
+from vibecheck.stream.protocol import (
+    DEFAULT_FRESHNESS_MS,
+    EventEnvelope,
+    encode_event,
+    monotonic_ms,
+)
 
 
 class SnapshotPublisher:
-    def __init__(self, socket_path: Path, *, current_ttl_ms: int = 750) -> None:
+    def __init__(
+        self,
+        socket_path: Path,
+        *,
+        current_ttl_ms: int = DEFAULT_FRESHNESS_MS,
+    ) -> None:
         self.socket_path = socket_path
         self.current_ttl_ms = current_ttl_ms
         self._server: asyncio.AbstractServer | None = None

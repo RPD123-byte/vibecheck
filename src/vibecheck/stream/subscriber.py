@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from vibecheck.stream.protocol import (
+    DEFAULT_FRESHNESS_MS,
     MAX_EVENT_BYTES,
     EventEnvelope,
     ProtocolError,
@@ -31,7 +32,7 @@ class SnapshotSubscriber:
         self,
         socket_path: Path,
         *,
-        freshness_ms: int = 750,
+        freshness_ms: int = DEFAULT_FRESHNESS_MS,
         maximum_bytes: int = MAX_EVENT_BYTES,
         clock_ms: Callable[[], int] | None = None,
         on_connect: Callable[[], None] | None = None,

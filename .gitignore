@@ -38,3 +38,6 @@ target/
 .idea/
 .vscode/
 *.swp
+
+# Local agent guidance
+/AGENTS.md

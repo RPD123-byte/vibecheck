@@ -11,15 +11,23 @@ The notch process SHALL render an AppKit borderless, transparent, non-activating
 - **WHEN** no connected screen exposes a usable notch area
 - **THEN** the process reports an unsupported-display state and exits or remains hidden without creating a malformed overlay
 
-### Requirement: Shared display threshold and hysteresis
-The notch SHALL show non-neutral emotions only when their raw score is strictly greater than the shared entry threshold, defaulting to 0.30. An already-displayed emotion SHALL remain eligible while its score is at least the exit threshold, defaulting to 0.25, and SHALL disappear below that threshold.
+### Requirement: Per-emotion display thresholds and hysteresis
+The notch SHALL first select the highest-scoring non-neutral emotion as the primary candidate. Surprise SHALL become eligible only when its raw score is strictly greater than 0.30. Every other non-neutral emotion SHALL become eligible only when its raw score is strictly greater than 0.50. A committed surprise SHALL remain eligible at or above 0.25, and every other committed emotion SHALL remain eligible at or above 0.45. A lower-scoring emotion MUST NOT replace an ineligible primary candidate merely because the lower-scoring emotion has a lower threshold.
 
-#### Scenario: Emotion crosses entry threshold
-- **WHEN** a non-neutral emotion rises from 0.30 or lower to greater than 0.30
+#### Scenario: Surprise crosses its entry threshold
+- **WHEN** surprise is the primary non-neutral emotion and rises from 0.30 or lower to greater than 0.30
 - **THEN** it becomes eligible for display confirmation
 
+#### Scenario: Another emotion crosses its entry threshold
+- **WHEN** a non-surprise emotion is the primary non-neutral emotion and rises from 0.50 or lower to greater than 0.50
+- **THEN** it becomes eligible for display confirmation
+
+#### Scenario: Primary candidate misses its threshold
+- **WHEN** the primary non-neutral emotion is at or below its entry threshold and a lower-scoring emotion is above that lower emotion's entry threshold
+- **THEN** no new emotion becomes eligible for display confirmation
+
 #### Scenario: Displayed emotion fluctuates near entry threshold
-- **WHEN** an active emotion falls below 0.30 but remains at or above 0.25
+- **WHEN** a committed emotion falls below its entry threshold but remains at or above its emotion-specific exit threshold
 - **THEN** it remains displayed without threshold chatter
 
 ### Requirement: Display transition smoothing
@@ -38,15 +46,15 @@ The notch SHALL require two consecutive fresh inference results with the same ca
 - **THEN** all emotion icons are cleared without waiting for two confirmations
 
 ### Requirement: Single-emotion selection and neutral suppression
-Neutral MUST NOT be rendered as an emotion icon. Positive, negative, and surprise emotions MAY be displayed when eligible, but the notch SHALL render only the single highest-scoring eligible non-neutral emotion. Score ties SHALL use deterministic name ordering. Interruption feedback MAY retain a multi-emotion context internally but MUST emphasize only that same single highest-scoring emotion in the notch.
+Neutral MUST NOT be rendered as an emotion icon. Positive, negative, and surprise emotions MAY be displayed when eligible, but the notch SHALL render only the selected primary non-neutral emotion. Score ties SHALL use deterministic name ordering. Interruption feedback MAY retain a multi-emotion context internally but MUST emphasize only that same single highest-scoring emotion in the notch.
 
 #### Scenario: Neutral is dominant
 - **WHEN** neutral has the highest score and every non-neutral score is ineligible
 - **THEN** no emotion icon is shown
 
-#### Scenario: Multiple non-neutral emotions are eligible
-- **WHEN** more than one emotion passes display filtering
-- **THEN** only the highest-scoring emotion is shown, using deterministic name ordering to break a score tie
+#### Scenario: Multiple non-neutral emotions have substantial scores
+- **WHEN** more than one non-neutral emotion has a non-zero score
+- **THEN** only the highest-scoring emotion is evaluated for a new display state, using deterministic name ordering to break a score tie
 
 #### Scenario: Interruption contains multiple emotions
 - **WHEN** interruption feedback identifies more than one eligible negative emotion
@@ -83,7 +91,11 @@ The notch SHALL consume interruption status independently from inference state. 
 - **THEN** the selected icons receive error emphasis and diagnostic detail remains observable
 
 ### Requirement: Producer health presentation
-The notch SHALL present concise loading, permission, camera, connection, stale-stream, and inference error states. Health presentation MUST remain distinct from emotion icons and MUST clear when current active data resumes.
+The notch SHALL present concise loading, permission, camera, connection, stale-stream, and inference error states. Health presentation MUST remain distinct from emotion icons and MUST clear when current active data resumes. Loading MUST remain visible from panel startup through camera/provider/model initialization and first-frame processing, without being replaced by an empty or stale state before the first active, no-face, permission, camera, or inference result.
+
+#### Scenario: Emotion model has a cold start
+- **WHEN** the notch is visible while the inference worker is importing providers or constructing its model
+- **THEN** the notch continuously presents loading until a later producer result replaces it
 
 #### Scenario: Camera permission is required
 - **WHEN** inference reports permission-required
