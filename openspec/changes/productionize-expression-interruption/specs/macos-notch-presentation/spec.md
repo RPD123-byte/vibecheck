@@ -12,14 +12,14 @@ The notch process SHALL render an AppKit borderless, transparent, non-activating
 - **THEN** the process reports an unsupported-display state and exits or remains hidden without creating a malformed overlay
 
 ### Requirement: Shared display threshold and hysteresis
-The notch SHALL show non-neutral emotions only when their raw score is strictly greater than the shared entry threshold, defaulting to 0.50. An already-displayed emotion SHALL remain eligible while its score is at least the exit threshold, defaulting to 0.45, and SHALL disappear below that threshold.
+The notch SHALL show non-neutral emotions only when their raw score is strictly greater than the shared entry threshold, defaulting to 0.30. An already-displayed emotion SHALL remain eligible while its score is at least the exit threshold, defaulting to 0.25, and SHALL disappear below that threshold.
 
 #### Scenario: Emotion crosses entry threshold
-- **WHEN** a non-neutral emotion rises from 0.50 or lower to greater than 0.50
+- **WHEN** a non-neutral emotion rises from 0.30 or lower to greater than 0.30
 - **THEN** it becomes eligible for display confirmation
 
 #### Scenario: Displayed emotion fluctuates near entry threshold
-- **WHEN** an active emotion falls below 0.50 but remains at or above 0.45
+- **WHEN** an active emotion falls below 0.30 but remains at or above 0.25
 - **THEN** it remains displayed without threshold chatter
 
 ### Requirement: Display transition smoothing

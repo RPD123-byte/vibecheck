@@ -174,13 +174,13 @@ mod tests {
     fn negative_only_and_strict_threshold() {
         let selected = select_emotions(
             &scores(&[
-                ("anger", 0.51),
-                ("disgust", 0.50),
+                ("anger", 0.31),
+                ("disgust", 0.30),
                 ("happiness", 0.99),
                 ("neutral", 0.99),
                 ("surprise", 0.99),
             ]),
-            0.50,
+            0.30,
         );
         assert_eq!(
             selected

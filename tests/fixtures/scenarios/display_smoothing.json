@@ -1,6 +1,6 @@
 {
-  "entry_threshold": 0.5,
-  "exit_threshold": 0.45,
+  "entry_threshold": 0.3,
+  "exit_threshold": 0.25,
   "confirmations": 2,
   "readings": [
     {"anger": 0.8},

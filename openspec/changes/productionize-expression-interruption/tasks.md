@@ -46,7 +46,7 @@
 - [x] 5.2 Move and test only the latest active-left notch geometry, including 32-point cells, 24-point glyphs, corner extensions, and configurable optical overlap; do not copy the experimental all-sides implementation into production
 - [x] 5.3 Implement the separate AppKit notch worker with supported-screen detection and a non-activating transparent panel
 - [x] 5.4 Connect the notch worker to inference snapshots and clear display state on no-face, stale input, disconnect, or producer restart
-- [x] 5.5 Implement neutral suppression, multi-emotion score ordering, two-reading show/switch confirmation, 0.50 entry, and 0.45 exit hysteresis
+- [x] 5.5 Implement neutral suppression, multi-emotion score ordering, two-reading show/switch confirmation, 0.30 entry, and 0.25 exit hysteresis
 - [x] 5.6 Implement loading, permission, camera, protocol, stale-stream, and inference health presentation distinct from emotion icons
 - [x] 5.7 Connect interruption status snapshots and implement in-progress, success/uncertain-success, bounded four-second sent, and error visual emphasis
 - [x] 5.8 Implement timer/socket/panel cleanup and verify notch shutdown never targets ChatGPT
@@ -55,7 +55,7 @@
 ## 6. Rust Interruption Policy
 
 - [x] 6.1 Implement Rust protocol models and canonical selected-emotion validation using shared conformance fixtures
-- [x] 6.2 Port negative-only strict-over-0.50 eligibility and deterministic score/name ordering into a pure policy module
+- [x] 6.2 Port negative-only strict-over-0.30 eligibility and deterministic score/name ordering into a pure policy module
 - [x] 6.3 Implement one-second continuous hold using capture timestamps and reset on set changes, threshold dips, no-face, stale input, or runtime changes
 - [x] 6.4 Implement one-dispatch-per-episode latching, one-second empty baseline rearm, and 15-second different-expression cooldown
 - [x] 6.5 Implement snooze/reconsider behavior for no target or proven failures without immediate repeated dispatch

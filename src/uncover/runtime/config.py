@@ -18,11 +18,11 @@ class RuntimeConfig:
     minimum_face_size: int = 40
     no_face_timeout_seconds: float = 0.8
     freshness_seconds: float = 0.75
-    display_entry_threshold: float = 0.50
-    display_exit_threshold: float = 0.45
+    display_entry_threshold: float = 0.30
+    display_exit_threshold: float = 0.25
     display_confirmations: int = 2
     camera_overlap: float = 4.0
-    interruption_threshold: float = 0.50
+    interruption_threshold: float = 0.30
     interruption_hold_seconds: float = 1.0
     interruption_cooldown_seconds: float = 15.0
     thread_id: str | None = None

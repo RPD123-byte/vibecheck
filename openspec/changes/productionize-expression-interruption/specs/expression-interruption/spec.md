@@ -12,14 +12,14 @@ Expression interruption SHALL run in a long-lived Rust executable that consumes 
 - **THEN** the Rust process reconnects, resets candidate state, and continues without being re-embedded into Python
 
 ### Requirement: Negative-only eligibility
-Only `anger`, `contempt`, `disgust`, `fear`, and `sadness` SHALL be eligible to cause interruption, and each eligible score MUST be strictly greater than the shared threshold, defaulting to 0.50. Happiness, neutral, surprise, unknown names, non-finite scores, and scores at or below threshold MUST NOT cause interruption.
+Only `anger`, `contempt`, `disgust`, `fear`, and `sadness` SHALL be eligible to cause interruption, and each eligible score MUST be strictly greater than the shared threshold, defaulting to 0.30. Happiness, neutral, surprise, unknown names, non-finite scores, and scores at or below threshold MUST NOT cause interruption.
 
 #### Scenario: Negative score exceeds threshold
-- **WHEN** anger is 0.51 in a fresh reading
+- **WHEN** anger is 0.31 in a fresh reading
 - **THEN** anger participates in the interruption candidate
 
 #### Scenario: Score equals threshold
-- **WHEN** disgust is exactly 0.50
+- **WHEN** disgust is exactly 0.30
 - **THEN** disgust is excluded from the candidate
 
 #### Scenario: Positive emotion is highly confident
@@ -34,7 +34,7 @@ The same set of eligible negative emotion names SHALL remain continuously presen
 - **THEN** the policy emits one dispatch intent containing the current selected scores
 
 #### Scenario: Confidence dips during hold
-- **WHEN** anger falls to 0.50 or below before one second elapses
+- **WHEN** anger falls to 0.30 or below before one second elapses
 - **THEN** the hold timer resets and later anger readings begin a new hold
 
 #### Scenario: Stream stalls during hold

@@ -34,8 +34,8 @@ def eligible_emotions(
 
 @dataclass(slots=True)
 class DisplayPolicy:
-    entry_threshold: float = 0.50
-    exit_threshold: float = 0.45
+    entry_threshold: float = 0.30
+    exit_threshold: float = 0.25
     confirmations: int = 2
     committed: tuple[str, ...] = field(default=(), init=False)
     _candidate: tuple[str, ...] | None = field(default=None, init=False)

@@ -20,9 +20,10 @@ def test_show_and_switch_need_two_samples_but_clear_is_immediate() -> None:
 
 def test_hysteresis_and_neutral_suppression() -> None:
     policy = DisplayPolicy(confirmations=1)
-    assert policy.observe({"anger": 0.51, "neutral": 0.99}) == ("anger",)
-    assert policy.observe({"anger": 0.47}) == ("anger",)
-    assert policy.observe({"anger": 0.44}) == ()
+    assert policy.observe({"anger": 0.30, "neutral": 0.99}) == ()
+    assert policy.observe({"anger": 0.31, "neutral": 0.99}) == ("anger",)
+    assert policy.observe({"anger": 0.27}) == ("anger",)
+    assert policy.observe({"anger": 0.24}) == ()
     assert policy.observe({"neutral": 1.0}) == ()
 
 

@@ -36,7 +36,7 @@ impl Cli {
             runtime_id: String::new(),
             dry_run: false,
             manage_gui: true,
-            threshold: 0.50,
+            threshold: 0.30,
             hold_ms: 1_000,
             cooldown_ms: 15_000,
             freshness_ms: 750,

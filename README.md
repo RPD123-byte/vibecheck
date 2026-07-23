@@ -46,6 +46,10 @@ Normal mode owns one camera/model worker, one AppKit notch worker, and one Rust
 interruption worker. Ctrl-C stops only those Uncover workers; ChatGPT and its shared
 daemon remain running.
 
+The shared expression threshold defaults to 30% for notch entry and negative-only
+interruption eligibility. The notch uses a 25% exit threshold, and interruption
+still requires the same eligible negative expression continuously for one second.
+
 ## Runtime modes and safety
 
 - `normal` starts camera inference, the AppKit notch, and live Codex interruption.
