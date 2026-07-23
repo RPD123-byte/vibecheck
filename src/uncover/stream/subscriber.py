@@ -14,6 +14,7 @@ from uncover.stream.protocol import (
     EventEnvelope,
     ProtocolError,
     decode_event,
+    monotonic_ms,
 )
 
 
@@ -35,9 +36,7 @@ class SnapshotSubscriber:
         self.socket_path = socket_path
         self.freshness_ms = freshness_ms
         self.maximum_bytes = maximum_bytes
-        self.clock_ms = clock_ms or (
-            lambda: int(asyncio.get_running_loop().time() * 1000)
-        )
+        self.clock_ms = clock_ms or monotonic_ms
         self.connected = False
         self.stale = False
         self.protocol_errors: list[str] = []

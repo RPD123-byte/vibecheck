@@ -17,7 +17,7 @@ from uncover.emotion.schema import CANONICAL_EMOTIONS, EmotionReading
 from uncover.inference.adapters.base import EmotionAdapter
 from uncover.inference.permission import CameraPermission, request_camera_permission
 from uncover.inference.registry import create_adapter
-from uncover.stream.protocol import EventEnvelope
+from uncover.stream.protocol import EventEnvelope, monotonic_ms
 from uncover.stream.publisher import SnapshotPublisher
 
 
@@ -94,7 +94,7 @@ class InferenceService:
         self._last_state: str | None = None
 
     def _now_ms(self) -> int:
-        return int(time.monotonic() * 1000)
+        return monotonic_ms()
 
     async def publish_state(self, state: str, detail: str | None = None) -> None:
         if state == self._last_state and detail is None:
@@ -240,7 +240,7 @@ async def _run_cli(args: argparse.Namespace) -> int:
             permission = await asyncio.to_thread(request_camera_permission)
             if permission is not CameraPermission.GRANTED:
                 await publisher.start()
-                now_ms = int(time.monotonic() * 1000)
+                now_ms = monotonic_ms()
                 await publisher.publish(
                     EventEnvelope(
                         "producer_state",
@@ -257,7 +257,7 @@ async def _run_cli(args: argparse.Namespace) -> int:
             frames = CameraFrameSource(args.camera)
             if not frames.opened:
                 await publisher.start()
-                now_ms = int(time.monotonic() * 1000)
+                now_ms = monotonic_ms()
                 await publisher.publish(
                     EventEnvelope(
                         "producer_state",

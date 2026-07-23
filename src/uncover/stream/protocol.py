@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass
 from math import isfinite
@@ -11,6 +12,15 @@ from typing import Any
 SCHEMA_VERSION = 1
 MAX_EVENT_BYTES = 64 * 1024
 EVENT_KINDS = frozenset({"reading", "producer_state", "interruption_status"})
+
+
+def monotonic_ms() -> int:
+    """Cross-language protocol time based on POSIX CLOCK_MONOTONIC."""
+    try:
+        value = time.clock_gettime(time.CLOCK_MONOTONIC)
+    except (AttributeError, OSError):
+        value = time.monotonic()
+    return int(value * 1000)
 
 
 class ProtocolError(ValueError):

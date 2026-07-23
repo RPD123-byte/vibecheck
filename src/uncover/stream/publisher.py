@@ -8,7 +8,7 @@ import stat
 from contextlib import suppress
 from pathlib import Path
 
-from uncover.stream.protocol import EventEnvelope, encode_event
+from uncover.stream.protocol import EventEnvelope, encode_event, monotonic_ms
 
 
 class SnapshotPublisher:
@@ -74,7 +74,7 @@ class SnapshotPublisher:
         self._subscribers.add(queue)
         if self._current is not None:
             published_at_ms, data = self._current
-            now_ms = int(asyncio.get_running_loop().time() * 1000)
+            now_ms = monotonic_ms()
             if now_ms - published_at_ms <= self.current_ttl_ms:
                 queue.put_nowait(data)
         task = asyncio.current_task()

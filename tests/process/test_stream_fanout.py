@@ -4,12 +4,11 @@ import asyncio
 import os
 import shutil
 import tempfile
-import time
 from pathlib import Path
 
 import pytest
 
-from uncover.stream.protocol import EventEnvelope
+from uncover.stream.protocol import EventEnvelope, monotonic_ms
 from uncover.stream.publisher import SnapshotPublisher
 from uncover.stream.subscriber import SnapshotSubscriber
 
@@ -25,7 +24,7 @@ def socket_dir() -> Path:
 
 
 def event(runtime: str, sequence: int) -> EventEnvelope:
-    now = int(time.monotonic() * 1000)
+    now = monotonic_ms()
     return EventEnvelope(
         "producer_state", runtime, sequence, now, now, {"state": f"s{sequence}"}
     )
