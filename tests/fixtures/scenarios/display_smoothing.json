@@ -1,0 +1,13 @@
+{
+  "entry_threshold": 0.3,
+  "exit_threshold": 0.25,
+  "confirmations": 2,
+  "readings": [
+    {"anger": 0.8},
+    {"anger": 0.8},
+    {"disgust": 0.9},
+    {"anger": 0.8},
+    {"neutral": 1.0}
+  ],
+  "expected": [[], ["anger"], ["anger"], ["anger"], []]
+}

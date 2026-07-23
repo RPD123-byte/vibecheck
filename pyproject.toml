@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "uncover"
+version = "0.1.0"
+description = "On-device facial-expression inference, notch presentation, and Codex interruption"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy==1.26.4",
+]
+
+[project.optional-dependencies]
+inference = [
+  "emotiefflib==1.1.1",
+  "facenet-pytorch==2.6.0",
+  "opencv-python==4.11.0.86",
+  "onnxruntime==1.27.0",
+]
+macos = [
+  "pyobjc-framework-AVFoundation>=10.3; sys_platform == 'darwin'",
+  "pyobjc-framework-Cocoa>=10.3; sys_platform == 'darwin'",
+]
+test = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.25",
+  "ruff>=0.12",
+  "websockets>=15",
+]
+
+[project.scripts]
+uncover-expression = "uncover.runtime.cli:main"
+uncover-inference = "uncover.inference.process:main"
+uncover-notch = "uncover.notch.process:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/uncover"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/README.md",
+  "/pyproject.toml",
+  "/src/uncover",
+  "/src/native/expression_interruption",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+markers = [
+  "model: exercises the real EmotiEffLib model",
+  "live_codex: mutates an isolated live Codex fixture thread",
+  "visual: renders target-Mac AppKit pixels against the validated reference",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

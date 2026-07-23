@@ -1,0 +1,139 @@
+"""Cancellable, freshness-aware Unix-socket subscription."""
+
+from __future__ import annotations
+
+import asyncio
+import random
+from collections.abc import AsyncIterator, Callable
+from contextlib import suppress
+from dataclasses import dataclass
+from pathlib import Path
+
+from uncover.stream.protocol import (
+    MAX_EVENT_BYTES,
+    EventEnvelope,
+    ProtocolError,
+    decode_event,
+    monotonic_ms,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class StreamItem:
+    event: EventEnvelope
+    discontinuity: bool
+    sequence_gap: bool
+    runtime_changed: bool
+
+
+class SnapshotSubscriber:
+    def __init__(
+        self,
+        socket_path: Path,
+        *,
+        freshness_ms: int = 750,
+        maximum_bytes: int = MAX_EVENT_BYTES,
+        clock_ms: Callable[[], int] | None = None,
+        on_connect: Callable[[], None] | None = None,
+        on_disconnect: Callable[[bool], None] | None = None,
+    ) -> None:
+        self.socket_path = socket_path
+        self.freshness_ms = freshness_ms
+        self.maximum_bytes = maximum_bytes
+        self.clock_ms = clock_ms or monotonic_ms
+        self.on_connect = on_connect
+        self.on_disconnect = on_disconnect
+        self.connected = False
+        self.stale = False
+        self.protocol_errors: list[str] = []
+        self._closed = asyncio.Event()
+        self._runtime_id: str | None = None
+        self._sequence: int | None = None
+
+    def close(self) -> None:
+        self._closed.set()
+
+    async def events(self) -> AsyncIterator[StreamItem]:
+        delay = 0.05
+        while not self._closed.is_set():
+            try:
+                reader, writer = await asyncio.open_unix_connection(
+                    str(self.socket_path), limit=self.maximum_bytes
+                )
+                self.connected = True
+                self.stale = False
+                if self.on_connect is not None:
+                    self.on_connect()
+                delay = 0.05
+                try:
+                    while not self._closed.is_set():
+                        try:
+                            data = await asyncio.wait_for(
+                                reader.readline(), timeout=self.freshness_ms / 1000
+                            )
+                        except TimeoutError as exc:
+                            self.stale = True
+                            self._runtime_id = None
+                            self._sequence = None
+                            raise ConnectionError(
+                                "emotion stream became stale"
+                            ) from exc
+                        if not data:
+                            raise ConnectionError("emotion stream disconnected")
+                        if len(data) > self.maximum_bytes or not data.endswith(b"\n"):
+                            self.protocol_errors.append("oversized event")
+                            raise ProtocolError("oversized event")
+                        try:
+                            event = decode_event(data, maximum_bytes=self.maximum_bytes)
+                        except ProtocolError as exc:
+                            self.protocol_errors.append(str(exc))
+                            continue
+                        if self.clock_ms() - event.published_at_ms > self.freshness_ms:
+                            self.stale = True
+                            self._runtime_id = None
+                            self._sequence = None
+                            continue
+                        runtime_changed = (
+                            self._runtime_id is not None
+                            and event.runtime_id != self._runtime_id
+                        )
+                        sequence_gap = False
+                        if (
+                            event.runtime_id == self._runtime_id
+                            and self._sequence is not None
+                        ):
+                            if event.sequence <= self._sequence:
+                                continue
+                            sequence_gap = event.sequence != self._sequence + 1
+                        discontinuity = runtime_changed or sequence_gap
+                        self._runtime_id = event.runtime_id
+                        self._sequence = event.sequence
+                        self.stale = False
+                        yield StreamItem(
+                            event,
+                            discontinuity,
+                            sequence_gap,
+                            runtime_changed,
+                        )
+                finally:
+                    writer.close()
+                    await writer.wait_closed()
+            except (
+                FileNotFoundError,
+                ConnectionError,
+                ConnectionRefusedError,
+                OSError,
+                ProtocolError,
+            ):
+                was_connected = self.connected
+                self.connected = False
+                self._runtime_id = None
+                self._sequence = None
+                if self.on_disconnect is not None and (was_connected or self.stale):
+                    self.on_disconnect(self.stale)
+                if self._closed.is_set():
+                    break
+                jitter = random.uniform(0.8, 1.2)
+                with suppress(TimeoutError):
+                    await asyncio.wait_for(self._closed.wait(), timeout=delay * jitter)
+                delay = min(delay * 2, 2.0)
