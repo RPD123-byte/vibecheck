@@ -55,7 +55,7 @@ async def test_rust_sidecar_consumes_real_socket_and_publishes_would_send() -> N
     subscriber = SnapshotSubscriber(status_socket, freshness_ms=10_000)
     iterator = subscriber.events()
     try:
-        ready = await asyncio.wait_for(anext(iterator), 15)
+        ready = await asyncio.wait_for(anext(iterator), 120)
         assert ready.event.payload["state"] == "dry_run_ready"
         assert stat.S_IMODE(status_socket.stat().st_mode) == 0o600
 

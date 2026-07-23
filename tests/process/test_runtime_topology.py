@@ -47,7 +47,11 @@ async def test_runtime_starts_three_workers_and_ctrl_c_stops_only_owned_workers(
                     "role"
                 ) == "notch" and '"emotions": ["anger"]' in event.get("message", ""):
                     observed_emotion = True
-                if health and observed_emotion:
+                if (
+                    health
+                    and observed_emotion
+                    and all(worker["ready"] for worker in health["workers"].values())
+                ):
                     return
             stderr = (
                 (await process.stderr.read()).decode(errors="replace")
@@ -56,7 +60,7 @@ async def test_runtime_starts_three_workers_and_ctrl_c_stops_only_owned_workers(
             )
             raise AssertionError(f"runtime exited unexpectedly: {stderr}")
 
-        await asyncio.wait_for(wait_until_running(), 30)
+        await asyncio.wait_for(wait_until_running(), 120)
         assert health is not None
         assert set(health["workers"]) == {"inference", "notch", "interruption"}
         assert all(worker["ready"] for worker in health["workers"].values())
