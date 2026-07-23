@@ -68,18 +68,16 @@ class EmotiEffLibAdapter(EmotionAdapter):
         face_threshold: float = 0.90,
         minimum_face_size: int = 40,
     ) -> None:
-        import torch
         from emotiefflib.facial_analysis import EmotiEffLibRecognizer
         from facenet_pytorch import MTCNN
 
-        device = "mps" if torch.backends.mps.is_available() else "cpu"
         self.face_threshold = face_threshold
         self.minimum_face_size = minimum_face_size
         self.detector = MTCNN(
             keep_all=True,
             post_process=False,
             min_face_size=minimum_face_size,
-            device=device,
+            device="cpu",
         )
         self.recognizer = EmotiEffLibRecognizer(
             engine="onnx", model_name=model_name, device="cpu"

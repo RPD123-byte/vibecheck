@@ -21,6 +21,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--camera", type=int, default=0)
     parser.add_argument("--image", type=Path, action="append", default=[])
     parser.add_argument("--headless-notch", action="store_true")
+    parser.add_argument("--interruption-binary", type=Path)
     parser.add_argument("--thread-id")
     parser.add_argument("--no-manage-codex-gui", action="store_true")
     parser.add_argument("--threshold", type=float, default=0.50)
@@ -45,6 +46,7 @@ async def _run(args: argparse.Namespace) -> None:
         project_root=root,
         headless_notch=args.headless_notch,
         image_paths=args.image,
+        interruption_binary=args.interruption_binary,
     )
     await owner.run()
 

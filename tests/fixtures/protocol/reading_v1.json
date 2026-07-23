@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "kind": "reading",
+  "runtime_id": "fixture-runtime",
+  "sequence": 7,
+  "captured_at_ms": 1000,
+  "published_at_ms": 1001,
+  "payload": {
+    "provider": "fixture",
+    "dominant_emotion": "disgust",
+    "scores": {
+      "anger": 0.01,
+      "contempt": 0.01,
+      "disgust": 0.91,
+      "fear": 0.01,
+      "happiness": 0.01,
+      "neutral": 0.03,
+      "sadness": 0.01,
+      "surprise": 0.01
+    },
+    "face_box": [0, 0, 100, 100],
+    "inference_ms": 12.5
+  }
+}

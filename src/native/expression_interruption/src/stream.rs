@@ -13,6 +13,15 @@ pub async fn consume(socket: PathBuf, freshness_ms: u64, sender: watch::Sender<I
                 delay_ms = 50;
                 sender.send_replace(InputUpdate::Reset);
                 read_connection(stream, freshness_ms, &sender).await;
+                println!(
+                    "{}",
+                    serde_json::json!({
+                        "type": "worker_health",
+                        "role": "interruption",
+                        "ready": false,
+                        "stream": "disconnected"
+                    })
+                );
             }
             Err(_) => {
                 sender.send_replace(InputUpdate::Reset);
@@ -33,6 +42,7 @@ async fn read_connection(
     let mut buffer = Vec::with_capacity(4096);
     let mut runtime_id: Option<String> = None;
     let mut sequence: Option<u64> = None;
+    let mut reported_ready = false;
     loop {
         buffer.clear();
         let read = tokio::time::timeout(
@@ -71,6 +81,18 @@ async fn read_connection(
         };
         runtime_id = Some(event.runtime_id.clone());
         sequence = Some(event.sequence);
+        if !reported_ready {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "type": "worker_health",
+                    "role": "interruption",
+                    "ready": true,
+                    "stream": "fresh"
+                })
+            );
+            reported_ready = true;
+        }
         sender.send_replace(InputUpdate::Event {
             event,
             discontinuity,

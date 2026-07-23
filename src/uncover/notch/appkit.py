@@ -11,7 +11,6 @@ from uncover.notch.state import NotchProjection
 
 
 def run_appkit(args: object) -> None:
-    import objc
     from AppKit import (
         NSApplication,
         NSApplicationActivationPolicyAccessory,
@@ -83,8 +82,12 @@ def run_appkit(args: object) -> None:
                 width,
                 content_overlap=0.0 if state.health else args.camera_overlap,
             )
-            NSColor.colorWithSRGBRed_green_blue_alpha_(0.015, 0.015, 0.02, 0.98).set()
-            NSColor.blackColor().setFill()
+            background = {
+                "in-progress": (0.04, 0.20, 0.35, 0.98),
+                "success": (0.03, 0.28, 0.16, 0.98),
+                "error": (0.38, 0.05, 0.07, 0.98),
+            }.get(state.emphasis, (0.015, 0.015, 0.02, 0.98))
+            NSColor.colorWithSRGBRed_green_blue_alpha_(*background).setFill()
             from AppKit import NSBezierPath
 
             NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(
@@ -109,6 +112,11 @@ def run_appkit(args: object) -> None:
     class Delegate(NSObject):
         panel = None
         timer = None
+
+        def refresh_(self, timer):
+            del timer
+            if self.panel is not None:
+                self.panel.contentView().setNeedsDisplay_(True)
 
         def applicationDidFinishLaunching_(self, notification):
             del notification
@@ -157,8 +165,8 @@ def run_appkit(args: object) -> None:
             )
             self.timer = schedule_timer(
                 0.1,
-                view,
-                objc.selector(view.setNeedsDisplay_, signature=b"v@:B"),
+                self,
+                "refresh:",
                 True,
                 True,
             )

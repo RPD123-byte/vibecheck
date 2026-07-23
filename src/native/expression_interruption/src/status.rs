@@ -1,6 +1,7 @@
 use crate::protocol::{SCHEMA_VERSION, SelectedEmotion, monotonic_ms};
 use anyhow::Context;
 use serde_json::json;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
@@ -17,9 +18,14 @@ pub struct StatusPublisher {
 impl StatusPublisher {
     pub async fn bind(path: &Path, runtime_id: String) -> anyhow::Result<Self> {
         if path.exists() {
+            if tokio::net::UnixStream::connect(path).await.is_ok() {
+                anyhow::bail!("status socket already has a live owner: {}", path.display());
+            }
             std::fs::remove_file(path).context("remove abandoned status socket")?;
         }
         let listener = UnixListener::bind(path).context("bind interruption status socket")?;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
+            .context("set interruption status socket permissions")?;
         let (sender, _) = watch::channel(Vec::new());
         let publisher = Self {
             runtime_id: Arc::new(runtime_id),

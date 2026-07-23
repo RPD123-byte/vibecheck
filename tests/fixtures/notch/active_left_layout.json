@@ -1,0 +1,24 @@
+{
+  "notch_x": 500.0,
+  "notch_width": 185.0,
+  "states": {
+    "empty": {
+      "content_width": 0.0,
+      "shape_x": 486.0,
+      "shape_width": 213.0,
+      "content_x": 500.0
+    },
+    "one_icon": {
+      "content_width": 32.0,
+      "shape_x": 466.0,
+      "shape_width": 233.0,
+      "content_x": 472.0
+    },
+    "two_icons": {
+      "content_width": 64.0,
+      "shape_x": 434.0,
+      "shape_width": 265.0,
+      "content_x": 440.0
+    }
+  }
+}

@@ -71,3 +71,15 @@ async def test_slow_consumer_retains_only_newest_snapshot(socket_dir: Path) -> N
     subscriber.close()
     await iterator.aclose()
     await publisher.close()
+
+
+@pytest.mark.asyncio
+async def test_second_publisher_never_unlinks_a_live_socket(socket_dir: Path) -> None:
+    socket = socket_dir / "emotion.sock"
+    owner = SnapshotPublisher(socket)
+    contender = SnapshotPublisher(socket)
+    await owner.start()
+    with pytest.raises(RuntimeError, match="live owner"):
+        await contender.start()
+    assert socket.exists()
+    await owner.close()

@@ -37,7 +37,19 @@ class SnapshotPublisher:
                 "runtime directory must be owned by this user with mode 0700"
             )
         if self.socket_path.exists():
-            self.socket_path.unlink()
+            try:
+                reader, writer = await asyncio.open_unix_connection(
+                    str(self.socket_path)
+                )
+            except (ConnectionError, ConnectionRefusedError, OSError):
+                self.socket_path.unlink()
+            else:
+                del reader
+                writer.close()
+                await writer.wait_closed()
+                raise RuntimeError(
+                    f"socket already has a live owner: {self.socket_path}"
+                )
         self._server = await asyncio.start_unix_server(
             self._accept, path=str(self.socket_path), limit=64 * 1024
         )
@@ -89,7 +101,8 @@ class SnapshotPublisher:
         finally:
             self._subscribers.discard(queue)
             writer.close()
-            await writer.wait_closed()
+            with suppress(ConnectionError, OSError):
+                await writer.wait_closed()
             if task is not None:
                 self._tasks.discard(task)
 

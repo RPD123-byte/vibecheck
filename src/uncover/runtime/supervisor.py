@@ -42,12 +42,14 @@ class RuntimeOwner:
         project_root: Path,
         headless_notch: bool = False,
         image_paths: list[Path] | None = None,
+        interruption_binary: Path | None = None,
     ) -> None:
         self.config = config
         self.python = python
         self.project_root = project_root
         self.headless_notch = headless_notch
         self.image_paths = image_paths or []
+        self.interruption_binary = interruption_binary
         self.runtime_id = str(uuid.uuid4())
         self.runtime_dir: Path | None = None
         self.workers: dict[str, WorkerSpec] = {}
@@ -132,13 +134,7 @@ class RuntimeOwner:
                 / "expression_interruption"
                 / "Cargo.toml"
             )
-            interruption = [
-                "cargo",
-                "run",
-                "--quiet",
-                "--manifest-path",
-                str(rust_manifest),
-                "--",
+            interruption = self._interruption_prefix(rust_manifest) + [
                 "--emotion-socket",
                 str(emotion_socket),
                 "--status-socket",
@@ -161,6 +157,37 @@ class RuntimeOwner:
                 interruption.extend(["--thread-id", self.config.thread_id])
             self.workers["interruption"] = WorkerSpec("interruption", interruption)
         return self.workers
+
+    def _interruption_prefix(self, manifest: Path) -> list[str]:
+        configured = self.interruption_binary
+        environment = os.environ.get("UNCOVER_INTERRUPTION_BINARY")
+        if configured is None and environment:
+            configured = Path(environment)
+        candidates = [
+            configured,
+            manifest.parent / "target" / "release" / "uncover-expression-interruption",
+            manifest.parent / "target" / "debug" / "uncover-expression-interruption",
+        ]
+        for candidate in candidates:
+            if (
+                candidate is not None
+                and candidate.is_file()
+                and os.access(candidate, os.X_OK)
+            ):
+                return [str(candidate.resolve())]
+        if manifest.is_file():
+            return [
+                "cargo",
+                "run",
+                "--quiet",
+                "--manifest-path",
+                str(manifest),
+                "--",
+            ]
+        raise FileNotFoundError(
+            "expression interruption binary is unavailable; pass "
+            "--interruption-binary or set UNCOVER_INTERRUPTION_BINARY"
+        )
 
     async def run(self) -> None:
         self.configure_workers()
@@ -189,7 +216,8 @@ class RuntimeOwner:
         worker.process = process
         worker.health.pid = process.pid
         worker.health.lifecycle = "running"
-        worker.health.ready = True
+        worker.health.ready = False
+        worker.health.stream = "connecting"
         self._monitor_tasks.append(asyncio.create_task(self._pipe(worker, False)))
         self._monitor_tasks.append(asyncio.create_task(self._pipe(worker, True)))
         self._monitor_tasks.append(asyncio.create_task(self._monitor(worker)))
@@ -203,6 +231,19 @@ class RuntimeOwner:
             return
         while line := await stream.readline():
             text = line.decode(errors="replace").rstrip()
+            if not stderr:
+                with suppress(json.JSONDecodeError):
+                    event = json.loads(text)
+                    if (
+                        event.get("type") == "worker_health"
+                        and event.get("role") == worker.role
+                    ):
+                        worker.health.ready = bool(event.get("ready"))
+                        worker.health.stream = str(event.get("stream", "unknown"))
+                        error = event.get("error")
+                        worker.health.last_error = str(error) if error else None
+                        self._emit_health()
+                        continue
             print(
                 json.dumps(
                     {
@@ -225,6 +266,7 @@ class RuntimeOwner:
             return
         worker.health.ready = False
         worker.health.lifecycle = "exited"
+        worker.health.stream = "disconnected"
         worker.health.last_error = f"exit status {code}"
         now = time.monotonic()
         window = self.config.restart_window_seconds
@@ -239,6 +281,10 @@ class RuntimeOwner:
         worker.health.restart_count += 1
         await asyncio.sleep(min(0.25 * (2 ** (worker.health.restart_count - 1)), 5.0))
         if not self.stop.is_set():
+            if worker.role == "inference":
+                new_runtime_id = str(uuid.uuid4())
+                runtime_flag = worker.command.index("--runtime-id")
+                worker.command[runtime_flag + 1] = new_runtime_id
             await self._start(worker)
 
     async def shutdown(self) -> None:

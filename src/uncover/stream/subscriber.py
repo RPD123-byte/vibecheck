@@ -32,11 +32,15 @@ class SnapshotSubscriber:
         freshness_ms: int = 750,
         maximum_bytes: int = MAX_EVENT_BYTES,
         clock_ms: Callable[[], int] | None = None,
+        on_connect: Callable[[], None] | None = None,
+        on_disconnect: Callable[[bool], None] | None = None,
     ) -> None:
         self.socket_path = socket_path
         self.freshness_ms = freshness_ms
         self.maximum_bytes = maximum_bytes
         self.clock_ms = clock_ms or monotonic_ms
+        self.on_connect = on_connect
+        self.on_disconnect = on_disconnect
         self.connected = False
         self.stale = False
         self.protocol_errors: list[str] = []
@@ -56,6 +60,8 @@ class SnapshotSubscriber:
                 )
                 self.connected = True
                 self.stale = False
+                if self.on_connect is not None:
+                    self.on_connect()
                 delay = 0.05
                 try:
                     while not self._closed.is_set():
@@ -108,10 +114,14 @@ class SnapshotSubscriber:
                 ConnectionError,
                 ConnectionRefusedError,
                 OSError,
+                ProtocolError,
             ):
+                was_connected = self.connected
                 self.connected = False
                 self._runtime_id = None
                 self._sequence = None
+                if self.on_disconnect is not None and (was_connected or self.stale):
+                    self.on_disconnect(self.stale)
                 if self._closed.is_set():
                     break
                 jitter = random.uniform(0.8, 1.2)

@@ -13,6 +13,7 @@ class WorkerHealth:
     ready: bool = False
     restart_count: int = 0
     pid: int | None = None
+    stream: str = "unknown"
     last_error: str | None = None
 
     def to_dict(self) -> dict[str, Any]:

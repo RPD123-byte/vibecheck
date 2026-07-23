@@ -1,0 +1,16 @@
+{
+  "provider": "fixture",
+  "dominant_emotion": "disgust",
+  "scores": {
+    "anger": 0.01,
+    "contempt": 0.01,
+    "disgust": 0.91,
+    "fear": 0.01,
+    "happiness": 0.01,
+    "neutral": 0.03,
+    "sadness": 0.01,
+    "surprise": 0.01
+  },
+  "face_box": [0, 0, 100, 100],
+  "inference_ms": 12.5
+}

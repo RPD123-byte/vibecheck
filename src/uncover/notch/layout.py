@@ -27,8 +27,10 @@ def calculate_notch_layout(
     content_overlap: float = DEFAULT_CAMERA_OVERLAP,
 ) -> NotchLayout:
     content_width = max(0.0, content_width)
-    content_overlap = min(
-        max(0.0, content_overlap), min(8.0, content_padding + content_width)
+    content_overlap = (
+        min(max(0.0, content_overlap), min(8.0, content_padding + content_width))
+        if content_width
+        else 0.0
     )
     content_x = notch_x - content_width + content_overlap
     shape_x = min(notch_x - corner_extension, content_x - content_padding)

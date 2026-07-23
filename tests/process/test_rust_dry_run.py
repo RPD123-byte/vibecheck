@@ -4,6 +4,7 @@ import asyncio
 import os
 import shutil
 import signal
+import stat
 import tempfile
 from pathlib import Path
 
@@ -56,6 +57,28 @@ async def test_rust_sidecar_consumes_real_socket_and_publishes_would_send() -> N
     try:
         ready = await asyncio.wait_for(anext(iterator), 15)
         assert ready.event.payload["state"] == "dry_run_ready"
+        assert stat.S_IMODE(status_socket.stat().st_mode) == 0o600
+
+        contender = await asyncio.create_subprocess_exec(
+            "cargo",
+            "run",
+            "--quiet",
+            "--manifest-path",
+            str(manifest),
+            "--",
+            "--emotion-socket",
+            str(emotion_socket),
+            "--status-socket",
+            str(status_socket),
+            "--runtime-id",
+            "socket-contender",
+            "--dry-run",
+            cwd=root,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        assert await asyncio.wait_for(contender.wait(), 5) != 0
+        assert status_socket.exists(), "contender must not unlink the live endpoint"
         deadline = asyncio.get_running_loop().time() + 5
         while publisher.subscriber_count < 1:
             if asyncio.get_running_loop().time() >= deadline:

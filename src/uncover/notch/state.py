@@ -65,7 +65,7 @@ class NotchProjection:
         self, event: EventEnvelope, *, discontinuity: bool = False
     ) -> RenderState:
         if discontinuity:
-            self.policy.reset_pending()
+            self.policy.reset()
         if event.kind == "producer_state":
             state = str(event.payload.get("state", "inference-error"))
             self.health = HEALTH_LABELS.get(state, state.replace("-", " ").title())

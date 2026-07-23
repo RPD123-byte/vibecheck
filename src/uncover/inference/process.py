@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import signal
 import sys
 import time
@@ -108,6 +109,17 @@ class InferenceService:
 
     async def run(self, stop: asyncio.Event) -> None:
         await self.publisher.start()
+        print(
+            json.dumps(
+                {
+                    "type": "worker_health",
+                    "role": "inference",
+                    "ready": True,
+                    "stream": "publishing",
+                }
+            ),
+            flush=True,
+        )
         await self.publish_state("loading")
         try:
             while not stop.is_set():
@@ -225,12 +237,13 @@ async def _run_cli(args: argparse.Namespace) -> int:
         args.socket, current_ttl_ms=round(args.freshness * 1000)
     )
     if args.demo:
+        patterns = [
+            {"happiness": 0.75, "neutral": 0.15},
+            {"anger": 0.92, "neutral": 0.04},
+            {"neutral": 0.90},
+        ]
         adapter: EmotionAdapter = SyntheticAdapter(
-            [
-                {"happiness": 0.75, "neutral": 0.15},
-                {"anger": 0.92, "neutral": 0.04},
-                {"neutral": 0.90},
-            ]
+            [pattern for pattern in patterns for _ in range(8)]
         )
         frames: FrameSource = SyntheticFrames()
     else:

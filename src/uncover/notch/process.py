@@ -14,6 +14,7 @@ from typing import TextIO
 
 from uncover.notch.display_policy import DisplayPolicy
 from uncover.notch.state import NotchProjection, RenderState
+from uncover.stream.protocol import EventEnvelope
 from uncover.stream.subscriber import SnapshotSubscriber
 
 
@@ -29,6 +30,26 @@ class SharedProjection:
 
     def get(self) -> RenderState:
         with self._lock:
+            self._state = self.projection.render()
+            return self._state
+
+    def apply_emotion(
+        self, event: EventEnvelope, *, discontinuity: bool = False
+    ) -> RenderState:
+        with self._lock:
+            self._state = self.projection.apply_emotion(
+                event, discontinuity=discontinuity
+            )
+            return self._state
+
+    def apply_status(self, event: EventEnvelope) -> RenderState:
+        with self._lock:
+            self._state = self.projection.apply_status(event)
+            return self._state
+
+    def stream_lost(self, *, stale: bool) -> RenderState:
+        with self._lock:
+            self._state = self.projection.stream_lost(stale=stale)
             return self._state
 
 
@@ -42,6 +63,7 @@ async def consume_streams(
     output: TextIO | None = None,
 ) -> None:
     last_json: str | None = None
+    emotion_ready = False
 
     def publish(state: RenderState) -> None:
         nonlocal last_json
@@ -54,23 +76,46 @@ async def consume_streams(
             last_json = encoded
 
     async def emotions() -> None:
+        nonlocal emotion_ready
+
+        def disconnected(stale: bool) -> None:
+            nonlocal emotion_ready
+            emotion_ready = False
+            print(
+                json.dumps(
+                    {
+                        "type": "worker_health",
+                        "role": "notch",
+                        "ready": False,
+                        "stream": "stale" if stale else "disconnected",
+                    }
+                ),
+                flush=True,
+            )
+            publish(shared.stream_lost(stale=stale))
+
         subscriber = SnapshotSubscriber(
-            emotion_socket, freshness_ms=round(freshness_seconds * 1000)
+            emotion_socket,
+            freshness_ms=round(freshness_seconds * 1000),
+            on_disconnect=disconnected,
         )
-        while not stop.is_set():
-            try:
-                async for item in subscriber.events():
-                    publish(
-                        shared.projection.apply_emotion(
-                            item.event, discontinuity=item.discontinuity
-                        )
-                    )
-                    if stop.is_set():
-                        break
-            finally:
-                if not stop.is_set():
-                    publish(shared.projection.stream_lost(stale=subscriber.stale))
-                    await asyncio.sleep(0.05)
+        async for item in subscriber.events():
+            if not emotion_ready:
+                emotion_ready = True
+                print(
+                    json.dumps(
+                        {
+                            "type": "worker_health",
+                            "role": "notch",
+                            "ready": True,
+                            "stream": "fresh",
+                        }
+                    ),
+                    flush=True,
+                )
+            publish(shared.apply_emotion(item.event, discontinuity=item.discontinuity))
+            if stop.is_set():
+                break
         subscriber.close()
 
     async def statuses() -> None:
@@ -78,7 +123,7 @@ async def consume_streams(
             return
         subscriber = SnapshotSubscriber(status_socket, freshness_ms=10_000)
         async for item in subscriber.events():
-            publish(shared.projection.apply_status(item.event))
+            publish(shared.apply_status(item.event))
             if stop.is_set():
                 break
         subscriber.close()

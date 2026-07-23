@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from uncover.stream.protocol import (
@@ -27,3 +29,15 @@ def test_protocol_rejects_version_malformed_and_oversized() -> None:
         decode_event(b"{nope}\n")
     with pytest.raises(ProtocolError, match="exceeds"):
         decode_event(b"x" * 10, maximum_bytes=4)
+
+
+def test_frozen_protocol_v1_fixture_is_valid() -> None:
+    fixture = (
+        Path(__file__).resolve().parents[1]
+        / "fixtures"
+        / "protocol"
+        / "reading_v1.json"
+    )
+    event = decode_event(fixture.read_bytes() + b"\n")
+    assert event.kind == "reading"
+    assert event.payload["scores"]["disgust"] == 0.91
