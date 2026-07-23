@@ -21,6 +21,11 @@ jobs:
         with:
           components: clippy,rustfmt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
       - name: Assert prototypes are absent
         run: |
           test ! -e experimentation
@@ -37,6 +42,14 @@ jobs:
 
       - name: Build Python artifacts
         run: python -m build
+
+      - name: Validate Electron application
+        run: |
+          npm ci
+          npm run js:format:check
+          npm run js:typecheck
+          npm run js:test
+          npm run js:audit
 
       - name: Lint, test, and build Rust
         run: |

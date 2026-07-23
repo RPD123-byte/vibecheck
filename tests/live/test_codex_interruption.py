@@ -268,4 +268,13 @@ async def test_real_turn_is_interrupted_and_restarted_with_expression_context() 
         if process is not None and process.returncode is None:
             os.killpg(process.pid, signal.SIGTERM)
             await process.wait()
+        assert MANAGED_SOCKET.exists(), (
+            "Vibecheck shutdown must leave the shared Codex daemon running"
+        )
+        probe = await websockets.unix_connect(
+            str(MANAGED_SOCKET),
+            uri="ws://localhost/rpc",
+            compression=None,
+        )
+        await probe.close()
         shutil.rmtree(runtime, ignore_errors=True)

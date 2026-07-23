@@ -52,10 +52,7 @@ class RuntimeConfig:
             raise ValueError(
                 "display_exit_threshold cannot exceed display_entry_threshold"
             )
-        if (
-            self.surprise_display_exit_threshold
-            > self.surprise_display_entry_threshold
-        ):
+        if self.surprise_display_exit_threshold > self.surprise_display_entry_threshold:
             raise ValueError(
                 "surprise_display_exit_threshold cannot exceed "
                 "surprise_display_entry_threshold"

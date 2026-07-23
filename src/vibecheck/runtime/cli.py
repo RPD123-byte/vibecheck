@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import sys
 from pathlib import Path
 
 from vibecheck.runtime.config import RuntimeConfig
+from vibecheck.runtime.feature_state import FeatureState
 from vibecheck.runtime.supervisor import RuntimeOwner
 
 
@@ -28,6 +30,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--surprise-threshold", type=float, default=0.30)
     parser.add_argument("--interruption-threshold", type=float, default=0.30)
     parser.add_argument("--hold-seconds", type=float, default=1.0)
+    parser.add_argument(
+        "--controller",
+        action="store_true",
+        help="start disabled and accept feature state over the private control socket",
+    )
     return parser
 
 
@@ -48,7 +55,17 @@ def _config_from_args(args: argparse.Namespace) -> RuntimeConfig:
 
 async def _run(args: argparse.Namespace) -> None:
     config = _config_from_args(args)
-    root = Path(__file__).resolve().parents[3]
+    if getattr(sys, "frozen", False):
+        root = Path(sys.executable).resolve().parent
+        model = root / "models" / f"{config.model}.onnx"
+        if not model.is_file():
+            raise FileNotFoundError(f"bundled model is missing: {model}")
+        os.environ.setdefault("VIBECHECK_MODEL_PATH", str(model))
+        bundled_interruption = root / "vibecheck-expression-interruption"
+        if args.interruption_binary is None:
+            args.interruption_binary = bundled_interruption
+    else:
+        root = Path(__file__).resolve().parents[3]
     owner = RuntimeOwner(
         config,
         python=sys.executable,
@@ -56,6 +73,8 @@ async def _run(args: argparse.Namespace) -> None:
         headless_notch=args.headless_notch,
         image_paths=args.image,
         interruption_binary=args.interruption_binary,
+        controller_mode=args.controller,
+        initial_features=None if not args.controller else FeatureState(),
     )
     await owner.run()
 

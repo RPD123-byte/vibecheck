@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import time
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -65,6 +68,18 @@ class EmotiEffLibAdapter(EmotionAdapter):
         face_threshold: float = 0.90,
         minimum_face_size: int = 40,
     ) -> None:
+        bundled_model = _bundled_model_path(model_name)
+        if bundled_model is not None:
+            import emotiefflib.utils
+
+            original_model_path = emotiefflib.utils.get_model_path_onnx
+
+            def packaged_model_path(requested_model: str) -> str:
+                if requested_model == model_name:
+                    return str(bundled_model)
+                return original_model_path(requested_model)
+
+            emotiefflib.utils.get_model_path_onnx = packaged_model_path
         from emotiefflib.facial_analysis import EmotiEffLibRecognizer
         from facenet_pytorch import MTCNN
 
@@ -114,3 +129,15 @@ class EmotiEffLibAdapter(EmotionAdapter):
     def close(self) -> None:
         self.detector = None
         self.recognizer = None
+
+
+def _bundled_model_path(model_name: str) -> Path | None:
+    configured = os.environ.get("VIBECHECK_MODEL_PATH")
+    candidates = [
+        Path(configured) if configured else None,
+        Path(sys.executable).resolve().parent / "models" / f"{model_name}.onnx",
+    ]
+    for candidate in candidates:
+        if candidate is not None and candidate.is_file():
+            return candidate
+    return None

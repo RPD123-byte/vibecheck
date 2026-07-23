@@ -16,8 +16,9 @@ The goal is to help Codex notice reactions that are normally lost in a text-only
 conversation without recording or uploading camera footage.
 
 > [!IMPORTANT]
-> Vibecheck currently runs from source. It is not yet packaged as a signed macOS
-> app or installer.
+> Vibecheck’s menu-bar app currently runs from source or as an unsigned local
+> build. A public Developer ID build still requires the protected notarized
+> release gate.
 
 ## Current behavior
 
@@ -42,6 +43,7 @@ Before installing Vibecheck, you need:
 - A Mac with a built-in display notch for the visual overlay
 - Python 3.11 or newer
 - Rust 1.91 or newer
+- Node.js 24
 - Git
 - Xcode Command Line Tools
 - The Codex desktop app for live interruption
@@ -106,7 +108,32 @@ cargo build \
 
 You only need to repeat this after the Rust code changes.
 
+### 7. Install the menu-bar app dependencies
+
+```bash
+npm ci
+```
+
 ## First run
+
+### Start the menu-bar app
+
+```bash
+npm run app:dev
+```
+
+Vibecheck appears only in the macOS menu bar; it does not open a Dock icon or
+ordinary app window. Click its icon to open the controls. Both **Show notch**
+and **Codex interruption** are off on first launch. Enabling either feature
+starts camera inference, and disabling the final active feature releases the
+camera while leaving the small controller process ready.
+
+Use **Pause** to stop all feature workers without changing the two toggles.
+Pause is not restored after the app restarts. Quit from the popover to stop
+every Vibecheck-owned process without quitting Codex.
+
+The command-line modes below remain supported for diagnostics and as a rollback
+path.
 
 ### Test the installation without using the camera or changing Codex
 
@@ -399,6 +426,25 @@ cargo clippy \
 cargo test \
   --manifest-path src/native/expression_interruption/Cargo.toml
 ```
+
+Run the Electron checks:
+
+```bash
+npm run js:format:check
+npm run js:typecheck
+npm run js:test
+npm run js:audit
+```
+
+Create an unsigned arm64 local app bundle:
+
+```bash
+scripts/build_runtime.sh
+npm run app:package
+```
+
+See [docs/macos-release.md](docs/macos-release.md) for the protected Developer
+ID, permission, notarization, DMG, and clean-install release process.
 
 The supported app lives under `src/`. The ignored `experimentation/` directory
 contains historical prototypes and is not used by the production runtime.

@@ -5,14 +5,29 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::UnixStream;
 use tokio::sync::watch;
 
-pub async fn consume(socket: PathBuf, freshness_ms: u64, sender: watch::Sender<InputUpdate>) {
+pub async fn consume(
+    socket: PathBuf,
+    freshness_ms: u64,
+    sender: watch::Sender<InputUpdate>,
+    mut shutdown: watch::Receiver<bool>,
+) {
     let mut delay_ms = 50_u64;
     loop {
-        match UnixStream::connect(&socket).await {
+        if *shutdown.borrow() {
+            return;
+        }
+        let connection = tokio::select! {
+            result = UnixStream::connect(&socket) => result,
+            result = shutdown.changed() => {
+                let _ = result;
+                return;
+            }
+        };
+        match connection {
             Ok(stream) => {
                 delay_ms = 50;
                 sender.send_replace(InputUpdate::Reset);
-                read_connection(stream, freshness_ms, &sender).await;
+                read_connection(stream, freshness_ms, &sender, &mut shutdown).await;
                 println!(
                     "{}",
                     serde_json::json!({
@@ -28,7 +43,13 @@ pub async fn consume(socket: PathBuf, freshness_ms: u64, sender: watch::Sender<I
             }
         }
         let jitter = 90 + u64::from(std::process::id() % 21);
-        tokio::time::sleep(Duration::from_millis(delay_ms * jitter / 100)).await;
+        tokio::select! {
+            () = tokio::time::sleep(Duration::from_millis(delay_ms * jitter / 100)) => {}
+            result = shutdown.changed() => {
+                let _ = result;
+                return;
+            }
+        }
         delay_ms = (delay_ms * 2).min(2_000);
     }
 }
@@ -37,6 +58,7 @@ async fn read_connection(
     stream: UnixStream,
     freshness_ms: u64,
     sender: &watch::Sender<InputUpdate>,
+    shutdown: &mut watch::Receiver<bool>,
 ) {
     let mut reader = BufReader::new(stream);
     let mut buffer = Vec::with_capacity(4096);
@@ -45,11 +67,16 @@ async fn read_connection(
     let mut reported_ready = false;
     loop {
         buffer.clear();
-        let read = tokio::time::timeout(
-            Duration::from_millis(freshness_ms),
-            reader.read_until(b'\n', &mut buffer),
-        )
-        .await;
+        let read = tokio::select! {
+            result = tokio::time::timeout(
+                Duration::from_millis(freshness_ms),
+                reader.read_until(b'\n', &mut buffer),
+            ) => result,
+            result = shutdown.changed() => {
+                let _ = result;
+                return;
+            }
+        };
         let Ok(Ok(size)) = read else {
             sender.send_replace(InputUpdate::Reset);
             return;

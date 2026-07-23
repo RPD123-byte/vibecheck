@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "id": "fixture-set-features",
+  "token": "fixture-token-is-replaced-at-runtime",
+  "type": "set_features",
+  "expected_revision": 0,
+  "features": {
+    "notch_enabled": true,
+    "integrations": {
+      "codex_enabled": false
+    },
+    "paused": false
+  }
+}
