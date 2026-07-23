@@ -29,7 +29,8 @@ def eligible_emotions(
             else float(scores.get(name, 0.0)) > entry_threshold
         )
     ]
-    return tuple(sorted(selected, key=lambda name: (-float(scores[name]), name)))
+    ranked = sorted(selected, key=lambda name: (-float(scores[name]), name))
+    return tuple(ranked[:1])
 
 
 @dataclass(slots=True)

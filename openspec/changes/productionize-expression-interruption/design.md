@@ -159,7 +159,7 @@ Multi-face identity continuity is a future capability requiring tracking and use
 
 Both consumers receive the same raw normalized scores and share the 0.30 entry/eligibility threshold, but their time behavior differs intentionally:
 
-- Notch: 0.25 exit hysteresis, two consecutive candidates to show or switch, immediate clear on no eligible emotion/no-face/stale input.
+- Notch: select only the highest-scoring eligible non-neutral emotion, apply 0.25 exit hysteresis and two consecutive candidates to show or switch, and clear immediately on no eligible emotion/no-face/stale input.
 - Interruption: same negative set continuously over 0.30 for one second, reset on any set change/dip/gap, one dispatch per episode, one-second baseline rearm, and 15-second cooldown between different dispatched sets.
 
 The inference worker does not smooth scores. It publishes source-of-truth snapshots so each consumer applies policy appropriate to its purpose.

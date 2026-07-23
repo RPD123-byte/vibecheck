@@ -49,6 +49,7 @@ daemon remain running.
 The shared expression threshold defaults to 30% for notch entry and negative-only
 interruption eligibility. The notch uses a 25% exit threshold, and interruption
 still requires the same eligible negative expression continuously for one second.
+The notch renders only the single highest-scoring eligible non-neutral expression.
 
 ## Runtime modes and safety
 

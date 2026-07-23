@@ -37,8 +37,8 @@ The notch SHALL require two consecutive fresh inference results with the same ca
 - **WHEN** a fresh reading contains no eligible non-neutral emotion
 - **THEN** all emotion icons are cleared without waiting for two confirmations
 
-### Requirement: Neutral suppression and score ordering
-Neutral MUST NOT be rendered as an emotion icon. Positive, negative, and surprise emotions MAY be displayed when eligible, and visible icons SHALL be ordered from highest to lowest current score.
+### Requirement: Single-emotion selection and neutral suppression
+Neutral MUST NOT be rendered as an emotion icon. Positive, negative, and surprise emotions MAY be displayed when eligible, but the notch SHALL render only the single highest-scoring eligible non-neutral emotion. Score ties SHALL use deterministic name ordering. Interruption feedback MAY retain a multi-emotion context internally but MUST emphasize only that same single highest-scoring emotion in the notch.
 
 #### Scenario: Neutral is dominant
 - **WHEN** neutral has the highest score and every non-neutral score is ineligible
@@ -46,7 +46,11 @@ Neutral MUST NOT be rendered as an emotion icon. Positive, negative, and surpris
 
 #### Scenario: Multiple non-neutral emotions are eligible
 - **WHEN** more than one emotion passes display filtering
-- **THEN** icons are ordered by descending score using deterministic tie-breaking
+- **THEN** only the highest-scoring emotion is shown, using deterministic name ordering to break a score tie
+
+#### Scenario: Interruption contains multiple emotions
+- **WHEN** interruption feedback identifies more than one eligible negative emotion
+- **THEN** only the highest-scoring selected emotion is emphasized in the notch
 
 ### Requirement: Single active-left layout
 The production notch SHALL implement only the latest `active-left` layout, placing active icons immediately left of the camera notch while preserving both notch corner extensions. Production source, configuration, fixtures, and tests MUST NOT include the experimental `all-sides` diagnostic layout or a layout selector. Geometry SHALL retain the validated 32-point cell, 24-point visible glyph, four-point optical overlap, and configurable overlap range from zero through eight points.

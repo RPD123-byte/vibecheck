@@ -27,6 +27,41 @@ def test_hysteresis_and_neutral_suppression() -> None:
     assert policy.observe({"neutral": 1.0}) == ()
 
 
+def test_only_highest_scoring_eligible_emotion_is_displayed() -> None:
+    policy = DisplayPolicy(confirmations=1)
+    assert policy.observe({"surprise": 0.42, "happiness": 0.35}) == ("surprise",)
+    assert policy.observe({"anger": 0.40, "disgust": 0.40}) == ("anger",)
+
+
+def test_interruption_emphasis_also_displays_only_highest_scoring_emotion() -> None:
+    projection = NotchProjection(DisplayPolicy(confirmations=1))
+    projection.apply_emotion(
+        EventEnvelope(
+            "reading",
+            "runtime",
+            0,
+            0,
+            0,
+            {"scores": {"sadness": 0.35, "anger": 0.31}},
+        )
+    )
+    state = projection.apply_status(
+        EventEnvelope(
+            "interruption_status",
+            "interruption",
+            0,
+            0,
+            0,
+            {
+                "state": "sent",
+                "emotions": [{"name": "anger"}, {"name": "sadness"}],
+                "scores": {"anger": 0.31, "sadness": 0.35},
+            },
+        )
+    )
+    assert state.emphasized_emotions == ("sadness",)
+
+
 def test_active_left_optical_edge_is_stable() -> None:
     one = calculate_notch_layout(500, 185, 32)
     two = calculate_notch_layout(500, 185, 64)

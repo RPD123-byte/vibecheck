@@ -116,8 +116,7 @@ class NotchProjection:
             if isinstance(name, str) and name in ICONS:
                 emphasized.append(name)
         raw_scores = event.payload.get("scores", {})
-        self.emphasized_emotions = tuple(emphasized)
-        self.emphasis_scores = (
+        emphasis_scores = (
             {
                 str(name): float(score)
                 for name, score in raw_scores.items()
@@ -126,6 +125,16 @@ class NotchProjection:
             if isinstance(raw_scores, dict)
             else {}
         )
+        emphasized = sorted(
+            set(emphasized),
+            key=lambda name: (-emphasis_scores.get(name, 0.0), name),
+        )[:1]
+        self.emphasized_emotions = tuple(emphasized)
+        self.emphasis_scores = {
+            name: emphasis_scores[name]
+            for name in emphasized
+            if name in emphasis_scores
+        }
         if state in {"interrupting", "restarting"}:
             self.emphasis = "in-progress"
             self._status_expires_at = float("inf")
