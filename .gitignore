@@ -11,6 +11,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 build/
+.build/
 dist/
 *.egg-info/
 
@@ -20,8 +21,10 @@ node_modules/
 # Rust tooling
 target/
 
-# Experimental and vendored research work must not become core dependencies
-/experimentation/
+# Experimental and vendored research work must not become core dependencies.
+# The highlight-and-react prototype is intentionally versioned in its own branch.
+/experimentation/*
+!/experimentation/highlight_and_react/
 /emotiefflib_repo/
 
 # Local biometric/model data and captured test images
