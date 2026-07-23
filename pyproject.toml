@@ -7,7 +7,7 @@ name = "vibecheck"
 version = "0.1.0"
 description = "On-device facial-expression inference, notch presentation, and Codex interruption"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
   "numpy==1.26.4",
 ]

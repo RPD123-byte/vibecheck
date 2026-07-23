@@ -36,11 +36,11 @@ Codex explicitly describes the result as an imperfect inference.
 
 ## Requirements
 
-Before installing Vibecheck, you need:
+The setup script checks these requirements and reports anything missing:
 
 - macOS
 - A Mac with a built-in display notch for the visual overlay
-- Python 3.11 or newer
+- Python 3.11
 - Rust 1.91 or newer
 - Git
 - Xcode Command Line Tools
@@ -49,62 +49,15 @@ Before installing Vibecheck, you need:
 
 ## Installation
 
-### 1. Install the Xcode Command Line Tools
-
-```bash
-xcode-select --install
-```
-
-If they are already installed, macOS will tell you.
-
-### 2. Check Python
-
-```bash
-python3 --version
-```
-
-Install Python 3.11 or newer if the command is missing or reports an older
-version.
-
-### 3. Install Rust
-
-Install Rust using [rustup](https://rustup.rs/), then run:
-
-```bash
-rustup toolchain install 1.91.1 --profile minimal --component clippy,rustfmt
-rustup default 1.91.1
-rustc --version
-```
-
-### 4. Clone Vibecheck
-
 ```bash
 git clone https://github.com/RPD123-byte/vibecheck.git
 cd vibecheck
+./setup.sh
 ```
 
-### 5. Create a Python environment
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[inference,macos]'
-```
-
-The inference dependencies are fairly large and may take several minutes to
-install.
-
-### 6. Build the interruption component
-
-```bash
-cargo build \
-  --locked \
-  --release \
-  --manifest-path src/native/expression_interruption/Cargo.toml
-```
-
-You only need to repeat this after the Rust code changes.
+The script creates `.venv`, installs the Python dependencies, and builds the
+Rust interruption component. Inference dependencies are large, so initial setup
+may take several minutes.
 
 ## First run
 
@@ -360,12 +313,7 @@ From the repository:
 
 ```bash
 git pull --ff-only
-source .venv/bin/activate
-python -m pip install -e '.[inference,macos]'
-cargo build \
-  --locked \
-  --release \
-  --manifest-path src/native/expression_interruption/Cargo.toml
+./setup.sh
 ```
 
 ## Development checks

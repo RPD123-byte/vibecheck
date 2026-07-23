@@ -37,9 +37,7 @@ def test_worker_arguments_build_the_real_display_policy() -> None:
 
 
 def test_standalone_workers_share_the_1_5_second_freshness_default() -> None:
-    notch_args = _parser().parse_args(
-        ["--emotion-socket", "/tmp/emotion.sock"]
-    )
+    notch_args = _parser().parse_args(["--emotion-socket", "/tmp/emotion.sock"])
     inference_args = inference_parser().parse_args(["--socket", "/tmp/emotion.sock"])
 
     assert notch_args.freshness == 1.5
