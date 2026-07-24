@@ -27,6 +27,8 @@ const config: ForgeConfig = {
     extraResource: [
       runtimePath,
       path.resolve(__dirname, "../../THIRD_PARTY_NOTICES.md"),
+      path.resolve(__dirname, "resources/trayTemplate.png"),
+      path.resolve(__dirname, "resources/trayTemplate@2x.png"),
     ],
     osxSign: releaseSigning
       ? {

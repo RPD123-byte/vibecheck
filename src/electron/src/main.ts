@@ -25,6 +25,7 @@ let runtimeReady: Promise<void> | null = null;
 let shutdownInProgress = false;
 let actionPending = false;
 let actionError: string | null = null;
+let trayImageIsEmpty = true;
 let lastState: PublicState = {
   aggregate: "off",
   features: {
@@ -38,7 +39,9 @@ let lastState: PublicState = {
 };
 
 function iconPath(): string {
-  return path.join(app.getAppPath(), "resources", "trayTemplate.svg");
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "trayTemplate.png")
+    : path.join(app.getAppPath(), "resources", "trayTemplate.png");
 }
 
 function labelFor(aggregate: PublicState["aggregate"]): string {
@@ -159,6 +162,7 @@ function installDevelopmentTestHook(): void {
         if (action === "quit") actions.quit();
       },
       dismissMenu: () => tray?.closeContextMenu(),
+      trayImageIsEmpty: () => trayImageIsEmpty,
     },
   });
 }
@@ -176,6 +180,10 @@ async function launch(): Promise<void> {
   runtime.on("runtime-error", (error) => console.error(error));
   runtimeReady = runtime.start();
   const image = nativeImage.createFromPath(iconPath());
+  trayImageIsEmpty = image.isEmpty();
+  if (trayImageIsEmpty) {
+    throw new Error(`Vibecheck tray icon is missing or invalid: ${iconPath()}`);
+  }
   image.setTemplateImage(true);
   tray = new Tray(image);
   rebuildMenu();

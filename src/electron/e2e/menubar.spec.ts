@@ -25,6 +25,7 @@ interface TestHook {
   }>;
   invoke(action: Action, enabled?: boolean): Promise<void>;
   dismissMenu(): void;
+  trayImageIsEmpty(): boolean;
 }
 
 test("native menu drives the demo runtime without windows or orphans", async () => {
@@ -41,7 +42,9 @@ test("native menu drives the demo runtime without windows or orphans", async () 
     VIBECHECK_E2E: "1",
     VIBECHECK_RUNTIME_MODE: "demo",
     VIBECHECK_HEADLESS_NOTCH: "1",
-    VIBECHECK_PYTHON_OWNER: path.join(projectRoot, ".venv", "bin", "python"),
+    VIBECHECK_PYTHON_OWNER:
+      process.env.VIBECHECK_PYTHON_OWNER ??
+      path.join(projectRoot, ".venv", "bin", "python"),
     TMPDIR: "/tmp",
   };
   const application = await electron.launch({
@@ -64,6 +67,33 @@ test("native menu drives the demo runtime without windows or orphans", async () 
     ).toBe(0);
     expect(
       await application.evaluate(({ app }) => app.dock?.isVisible() ?? false),
+    ).toBe(false);
+    expect(
+      await application.evaluate(() =>
+        (
+          globalThis as { __vibecheckE2E: TestHook }
+        ).__vibecheckE2E.trayImageIsEmpty(),
+      ),
+    ).toBe(false);
+    const packagedTrayIcon = path.resolve(
+      __dirname,
+      "../out/Vibecheck-darwin-arm64/Vibecheck.app/Contents/Resources/trayTemplate.png",
+    );
+    expect(fs.existsSync(packagedTrayIcon)).toBe(true);
+    expect(
+      fs.existsSync(
+        path.resolve(
+          __dirname,
+          "../out/Vibecheck-darwin-arm64/Vibecheck.app/Contents/Resources/trayTemplate@2x.png",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      await application.evaluate(
+        ({ nativeImage }, assetPath) =>
+          nativeImage.createFromPath(assetPath).isEmpty(),
+        packagedTrayIcon,
+      ),
     ).toBe(false);
     await expect
       .poll(() => state(application).then((value) => value.aggregate))
