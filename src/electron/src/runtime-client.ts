@@ -18,6 +18,7 @@ import { OwnerCommand, resolveOwnerCommand } from "./owner-command";
 
 const BOOTSTRAP_TIMEOUT_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 8_000;
+const GRACEFUL_OWNER_EXIT_MS = 18_000;
 
 interface Pending {
   resolve: (message: ControlEnvelope) => void;
@@ -421,7 +422,7 @@ export class RuntimeClient extends EventEmitter {
       child.once("exit", () => resolve()),
     );
     const deadline = new Promise<"timeout">((resolve) =>
-      setTimeout(() => resolve("timeout"), 5_000),
+      setTimeout(() => resolve("timeout"), GRACEFUL_OWNER_EXIT_MS),
     );
     if ((await Promise.race([exited, deadline])) === "timeout") {
       await this.terminateOwnedChild();

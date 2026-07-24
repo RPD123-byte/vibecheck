@@ -8,6 +8,7 @@ import os
 import shutil
 import signal
 import stat
+import sys
 import tempfile
 import time
 import uuid
@@ -110,10 +111,9 @@ class RuntimeOwner:
         emotion_socket = runtime_dir / "emotion.sock"
         status_socket = runtime_dir / "interruption-status.sock"
         if role == "inference":
-            command = [
-                self.python,
-                "-m",
-                "vibecheck.inference.process",
+            command = self._python_worker_prefix(
+                "inference", "vibecheck.inference.process"
+            ) + [
                 "--socket",
                 str(emotion_socket),
                 "--runtime-id",
@@ -141,10 +141,7 @@ class RuntimeOwner:
                 command.extend(["--image", str(path)])
             return WorkerSpec(role, command)
         if role == "notch":
-            command = [
-                self.python,
-                "-m",
-                "vibecheck.notch.process",
+            command = self._python_worker_prefix("notch", "vibecheck.notch.process") + [
                 "--emotion-socket",
                 str(emotion_socket),
                 "--status-socket",
@@ -198,6 +195,11 @@ class RuntimeOwner:
         if self.config.thread_id:
             command.extend(["--thread-id", self.config.thread_id])
         return WorkerSpec(role, command)
+
+    def _python_worker_prefix(self, role: str, module: str) -> list[str]:
+        if getattr(sys, "frozen", False):
+            return [self.python, "--frozen-worker", role]
+        return [self.python, "-m", module]
 
     def _interruption_prefix(self, manifest: Path) -> list[str]:
         configured = self.interruption_binary

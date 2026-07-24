@@ -1,10 +1,10 @@
 ## 1. Baseline and Electron Workspace
 
 - [x] 1.1 Record the current Python, Rust, process, visual, and opt-in live test commands and verify the supported production CLI remains a working rollback path before refactoring.
-- [x] 1.2 Create the tracked `src/electron` Electron Forge workspace with TypeScript, React, Vite, a committed lockfile, pinned runtime/tool versions, and root development/build commands.
+- [x] 1.2 Create the tracked `src/electron` Electron Forge workspace with TypeScript, main-process Vite bundling, a committed lockfile, pinned runtime/tool versions, and root development/build commands without React or a renderer.
 - [x] 1.3 Configure a stable application name and provisional bundle identifier, single-instance behavior, `LSUIElement`, development Dock hiding, and macOS-only startup guards.
 - [x] 1.4 Add repository guards and ignore rules for Electron build output, packaged artifacts, caches, and prohibited experimentation or vendored source dependencies.
-- [x] 1.5 Add JavaScript formatting, type checking, unit-test, renderer-test, and dependency-audit commands suitable for default CI without Apple credentials.
+- [x] 1.5 Add JavaScript formatting, type checking, main-process unit-test, Electron integration-test, and dependency-audit commands suitable for default CI without Apple credentials.
 
 ## 2. Mutable Feature State and Pure Topology
 
@@ -37,39 +37,39 @@
 
 ## 5. Electron Main-Process Runtime Client
 
-- [x] 5.1 Implement Python-owner launch from a configured development or packaged executable path without allowing renderer-supplied commands, paths, or environment overrides.
+- [x] 5.1 Implement Python-owner launch from a configured development or packaged executable path without allowing menu-supplied commands, paths, or environment overrides.
 - [x] 5.2 Parse only bounded structured bootstrap records, connect to the advertised private Unix socket, validate protocol/runtime identity, and surface bootstrap timeout or process exit as structured failure.
 - [x] 5.3 Implement the revision-aware runtime client for state subscription, atomic feature mutation, recovery, and graceful shutdown with reconnect and request timeout behavior.
 - [x] 5.4 Persist only notch and Codex enable preferences, default both off on first launch, keep pause session-local, and reapply preferences after a new owner connection.
 - [x] 5.5 Add bounded top-level Python-owner restart with fresh runtime directories, no overlapping owners, backoff/rate limits, and terminal explicit-recovery state.
 - [x] 5.6 On Electron quit, request Python shutdown, await acknowledgement and exit, then escalate only against the validated owned Python process after the deadline.
-- [x] 5.7 Add main-process unit tests with fake child and socket peers for bootstrap, revision conflict, crash recovery, stale messages, quit, renderer reload, and prevention of arbitrary subprocess launch.
+- [x] 5.7 Add main-process unit tests with fake child and socket peers for bootstrap, revision conflict, crash recovery, stale messages, quit, menu rebuild, and prevention of arbitrary subprocess launch.
 
-## 6. Secure Menu-Bar Popover
+## 6. Native Menu-Bar Menu
 
-- [x] 6.1 Create the macOS template tray icon, tooltip, click toggle, and a hidden reusable popover BrowserWindow with no ordinary startup window or Dock item.
-- [x] 6.2 Anchor and clamp the popover from live tray bounds, hide it on Escape/outside interaction/second click, and reposition it across display, resolution, menu-bar, and Space changes.
-- [x] 6.3 Configure renderer sandboxing, context isolation, disabled Node integration, local-only assets, restrictive Content Security Policy, navigation denial, and a narrow typed preload bridge.
-- [x] 6.4 Implement the first-release visual surface for aggregate status, on-device camera state, `Show notch`, `Codex interruption`, temporary pause/resume, conditional recovery, and quit.
-- [x] 6.5 Project `Off`, `Starting`, `Active`, `Paused`, `Needs Permission`, `Degraded`, and `Failed` from authoritative state while preserving enabled toggles during loading and failure.
-- [x] 6.6 Ensure the renderer never receives expression names, confidence scores, frames, conversation contents, interruption messages, or Codex thread lists.
-- [x] 6.7 Add React/preload tests for every state and control, stale acknowledgements, pending toggles, permission errors, partial failure, pause preservation, recovery, and privacy field exclusion.
-- [ ] 6.8 Add Electron integration tests for single-instance behavior, no Dock presence, popover show/hide, multi-display positioning seam, renderer security, and runtime survival when the popover closes.
+- [x] 6.1 Create the macOS template tray icon, tooltip, and native `Menu` surface with no `BrowserWindow`, ordinary startup window, renderer process, or Dock item.
+- [x] 6.2 Let macOS own native-menu placement, focus, dismissal, keyboard navigation, display selection, and Space behavior without custom positioning code.
+- [x] 6.3 Keep all menu construction and fixed action callbacks in Electron main with no preload, renderer, navigation, remote content, or renderer IPC surface.
+- [x] 6.4 Implement native menu items for aggregate status, on-device camera state, `Show notch`, `Codex interruption`, temporary pause/resume, conditional recovery, and quit.
+- [x] 6.5 Project `Off`, `Starting`, `Active`, `Paused`, `Needs Permission`, `Degraded`, and `Failed` from authoritative state while preserving enabled checkmarks during loading and failure.
+- [x] 6.6 Ensure the native menu never displays expression names, confidence scores, frames, conversation contents, interruption messages, or Codex thread lists.
+- [x] 6.7 Add main-process menu-template tests for every state and control, pending actions, permission errors, partial failure, pause preservation, recovery, and privacy field exclusion.
+- [x] 6.8 Add Electron integration tests for single-instance behavior, no Dock presence, zero `BrowserWindow` instances, native menu action routing, and runtime survival when the menu is dismissed.
 
 ## 7. Dynamic End-to-End Verification
 
 - [x] 7.1 Add real-process tests for every directed transition among off, notch-only, interruption-only, combined, and paused topology states.
 - [x] 7.2 Assert unchanged inference and consumer PIDs across minimal transitions and verify final disable releases the camera/model process while retaining the control owner.
 - [x] 7.3 Exercise rapid toggle churn, duplicate mutations, mutation during backoff, consumer crash during disable, inference restart continuity reset, and controller loss without orphan processes.
-- [ ] 7.4 Launch Electron main against the real Python demo runtime and verify UI intent, Python reconciliation, notch headless projection, Rust dry-run state, pause/resume, and safe quit end to end.
+- [x] 7.4 Launch Electron main against the real Python demo runtime and verify UI intent, Python reconciliation, notch headless projection, Rust dry-run state, pause/resume, and safe quit end to end.
 - [x] 7.5 Run the opt-in live Codex fixture with interruption enabled/disabled around an active action and prove Vibecheck shutdown leaves the Codex GUI and shared daemon running.
 - [x] 7.6 Preserve existing real-model, freshness/loading, visual notch, source guard, Rust policy, and lifecycle regression suites as gates for the Electron feature.
 
 ## 8. Frozen Runtime Packaging
 
-- [ ] 8.1 Spike and document a relocatable onedir frozen Python build from a clean environment, falling back from PyInstaller only if real dependency collection cannot be made reliable.
-- [ ] 8.2 Add explicit collection hooks and resource lookup for EmotiEffLib, ONNX Runtime, OpenCV, PyObjC/AppKit/AVFoundation, the arm64 Rust interruption binary, and only the selected `enet_b0_8_best_afew.onnx` model with its Apache-2.0 notice.
-- [ ] 8.3 Package the frozen runtime beneath Electron `Contents/Resources`, resolve it through `process.resourcesPath`, and prevent development interpreter/repository fallback in packaged mode.
+- [x] 8.1 Spike and document a relocatable onedir frozen Python build from a clean environment, falling back from PyInstaller only if real dependency collection cannot be made reliable.
+- [x] 8.2 Add explicit collection hooks and resource lookup for EmotiEffLib, ONNX Runtime, OpenCV, PyObjC/AppKit/AVFoundation, the arm64 Rust interruption binary, and only the selected `enet_b0_8_best_afew.onnx` model with its Apache-2.0 notice.
+- [x] 8.3 Package the frozen runtime beneath Electron `Contents/Resources`, resolve it through `process.resourcesPath`, and prevent development interpreter/repository fallback in packaged mode.
 - [ ] 8.4 Inventory every Mach-O executable, dynamic library, native extension, helper, and framework in the final bundle with file type, architecture slices, identifier, and signing status.
 - [ ] 8.5 Run real image inference, notch startup, Rust dry-run, dynamic toggles, pause, and quit using only the packaged runtime and bundled model assets with network disabled.
 - [ ] 8.6 Measure packaged cold start, loading heartbeat, idle-off resources, active resources, app size, compressed DMG size, and largest components; establish an accepted arm64 preview size budget without weakening freshness or privacy behavior.
@@ -97,6 +97,6 @@
 
 - [ ] 11.1 Run Python lint/type checks and all default unit, protocol, process, model, visual, and source-guard tests from a clean clone without ignored planning or experimentation files.
 - [x] 11.2 Run Rust formatting, linting, unit, process, dry-run, and opt-in live Codex verification against the pinned `codex-control` release.
-- [ ] 11.3 Run JavaScript formatting, type checking, dependency audit, main/preload/renderer tests, Electron integration tests, and packaged security assertions.
+- [x] 11.3 Run JavaScript formatting, type checking, dependency audit, main-process native-menu tests, Electron integration tests, and packaged zero-window/security assertions.
 - [ ] 11.4 Verify no expression data, frames, conversation contents, release secrets, mutable runtime files, or development paths are persisted or included unintentionally.
 - [ ] 11.5 Perform the protected signed/notarized clean-install release gate and record the exact app version, Electron/Python/Rust/model versions, architecture, notarization submission, and final artifact hashes.

@@ -54,8 +54,8 @@ cross-application Accessibility work that would conflict with App Sandbox.
   history, confidence display, or current-expression menu item.
 - Changing inference models, thresholds, smoothing, notch geometry, eligible
   interruption emotions, targeting, or Codex message content.
-- Moving process supervision into Electron or calling Rust directly from the
-  renderer.
+- Moving process supervision into Electron or calling Rust directly from any
+  present or future UI surface.
 - Mac App Store distribution, automatic updating, Windows/Linux parity, or
   universal-binary merging in the first implementation.
 - Claude Code integration, selection/highlight conditioning, Accessibility
@@ -65,22 +65,24 @@ cross-application Accessibility work that would conflict with App Sandbox.
 
 ## Decisions
 
-### 1. Build an Electron Forge menu-bar shell with a custom popover
+### 1. Build an Electron Forge menu-bar shell with a native menu
 
 The tracked Electron package lives under `src/electron/` and uses Electron
-Forge, TypeScript, React, and Vite. Electron main owns `Tray`, the hidden
-popover `BrowserWindow`, the Python process, persistent preferences, and runtime
-IPC. The sandboxed renderer owns only presentation. A narrow context-isolated
-preload bridge carries typed state and user intent.
+Forge, TypeScript, and Vite main-process bundling. Electron main owns `Tray`,
+the native `Menu`, the Python process, persistent preferences, and runtime IPC.
+There is no `BrowserWindow`, renderer, preload bridge, HTML, or web-content
+surface in the first release.
 
 The app uses `LSUIElement` packaging metadata and hides its Dock presence in
-development. The popover is created hidden, shown only after its first render,
-anchored from current tray bounds, and repositioned after display changes. It
-hides without being destroyed so closing the surface cannot alter runtime
-lifetime.
+development. Clicking the template tray icon opens the standard native macOS
+menu. macOS owns its placement, focus, dismissal, keyboard behavior, display,
+Space handling, colors, typography, and accessibility semantics. Dismissing
+the menu cannot alter runtime lifetime.
 
-Alternative considered: Electron native context menu. It is simpler but cannot
-produce the intended Wispr-like status hierarchy or grow into richer web UI.
+Alternative considered: a custom Electron popover. It leaves room for richer
+web UI, but it is not the familiar first-release utility experience requested
+and introduces window placement, renderer security, and visual consistency
+work that native menus already solve.
 
 Alternative considered: a normal hidden-to-tray window. It leaves confusing
 Dock/window lifecycle semantics and provides no benefit for this first surface.
@@ -88,12 +90,13 @@ Dock/window lifecycle semantics and provides no benefit for this first surface.
 ### 2. Keep Python as the only worker-topology authority
 
 Electron launches one Python owner. Python alone launches inference, notch, and
-Rust interruption workers. Electron never receives arbitrary executable paths
-from the renderer and never starts individual workers.
+Rust interruption workers. Native menu callbacks are fixed in Electron main;
+they never accept arbitrary executable paths and Electron never starts
+individual feature workers.
 
 ```text
-Electron renderer
-       │ narrow preload API
+Native macOS menu
+       │ fixed main callbacks
        ▼
 Electron main ── control.sock ──▶ Python owner
                                       │
@@ -204,7 +207,7 @@ second Rust control protocol for no first-release benefit.
 
 Electron maintains the authenticated control session. If the main process
 disappears and does not reconnect within five seconds, Python assumes ownership
-was lost, drains workers, and exits. Closing or reloading only the renderer does
+was lost, drains workers, and exits. Opening or dismissing the native menu does
 not affect the main-process session.
 
 Electron supervises the Python owner with a separate bounded restart budget. A
@@ -220,13 +223,13 @@ deadline expires.
 
 Python aggregates desired state, effective roles, readiness, freshness,
 restart counts, and structured failures. Electron main validates this state and
-projects it to the renderer as `Off`, `Starting`, `Active`, `Paused`,
+projects it directly into the native menu as `Off`, `Starting`, `Active`, `Paused`,
 `Needs Permission`, `Degraded`, or `Failed`.
 
-The renderer does not parse logs or infer dependency state. It displays no
+The menu does not parse logs or infer dependency state. It displays no
 expression, confidence, frame, thread list, or conversation content. Runtime
 diagnostics remain structured and accessible to tests and conditional recovery
-UI without becoming a first-release developer dashboard.
+items without becoming a first-release developer dashboard.
 
 ### 10. Freeze Python as an onedir sidecar and package one immutable release
 
@@ -318,7 +321,7 @@ Tests include:
   tests;
 - process transitions through all topology edges with PID preservation;
 - Rust idle and in-flight graceful-drain tests;
-- Electron main/preload/renderer unit tests with renderer security assertions;
+- Electron main-process native-menu template and fixed-action unit tests;
 - Electron integration against the real Python demo runtime;
 - packaged real-model inference from application Resources;
 - nested Mach-O signing inventory, notarization, and Gatekeeper verification;
@@ -342,9 +345,9 @@ tests remain release gates.
 - **[Risk] Electron crash leaves biometric processing active** → Tie Python
   lifetime to the authenticated controller connection and exit after a short
   reconnect grace period.
-- **[Risk] Custom popover behaves inconsistently across displays and Spaces** →
-  Anchor from live tray bounds, recalculate on display changes, and include
-  multi-display/manual macOS acceptance.
+- **[Risk] Native menu constraints limit future interface richness** → Keep the
+  runtime client independent from presentation so a later main window or custom
+  surface can be added without changing worker ownership or control semantics.
 - **[Risk] Frozen ML dependencies contain unsigned or architecture-specific
   native code** → Use onedir packaging, inventory every Mach-O file, build per
   architecture, and run real inference from the final signed app.
@@ -358,16 +361,16 @@ tests remain release gates.
 - **[Risk] Frozen ML dependencies produce an excessively large preview** →
   Bundle only the selected 15 MB model, publish a component-size inventory,
   and accept a measured arm64 DMG budget before release.
-- **[Risk] Electron increases idle resource usage** → Accept the cost for UI
-  extensibility, keep the renderer surface small, and stop camera/model workers
-  whenever no feature requires them.
+- **[Risk] Electron increases idle resource usage** → Accept the cost for later
+  UI extensibility, ship no renderer process in this surface, and stop
+  camera/model workers whenever no feature requires them.
 - **[Trade-off] First release uses direct distribution rather than the Mac App
   Store** → Developer ID notarization supports the required subprocess and
   future Accessibility architecture without App Sandbox restrictions.
 
 ## Migration Plan
 
-1. Introduce locked Electron tooling and a renderer-secure menu-bar shell that
+1. Introduce locked Electron tooling and a main-process native menu-bar shell that
    can run against a fake runtime without changing the supported CLI.
 2. Split immutable configuration from mutable feature state, extract pure
    topology calculation, and make existing CLI modes select an initial desired
@@ -378,7 +381,7 @@ tests remain release gates.
    status reconnect, and every topology transition test.
 5. Add Rust graceful drain and live verification around disable-during-dispatch.
 6. Add controller-loss cleanup, Python-owner recovery, persistent preferences,
-   pause, and the final popover states.
+   pause, and the final native-menu states.
 7. Freeze the Python runtime and bundle the complete runtime under Electron
    Resources; exercise the real model from the packaged path.
 8. Establish Developer ID CI signing, least-privilege entitlements,

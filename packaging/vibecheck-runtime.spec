@@ -16,7 +16,14 @@ hiddenimports = [
     *collect_submodules("emotiefflib"),
     *collect_submodules("facenet_pytorch"),
 ]
-for package in ("emotiefflib", "onnxruntime", "cv2", "Cocoa", "AVFoundation"):
+for package in (
+    "emotiefflib",
+    "facenet_pytorch",
+    "onnxruntime",
+    "cv2",
+    "Cocoa",
+    "AVFoundation",
+):
     package_datas, package_binaries, package_hidden = collect_all(package)
     datas.extend(package_datas)
     binaries.extend(package_binaries)

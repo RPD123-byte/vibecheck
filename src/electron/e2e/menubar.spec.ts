@@ -1,67 +1,141 @@
 import { _electron as electron, expect, test } from "@playwright/test";
 import electronPath from "electron";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-test("real demo runtime follows menu intent and quits without orphans", async () => {
+type Action = "notch" | "codex" | "pause" | "recover" | "quit";
+
+interface TestHook {
+  state(): {
+    aggregate: string;
+    features: {
+      notch_enabled: boolean;
+      integrations: { codex_enabled: boolean };
+      paused: boolean;
+    };
+  };
+  menu(): Array<{
+    id: string | null;
+    label: string | null;
+    checked: boolean | null;
+    enabled: boolean;
+  }>;
+  invoke(action: Action, enabled?: boolean): Promise<void>;
+  dismissMenu(): void;
+}
+
+test("native menu drives the demo runtime without windows or orphans", async () => {
   const projectRoot = path.resolve(__dirname, "../../..");
   const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), "vibecheck-e2e-"));
   const runtimePrefix = `vibecheck-${process.getuid?.() ?? 0}-`;
   const before = runtimeDirectories(runtimePrefix);
+  const appArguments = [
+    path.resolve(__dirname, ".."),
+    `--user-data-dir=${path.join(testRoot, "user-data")}`,
+  ];
+  const appEnvironment = {
+    ...process.env,
+    VIBECHECK_E2E: "1",
+    VIBECHECK_RUNTIME_MODE: "demo",
+    VIBECHECK_HEADLESS_NOTCH: "1",
+    VIBECHECK_PYTHON_OWNER: path.join(projectRoot, ".venv", "bin", "python"),
+    TMPDIR: "/tmp",
+  };
   const application = await electron.launch({
     executablePath: electronPath as unknown as string,
-    args: [
-      path.resolve(__dirname, ".."),
-      `--user-data-dir=${path.join(testRoot, "user-data")}`,
-    ],
-    env: {
-      ...process.env,
-      VIBECHECK_RUNTIME_MODE: "demo",
-      VIBECHECK_HEADLESS_NOTCH: "1",
-      VIBECHECK_PYTHON_OWNER: path.join(projectRoot, ".venv", "bin", "python"),
-      TMPDIR: "/tmp",
-    },
+    args: appArguments,
+    env: appEnvironment,
   });
   try {
-    const window = await application.firstWindow();
-    await expect(window.getByText("Off", { exact: true })).toBeVisible();
+    await expect
+      .poll(() =>
+        application.evaluate(() =>
+          Boolean((globalThis as { __vibecheckE2E?: TestHook }).__vibecheckE2E),
+        ),
+      )
+      .toBe(true);
+    expect(
+      await application.evaluate(
+        ({ BrowserWindow }) => BrowserWindow.getAllWindows().length,
+      ),
+    ).toBe(0);
     expect(
       await application.evaluate(({ app }) => app.dock?.isVisible() ?? false),
     ).toBe(false);
-    expect(
-      await window.evaluate(
-        () =>
-          typeof (globalThis as { require?: unknown }).require === "undefined",
-      ),
-    ).toBe(true);
+    await expect
+      .poll(() => state(application).then((value) => value.aggregate))
+      .toBe("off");
 
-    await window.getByLabel("Show notch").click();
-    await expect(window.getByText("Active", { exact: true })).toBeVisible({
-      timeout: 30_000,
-    });
-    await window.getByLabel("Codex interruption").click();
-    await expect(window.getByLabel("Codex interruption")).toBeChecked();
-    await window.getByRole("button", { name: "Pause" }).click();
-    await expect(window.getByText("Paused", { exact: true })).toBeVisible();
-    await window.getByRole("button", { name: "Resume" }).click();
-    await expect(window.getByText("Active", { exact: true })).toBeVisible();
+    const initialMenu = await application.evaluate(() =>
+      (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.menu(),
+    );
+    expect(initialMenu.find((item) => item.id === "status")?.label).toBe(
+      "Vibecheck — Off",
+    );
+    expect(initialMenu.find((item) => item.id === "notch")?.checked).toBe(
+      false,
+    );
 
-    await application.evaluate(({ BrowserWindow }) => {
-      BrowserWindow.getAllWindows()[0]?.hide();
+    const duplicate = spawn(electronPath as unknown as string, appArguments, {
+      env: appEnvironment,
+      stdio: "ignore",
     });
-    expect(
-      await application.evaluate(
-        ({ BrowserWindow }) =>
-          BrowserWindow.getAllWindows()[0]?.isVisible() ?? true,
+    const [duplicateExit] = await Promise.race([
+      once(duplicate, "exit"),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("second instance did not exit")),
+          5_000,
+        ),
       ),
-    ).toBe(false);
+    ]);
+    expect(duplicateExit).toBe(0);
     expect(application.process().exitCode).toBeNull();
 
-    await application.evaluate(({ BrowserWindow }) => {
-      BrowserWindow.getAllWindows()[0]?.show();
-    });
-    await window.getByRole("button", { name: "Quit" }).click();
+    await invoke(application, "notch", true);
+    await expect
+      .poll(() => state(application).then((value) => value.aggregate), {
+        timeout: 30_000,
+      })
+      .toBe("active");
+    expect((await state(application)).features.notch_enabled).toBe(true);
+
+    await invoke(application, "codex", true);
+    await expect
+      .poll(
+        () =>
+          state(application).then(
+            (value) => value.features.integrations.codex_enabled,
+          ),
+        { timeout: 30_000 },
+      )
+      .toBe(true);
+
+    await invoke(application, "pause", true);
+    await expect
+      .poll(() => state(application).then((value) => value.aggregate))
+      .toBe("paused");
+    await invoke(application, "pause", false);
+    await expect
+      .poll(() => state(application).then((value) => value.aggregate), {
+        timeout: 30_000,
+      })
+      .toBe("active");
+
+    await application.evaluate(() =>
+      (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.dismissMenu(),
+    );
+    expect((await state(application)).aggregate).toBe("active");
+    expect(
+      await application.evaluate(
+        ({ BrowserWindow }) => BrowserWindow.getAllWindows().length,
+      ),
+    ).toBe(0);
+
+    await invoke(application, "quit");
     await application.process().exited;
   } finally {
     if (application.process().exitCode === null) await application.close();
@@ -69,6 +143,29 @@ test("real demo runtime follows menu intent and quits without orphans", async ()
   }
   expect(runtimeDirectories(runtimePrefix)).toEqual(before);
 });
+
+async function state(
+  application: Awaited<ReturnType<typeof electron.launch>>,
+): Promise<ReturnType<TestHook["state"]>> {
+  return application.evaluate(() =>
+    (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.state(),
+  );
+}
+
+async function invoke(
+  application: Awaited<ReturnType<typeof electron.launch>>,
+  action: Action,
+  enabled?: boolean,
+): Promise<void> {
+  await application.evaluate(
+    (_electron, { action: selected, enabled: value }) =>
+      (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.invoke(
+        selected,
+        value,
+      ),
+    { action, enabled },
+  );
+}
 
 function runtimeDirectories(prefix: string): string[] {
   return fs

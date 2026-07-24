@@ -9,7 +9,7 @@ leaving room for a richer application interface later.
 ## What Changes
 
 - Add a macOS menu-bar-only Electron application with no ordinary startup
-  window or Dock presence, using a custom popover for Vibecheck state, notch
+  window or Dock presence, using a native macOS menu for Vibecheck state, notch
   enablement, Codex interruption enablement, temporary pause, conditional
   recovery actions, and quit.
 - Add a versioned, owner-only local control protocol between Electron's main
@@ -34,7 +34,7 @@ leaving room for a richer application interface later.
 
 ### New Capabilities
 
-- `menubar-application`: Menu-bar icon, custom Electron popover, feature
+- `menubar-application`: Menu-bar icon, native macOS menu, feature
   controls, desired/effective state presentation, pause, failure recovery, and
   quit behavior.
 - `runtime-feature-control`: Versioned Electron-to-Python control protocol,
@@ -53,9 +53,9 @@ interruption, or lifecycle requirements.
 
 ## Impact
 
-- Adds an Electron Forge, TypeScript, React, and Vite application surface under
-  tracked production source, plus locked JavaScript dependencies and renderer
-  security configuration.
+- Adds an Electron Forge, TypeScript, and Vite main-process application under
+  tracked production source, plus locked JavaScript dependencies and a native
+  menu with no renderer or web-content surface.
 - Refactors `vibecheck.runtime` into separable ownership, topology, control,
   supervision, feature-state, and health responsibilities while retaining its
   supported CLI entry point.

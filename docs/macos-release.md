@@ -64,7 +64,7 @@ quitting Vibecheck leaves Codex/ChatGPT running.
 Open the DMG, drag Vibecheck to Applications, and launch it. macOS verifies the
 Developer ID and notarization ticket. Vibecheck asks for camera access only when
 the user first enables a feature that requires expression inference. Frames and
-expression results stay on device; the menu renderer receives neither.
+expression results stay on device; the native menu displays neither.
 
 If camera access was denied, enable Vibecheck under **System Settings → Privacy
 & Security → Camera**, then choose **Try again**. Apple Events permission is

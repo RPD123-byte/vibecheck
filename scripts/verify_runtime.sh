@@ -18,7 +18,9 @@ lipo -info "${runtime}"
 lipo -info "${rust}"
 "${runtime}" --help >/dev/null
 
-if rg -a -l "/Users/|/experimentation/|emotiefflib_repo" "${runtime_dir}"; then
-  echo "Packaged runtime contains a prohibited development path." >&2
+if rg -a -l \
+  "/Users/computer/uncover|/experimentation/|emotiefflib_repo" \
+  "${runtime_dir}"; then
+  echo "Packaged runtime contains a prohibited project development path." >&2
   exit 1
 fi

@@ -129,7 +129,7 @@ starts camera inference, and disabling the final active feature releases the
 camera while leaving the small controller process ready.
 
 Use **Pause** to stop all feature workers without changing the two toggles.
-Pause is not restored after the app restarts. Quit from the popover to stop
+Pause is not restored after the app restarts. Quit from the native menu to stop
 every Vibecheck-owned process without quitting Codex.
 
 The command-line modes below remain supported for diagnostics and as a rollback

@@ -21,6 +21,7 @@ node_modules/
 /src/electron/out/
 /src/electron/.webpack/
 /src/electron/forge.config.js
+/src/electron/test-results/
 
 # Rust tooling
 target/

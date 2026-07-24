@@ -3,7 +3,7 @@
 ### Requirement: Menu-bar-only application lifecycle
 Vibecheck SHALL launch as a single-instance macOS menu-bar application without
 opening an ordinary application window or presenting a Dock icon. Closing or
-hiding the popover MUST NOT stop the Python runtime, inference, notch, or
+hiding the native menu MUST NOT stop the Python runtime, inference, notch, or
 interruption features.
 
 #### Scenario: Application launches
@@ -14,22 +14,23 @@ interruption features.
 - **WHEN** another Vibecheck instance is requested while one is running
 - **THEN** the existing instance is activated and a second runtime owner is not started
 
-### Requirement: Anchored custom popover
-Clicking the menu-bar item SHALL toggle one custom Electron popover anchored to
-the current bounds and screen of the menu-bar item. The popover SHALL hide on
-Escape, outside interaction, or a second menu-bar click and SHALL recalculate
-its position after display geometry changes.
+### Requirement: Native macOS menu
+Clicking the menu-bar item SHALL open a standard native macOS menu owned by the
+Electron main process. The operating system SHALL own its placement, focus,
+keyboard navigation, appearance, dismissal, display selection, and Space
+behavior. Vibecheck MUST NOT create a `BrowserWindow` for this first-release
+surface.
 
 #### Scenario: Menu-bar item is clicked
-- **WHEN** the popover is hidden and the user clicks the Vibecheck menu-bar item
-- **THEN** the popover appears beneath that item on its current display without opening a conventional application window
+- **WHEN** the user clicks the Vibecheck menu-bar item
+- **THEN** the native macOS menu opens beneath that item without creating or showing a conventional application window
 
-#### Scenario: Popover loses focus
-- **WHEN** the user interacts outside the open popover
-- **THEN** the popover hides while the application and selected features remain running
+#### Scenario: Menu is dismissed
+- **WHEN** the user clicks outside the open menu or presses Escape
+- **THEN** macOS dismisses the menu while the application and selected features remain running
 
 ### Requirement: Understandable aggregate state
-The popover SHALL project authoritative Python runtime state into the
+The native menu SHALL project authoritative Python runtime state into the
 user-facing states `Off`, `Starting`, `Active`, `Paused`, `Needs Permission`,
 `Degraded`, and `Failed`. It MUST distinguish user-desired enablement from
 effective worker state so a requested feature remains visibly enabled while it
@@ -44,7 +45,7 @@ is starting or temporarily unavailable.
 - **THEN** the menu reports `Degraded`, identifies Codex interruption as failed, and leaves the notch enabled
 
 ### Requirement: Independent first-release controls
-The first-release popover SHALL expose independent controls for `Show notch`
+The first-release native menu SHALL expose independent controls for `Show notch`
 and `Codex interruption`, plus aggregate status, temporary pause, conditional
 runtime recovery, and quit. It MUST NOT require a settings window to operate
 these controls.
@@ -83,20 +84,21 @@ be disabled until the user explicitly enables them.
 - **WHEN** no saved Vibecheck preferences exist
 - **THEN** the runtime remains off and does not access the camera until the user enables a feature
 
-### Requirement: Narrow renderer authority
-The Electron renderer SHALL run with context isolation and sandboxing enabled,
-Node integration disabled, no remote web content, and a restrictive Content
-Security Policy. The preload bridge SHALL expose only typed state
-subscriptions and feature, pause, recovery, and quit requests; the renderer
-MUST NOT spawn processes, access arbitrary files, or open the runtime socket.
+### Requirement: Main-process-only menu authority
+The first-release menu SHALL be constructed from native `Menu` and `MenuItem`
+objects inside Electron main. Vibecheck MUST NOT create a renderer,
+`BrowserWindow`, preload bridge, remote web content, or navigation surface.
+Menu callbacks SHALL invoke only fixed feature, pause, recovery, and quit
+operations; they MUST NOT accept executable paths, process names, commands, or
+runtime configuration.
 
-#### Scenario: Renderer requests a feature change
+#### Scenario: Menu requests a feature change
 - **WHEN** the user changes a toggle
-- **THEN** the renderer sends a typed request through the preload bridge and Electron's main process validates it before contacting Python
+- **THEN** a fixed main-process callback requests the corresponding typed mutation from Python
 
-#### Scenario: Renderer content is compromised
-- **WHEN** renderer code attempts to invoke an undeclared Node or process operation
-- **THEN** the operation is unavailable through the sandboxed renderer and narrow preload API
+#### Scenario: No web surface exists
+- **WHEN** Vibecheck is running in the first release
+- **THEN** Electron has no renderer process or web-content input surface that could obtain Node or runtime authority
 
 ### Requirement: Privacy-preserving presentation
 The menu SHALL indicate whether the camera is inactive, starting, active
@@ -106,7 +108,7 @@ active Codex thread list.
 
 #### Scenario: Inference is active
 - **WHEN** at least one feature requires the camera and model
-- **THEN** the popover indicates that on-device camera processing is active without exposing inferred expression data
+- **THEN** the menu indicates that on-device camera processing is active without exposing inferred expression data
 
 ### Requirement: Safe application quit
 Quitting from the menu SHALL request bounded graceful shutdown from the Python
