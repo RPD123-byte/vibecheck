@@ -71,6 +71,7 @@ jobs:
         env:
           VIBECHECK_MODEL_SOURCE: ${{ runner.temp }}/enet_b0_8_best_afew.onnx
           VIBECHECK_RELEASE_SIGNING: "1"
+          VIBECHECK_RELEASE_NOTARIZATION: "1"
           VIBECHECK_DEVELOPER_IDENTITY: ${{ secrets.DEVELOPER_ID_APPLICATION_IDENTITY }}
           APPLE_API_KEY_PATH: ${{ runner.temp }}/AuthKey.p8
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}

@@ -18,9 +18,16 @@ if [[ ! -f "${model_source}" ]]; then
 fi
 
 mkdir -p "${build_root}"
-uv venv --python 3.11 "${release_venv}"
-uv pip install --python "${release_venv}/bin/python" \
-  "${repo_root}[inference,macos,release]"
+uv venv --clear --python 3.11 "${release_venv}"
+uv export \
+  --frozen \
+  --no-dev \
+  --extra inference \
+  --extra macos \
+  --extra release \
+  --no-emit-project |
+  uv pip install --python "${release_venv}/bin/python" --requirements -
+uv pip install --python "${release_venv}/bin/python" --no-deps "${repo_root}"
 cargo build --release --locked --manifest-path "${rust_manifest}"
 
 export VIBECHECK_MODEL_SOURCE="${model_source}"

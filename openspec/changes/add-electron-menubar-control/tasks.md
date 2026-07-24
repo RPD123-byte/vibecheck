@@ -72,7 +72,7 @@
 - [x] 8.3 Package the frozen runtime beneath Electron `Contents/Resources`, resolve it through `process.resourcesPath`, and prevent development interpreter/repository fallback in packaged mode.
 - [x] 8.4 Inventory every Mach-O executable, dynamic library, native extension, helper, and framework in the final bundle with file type, architecture slices, identifier, and signing status.
 - [x] 8.5 Run real image inference, notch startup, Rust dry-run, dynamic toggles, pause, and quit using only the packaged runtime and bundled model assets with network disabled.
-- [ ] 8.6 Measure packaged cold start, loading heartbeat, idle-off resources, active resources, app size, compressed DMG size, and largest components; establish an accepted arm64 preview size budget without weakening freshness or privacy behavior.
+- [x] 8.6 Measure packaged cold start, loading heartbeat, idle-off resources, active resources, app size, compressed DMG size, and largest components; establish an accepted arm64 preview size budget without weakening freshness or privacy behavior.
 
 ## 9. Developer ID Signing and Permissions
 

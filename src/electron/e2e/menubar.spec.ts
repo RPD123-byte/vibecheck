@@ -200,9 +200,10 @@ test("native menu drives the demo runtime without windows or orphans", async () 
       ),
     ).toBe(0);
 
+    const applicationExit = once(applicationProcess, "exit");
     await invoke(application, "quit");
     if (applicationProcess.exitCode === null) {
-      await once(applicationProcess, "exit");
+      await applicationExit;
     }
   } finally {
     if (applicationProcess.exitCode === null) await application.close();

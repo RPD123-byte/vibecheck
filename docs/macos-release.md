@@ -67,6 +67,26 @@ selected model and the release Rust sidecar, and is placed below the Electron
 app’s `Contents/Resources`. Packaged code has no development-interpreter or
 repository fallback.
 
+## Local Developer ID-signed acceptance build
+
+Signing and notarization are independently gated so a maintainer can exercise
+the exact signed entitlement layout before submitting a release candidate:
+
+```bash
+export VIBECHECK_RELEASE_SIGNING=1
+export VIBECHECK_DEVELOPER_IDENTITY='Developer ID Application: Rithvik Prakki (YU57297F36)'
+npm run app:package
+```
+
+This signs the Electron main process, its helpers, the frozen Python camera
+worker, the Rust sidecar, and every nested Mach-O with the hardened runtime and
+secure timestamps. It does not contact Apple’s notarization service.
+
+The Electron main process and the frozen `vibecheck-runtime` executable receive
+the camera entitlement because the former owns consent and the latter performs
+capture. Apple Events remains limited to Electron main. CI verifies that camera,
+JIT, and automation authority do not spread to unrelated bundled executables.
+
 ## Release flow
 
 Dispatch the `Release macOS preview` workflow with a version that exactly
