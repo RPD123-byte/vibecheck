@@ -11,6 +11,7 @@ import { inject, splitWorkspaceSource } from '../scripts/devtools_injector.mjs';
 const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(projectDirectory, 'renderer/highlight_and_react.css');
 const fixtureMain = resolve(projectDirectory, 'Fixtures/Renderer/main.mjs');
+const fixtureLauncher = resolve(projectDirectory, 'scripts/run_fixture_renderer.sh');
 
 function findElectron() {
   const executable = 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron';
@@ -105,6 +106,15 @@ test('Attune source separates renderer CSS and JavaScript', async () => {
   assert.match(parts.css, /#highlight-and-react-bar/);
   assert.doesNotMatch(parts.css, /@attune-script/);
   assert.match(parts.script, /onDoubleClick/);
+});
+
+test('interactive launcher discovers Electron from the renamed main checkout', () => {
+  const electron = execFileSync(fixtureLauncher, ['--print-electron-path'], {
+    cwd: projectDirectory,
+    encoding: 'utf8',
+  }).trim();
+  assert.ok(existsSync(electron), `Electron path does not exist: ${electron}`);
+  assert.doesNotMatch(electron, /\/Users\/computer\/uncover\//);
 });
 
 test('injected renderer opens, dismisses, shortcuts, and reacts', async (context) => {
