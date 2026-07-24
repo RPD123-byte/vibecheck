@@ -37,53 +37,308 @@
   pointer-events: none;
 }
 
+[data-highlight-and-react-reaction-key="standard:haha"]::after {
+  color: #32ade6;
+  content: "HA\A HA";
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 0.72;
+  white-space: pre;
+}
+
+#highlight-and-react-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483644;
+  pointer-events: none;
+}
+
+#highlight-and-react-scrim i {
+  position: fixed;
+  display: block;
+  background: rgb(0 0 0 / 48%);
+  pointer-events: none;
+}
+
 #highlight-and-react-bar {
   position: fixed;
   z-index: 2147483647;
   display: flex;
   align-items: center;
-  gap: 2px;
-  box-sizing: border-box;
-  height: 46px;
-  padding: 5px 7px;
-  border: 1px solid color-mix(in srgb, CanvasText 18%, transparent);
-  border-radius: 16px;
-  background: color-mix(in srgb, Canvas 94%, CanvasText 6%);
-  color: CanvasText;
-  box-shadow: 0 16px 44px rgb(0 0 0 / 34%);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  gap: 5px;
+  color: #fff;
+  filter: drop-shadow(0 12px 24px rgb(0 0 0 / 36%));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   isolation: isolate;
+  transform-origin: var(--tapback-origin-x, 50%) bottom;
+  animation: highlight-and-react-present 150ms cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes highlight-and-react-present {
+  from { opacity: 0; transform: translateY(4px) scale(.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#highlight-and-react-strip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 5px 7px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 19px;
+  background: rgb(38 38 40 / 94%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 9%),
+    0 8px 24px rgb(0 0 0 / 28%);
+  backdrop-filter: blur(26px) saturate(180%);
+}
+
+#highlight-and-react-strip::after {
+  position: absolute;
+  left: var(--tapback-tail-x, 50%);
+  width: 11px;
+  height: 11px;
+  border-right: 1px solid rgb(255 255 255 / 9%);
+  border-bottom: 1px solid rgb(255 255 255 / 9%);
+  background: rgb(38 38 40 / 94%);
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+}
+
+#highlight-and-react-bar[data-placement="above"] #highlight-and-react-strip::after {
+  bottom: -5px;
+}
+
+#highlight-and-react-bar[data-placement="below"] #highlight-and-react-strip::after {
+  top: -5px;
+  transform: translateX(-50%) rotate(225deg);
 }
 
 #highlight-and-react-bar button {
   appearance: none;
   display: grid;
-  width: 38px;
-  height: 34px;
+  width: 27px;
+  height: 27px;
   padding: 0;
   place-items: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 999px;
   background: transparent;
-  color: inherit;
+  color: #fff;
   cursor: pointer;
-  font: 21px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
+  font: 19px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
+  transition:
+    background 90ms ease,
+    box-shadow 90ms ease,
+    transform 110ms cubic-bezier(.2, .8, .2, 1);
 }
 
 #highlight-and-react-bar button:hover {
-  background: color-mix(in srgb, CanvasText 11%, transparent);
-  transform: translateY(-1px) scale(1.08);
+  background: rgb(255 255 255 / 14%);
+  transform: translateY(-3px) scale(1.2);
+}
+
+#highlight-and-react-bar button[aria-pressed="true"] {
+  background: #0a84ff;
+  box-shadow:
+    0 0 0 3px rgb(255 255 255 / 92%),
+    0 3px 9px rgb(0 0 0 / 34%);
+  transform: scale(1.08);
 }
 
 #highlight-and-react-bar button:focus-visible {
-  outline: 2px solid Highlight;
-  outline-offset: 1px;
+  outline: 2px solid #64d2ff;
+  outline-offset: 2px;
+}
+
+#highlight-and-react-bar .tapback-haha {
+  color: #32ade6;
+  font: 900 8px/.7 -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
+  letter-spacing: -.04em;
+  text-align: center;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 34%);
+}
+
+#highlight-and-react-bar .tapback-punctuation {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 24%);
+}
+
+#highlight-and-react-bar .tapback-exclamation {
+  color: #ff695e;
+}
+
+#highlight-and-react-bar .tapback-question {
+  color: #bf7af0;
+}
+
+#highlight-and-react-more {
+  position: relative;
+  width: 38px !important;
+  height: 38px !important;
+  border: 1px solid rgb(255 255 255 / 12%) !important;
+  background: rgb(58 58 60 / 96%) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 9%),
+    0 8px 24px rgb(0 0 0 / 28%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif !important;
+  font-size: 25px !important;
+  font-weight: 400 !important;
+  backdrop-filter: blur(26px) saturate(180%);
+}
+
+#highlight-and-react-more::before,
+#highlight-and-react-more::after {
+  position: absolute;
+  border-radius: 999px;
+  background: rgb(58 58 60 / 96%);
+  content: "";
+  pointer-events: none;
+}
+
+#highlight-and-react-more::before {
+  right: 1px;
+  bottom: -6px;
+  width: 9px;
+  height: 9px;
+}
+
+#highlight-and-react-more::after {
+  right: -4px;
+  bottom: -11px;
+  width: 5px;
+  height: 5px;
+}
+
+#highlight-and-react-bar[data-placement="below"] #highlight-and-react-more::before {
+  top: -6px;
+  bottom: auto;
+}
+
+#highlight-and-react-bar[data-placement="below"] #highlight-and-react-more::after {
+  top: -11px;
+  bottom: auto;
+}
+
+#highlight-and-react-bar[data-expanded="true"] #highlight-and-react-strip {
+  display: none;
+}
+
+#highlight-and-react-emoji-picker {
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 24px));
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 17px;
+  background: rgb(38 38 40 / 96%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 9%),
+    0 22px 70px rgb(0 0 0 / 52%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  backdrop-filter: blur(32px) saturate(180%);
+  animation: highlight-and-react-present 150ms cubic-bezier(.2, .8, .2, 1);
+}
+
+#highlight-and-react-emoji-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 13px 8px;
+}
+
+#highlight-and-react-emoji-picker h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+#highlight-and-react-emoji-picker [data-close-picker] {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+  cursor: pointer;
+  font: 16px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#highlight-and-react-emoji-scroll {
+  max-height: min(350px, calc(100vh - 94px));
+  padding: 0 9px 12px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#highlight-and-react-emoji-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+#highlight-and-react-emoji-picker section + section {
+  margin-top: 8px;
+}
+
+#highlight-and-react-emoji-picker h3 {
+  margin: 0;
+  padding: 6px 4px;
+  color: rgb(255 255 255 / 54%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.highlight-and-react-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.highlight-and-react-emoji-grid button {
+  appearance: none;
+  display: grid;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: 23px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
+}
+
+.highlight-and-react-emoji-grid button:hover {
+  background: rgb(255 255 255 / 13%);
+  transform: scale(1.12);
+}
+
+.highlight-and-react-emoji-grid button:focus-visible {
+  outline: 2px solid #64d2ff;
+  outline-offset: -2px;
 }
 
 /* @attune-script
 (() => {
   const BAR_ID = 'highlight-and-react-bar';
+  const STRIP_ID = 'highlight-and-react-strip';
+  const MORE_ID = 'highlight-and-react-more';
+  const PICKER_ID = 'highlight-and-react-emoji-picker';
+  const SCRIM_ID = 'highlight-and-react-scrim';
   const HIGHLIGHT_NAME = 'highlight-and-react-selection';
+  const RECENTS_KEY = 'highlight-and-react-recent-emoji';
   const MESSAGE_SELECTOR = [
     '[data-user-message-bubble]',
     '[data-message-author-role]',
@@ -94,7 +349,41 @@
     'main blockquote',
     'main li',
   ].join(',');
-  const REACTIONS = ['❤️', '👍', '👎', '😂', '‼️', '❓'];
+  const STANDARD_REACTIONS = [
+    { key: 'standard:heart', value: '🩷', label: 'Heart' },
+    { key: 'standard:thumbs-up', value: '👍', label: 'Thumbs up' },
+    { key: 'standard:thumbs-down', value: '👎', label: 'Thumbs down' },
+    { key: 'standard:haha', value: 'HA', label: 'Ha ha!', glyph: 'haha' },
+    { key: 'standard:exclamation', value: '‼️', label: 'Exclamation mark', glyph: 'exclamation' },
+    { key: 'standard:question', value: '❓', label: 'Question mark', glyph: 'question' },
+  ];
+  const DEFAULT_RECENTS = ['😂', '💀', '🤞', '👼', '❤️'];
+  const EMOJI_CATEGORIES = [
+    {
+      label: 'Smileys & People',
+      emoji: '😀 😃 😄 😁 😆 🥹 😅 😂 🤣 🥲 ☺️ 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🥸 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣 😖 😫 😩 🥺 😢 😭 😮‍💨 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🫣 🤭 🤫 🤥 😶 🫥 😐 🫤 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕'.split(' '),
+    },
+    {
+      label: 'Gestures',
+      emoji: '👋 🤚 🖐️ ✋ 🖖 🫱 🫲 🫳 🫴 👌 🤌 🤏 ✌️ 🤞 🫰 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 🫵 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 🫶 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪'.split(' '),
+    },
+    {
+      label: 'Hearts & Symbols',
+      emoji: '❤️ 🩷 🧡 💛 💚 💙 🩵 💜 🤎 🖤 🩶 🤍 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 💋 💯 💢 💥 💫 💦 💨 🕳️ 💣 💬 👁️‍🗨️ 🗨️ 🗯️ 💭 💤'.split(' '),
+    },
+    {
+      label: 'Animals & Nature',
+      emoji: '🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐻‍❄️ 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🙈 🙉 🙊 🐔 🐧 🐦 🐤 🦄 🐝 🦋 🐌 🐞 🌸 🌹 🌺 🌻 🌼 🌷 🌱 🌲 🌈 ⭐️ 🌟 ✨ ⚡️ 🔥'.split(' '),
+    },
+    {
+      label: 'Food & Activity',
+      emoji: '🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🍕 🍔 🍟 🌭 🍿 🍩 🍪 🎂 🍰 🧁 ☕️ 🍺 🍻 🥂 🍷 ⚽️ 🏀 🏈 ⚾️ 🎾 🏐 🎸 🎹 🎤 🎧 🎮 🎯'.split(' '),
+    },
+    {
+      label: 'Objects & Travel',
+      emoji: '🚗 🚕 🚌 🚎 🏎️ 🚓 🚑 🚒 🚲 ✈️ 🚀 🛸 ⌚️ 📱 💻 ⌨️ 🖥️ 📷 📸 🎥 📺 🔋 💡 🔦 📚 ✏️ 📝 💼 🎁 🎈 🎉 🎊 🪩 🔑 ❤️‍🔥'.split(' '),
+    },
+  ];
   let activeRange = null;
   let activeMessage = null;
   let activeRects = [];
@@ -112,6 +401,35 @@
   const usableRects = (range) => [...range.getClientRects()]
     .filter((rect) => rect.width >= 1 && rect.height >= 1);
 
+  const readRecents = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(RECENTS_KEY) || 'null');
+      if (Array.isArray(parsed)) {
+        const emoji = parsed.filter((value) => typeof value === 'string' && value.trim());
+        if (emoji.length) return [...new Set(emoji)].slice(0, 5);
+      }
+    } catch {
+      // Invalid local state falls back to the same five slots Messages exposes.
+    }
+    return [...DEFAULT_RECENTS];
+  };
+
+  const rememberEmoji = (emoji) => {
+    const recents = [emoji, ...readRecents().filter((value) => value !== emoji)].slice(0, 5);
+    try {
+      localStorage.setItem(RECENTS_KEY, JSON.stringify(recents));
+    } catch {
+      // Reactions still work when renderer storage is unavailable.
+    }
+  };
+
+  const emojiReaction = (emoji) => ({
+    key: `emoji:${emoji}`,
+    value: emoji,
+    label: emoji,
+    customEmoji: true,
+  });
+
   const pointInsideSelection = (x, y) => activeRects.some((rect) => (
     x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
   ));
@@ -122,10 +440,68 @@
 
   const close = () => {
     document.getElementById(BAR_ID)?.remove();
+    document.getElementById(PICKER_ID)?.remove();
+    document.getElementById(SCRIM_ID)?.remove();
     removeSelectionHighlight();
     activeRange = null;
     activeMessage = null;
     activeRects = [];
+  };
+
+  const renderScrim = () => {
+    document.getElementById(SCRIM_ID)?.remove();
+    const scrim = document.createElement('div');
+    scrim.id = SCRIM_ID;
+    scrim.setAttribute('aria-hidden', 'true');
+    for (let index = 0; index < 4; index += 1) scrim.append(document.createElement('i'));
+    document.body.append(scrim);
+  };
+
+  const placeScrim = () => {
+    const pieces = [...(document.getElementById(SCRIM_ID)?.children || [])];
+    if (pieces.length !== 4 || !activeMessage) return;
+    const rect = activeMessage.getBoundingClientRect();
+    const padding = 6;
+    const top = Math.max(0, rect.top - padding);
+    const left = Math.max(0, rect.left - padding);
+    const right = Math.min(window.innerWidth, rect.right + padding);
+    const bottom = Math.min(window.innerHeight, rect.bottom + padding);
+    const frames = [
+      [0, 0, window.innerWidth, top],
+      [0, top, left, Math.max(0, bottom - top)],
+      [right, top, Math.max(0, window.innerWidth - right), Math.max(0, bottom - top)],
+      [0, bottom, window.innerWidth, Math.max(0, window.innerHeight - bottom)],
+    ];
+    pieces.forEach((piece, index) => {
+      const [x, y, width, height] = frames[index];
+      Object.assign(piece.style, {
+        left: `${x}px`,
+        top: `${y}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+      });
+    });
+  };
+
+  const placeEmojiPicker = () => {
+    const picker = document.getElementById(PICKER_ID);
+    if (!picker || !activeRects.length) return;
+    const first = activeRects[0];
+    const last = activeRects[activeRects.length - 1];
+    const leftEdge = Math.min(...activeRects.map((rect) => rect.left));
+    const rightEdge = Math.max(...activeRects.map((rect) => rect.right));
+    const center = (leftEdge + rightEdge) / 2;
+    const margin = 12;
+    const left = Math.max(
+      margin,
+      Math.min(window.innerWidth - picker.offsetWidth - margin, center - picker.offsetWidth / 2),
+    );
+    const above = first.top - picker.offsetHeight - margin;
+    const top = above >= margin
+      ? above
+      : Math.min(window.innerHeight - picker.offsetHeight - margin, last.bottom + margin);
+    picker.style.left = `${Math.round(left)}px`;
+    picker.style.top = `${Math.round(top)}px`;
   };
 
   const placeBar = () => {
@@ -148,24 +524,78 @@
       Math.min(window.innerWidth - bar.offsetWidth - margin, center - bar.offsetWidth / 2),
     );
     const above = first.top - bar.offsetHeight - margin;
-    const top = above >= margin
+    const placement = above >= margin ? 'above' : 'below';
+    const top = placement === 'above'
       ? above
       : Math.min(window.innerHeight - bar.offsetHeight - margin, last.bottom + margin);
     bar.style.left = `${Math.round(left)}px`;
     bar.style.top = `${Math.round(top)}px`;
+    bar.dataset.placement = placement;
+    const strip = document.getElementById(STRIP_ID);
+    if (strip) {
+      const tailX = Math.max(14, Math.min(strip.offsetWidth - 14, center - left));
+      strip.style.setProperty('--tapback-tail-x', `${Math.round(tailX)}px`);
+    }
+    placeScrim();
+    placeEmojiPicker();
+  };
+
+  const reactionGlyph = (reaction) => {
+    if (!reaction.glyph) return document.createTextNode(reaction.value);
+    const glyph = document.createElement('span');
+    if (reaction.glyph === 'haha') {
+      glyph.className = 'tapback-haha';
+      glyph.append('HA', document.createElement('br'), 'HA');
+    } else {
+      glyph.className = `tapback-punctuation tapback-${reaction.glyph}`;
+      glyph.textContent = reaction.glyph === 'exclamation' ? '!!' : '?';
+    }
+    return glyph;
+  };
+
+  const createReactionButton = (reaction) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.reactionKey = reaction.key;
+    button.title = reaction.label;
+    button.setAttribute('aria-label', reaction.customEmoji ? `React ${reaction.value}` : reaction.label);
+    button.setAttribute(
+      'aria-pressed',
+      String(activeMessage?.dataset.highlightAndReactReactionKey === reaction.key),
+    );
+    button.append(reactionGlyph(reaction));
+    button.addEventListener('click', () => react(reaction));
+    return button;
   };
 
   const react = (reaction) => {
     if (!activeMessage || !activeRange) return;
-    const detail = {
-      reaction,
-      text: activeRange.toString().trim(),
-      messageSelector: activeMessage.matches('[data-user-message-bubble]')
-        ? '[data-user-message-bubble]'
-        : activeMessage.tagName.toLowerCase(),
-    };
     const message = activeMessage;
-    message.dataset.highlightAndReactReaction = reaction;
+    const previousKey = message.dataset.highlightAndReactReactionKey || null;
+    const previousReaction = message.dataset.highlightAndReactReaction || null;
+    const removing = previousKey === reaction.key;
+    const action = removing ? 'remove' : previousKey ? 'replace' : 'add';
+
+    if (removing) {
+      delete message.dataset.highlightAndReactReactionKey;
+      delete message.dataset.highlightAndReactReaction;
+    } else {
+      message.dataset.highlightAndReactReactionKey = reaction.key;
+      message.dataset.highlightAndReactReaction = reaction.value;
+      if (reaction.customEmoji) rememberEmoji(reaction.value);
+    }
+
+    const detail = {
+      action,
+      key: removing ? null : reaction.key,
+      reaction: removing ? null : reaction.value,
+      previousKey,
+      previousReaction,
+      text: activeRange.toString().trim(),
+      messageSelector: message.matches('[data-user-message-bubble]')
+        ? '[data-user-message-bubble]'
+        : message.tagName.toLowerCase(),
+    };
     message.dispatchEvent(new CustomEvent('highlight-and-react', {
       bubbles: true,
       detail,
@@ -174,24 +604,95 @@
     close();
   };
 
+  const closeEmojiPicker = () => {
+    document.getElementById(PICKER_ID)?.remove();
+    const bar = document.getElementById(BAR_ID);
+    if (!bar) return;
+    bar.dataset.expanded = 'false';
+    const more = document.getElementById(MORE_ID);
+    more?.setAttribute('aria-expanded', 'false');
+    placeBar();
+    more?.focus({ preventScroll: true });
+  };
+
+  const appendEmojiSection = (scroll, label, emoji) => {
+    const section = document.createElement('section');
+    const heading = document.createElement('h3');
+    heading.textContent = label;
+    const grid = document.createElement('div');
+    grid.className = 'highlight-and-react-emoji-grid';
+    for (const value of emoji) grid.append(createReactionButton(emojiReaction(value)));
+    section.append(heading, grid);
+    scroll.append(section);
+  };
+
+  const renderEmojiPicker = () => {
+    document.getElementById(PICKER_ID)?.remove();
+    const picker = document.createElement('div');
+    picker.id = PICKER_ID;
+    picker.setAttribute('role', 'dialog');
+    picker.setAttribute('aria-label', 'Choose an emoji Tapback');
+
+    const header = document.createElement('header');
+    const title = document.createElement('h2');
+    title.textContent = 'Emoji';
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.dataset.closePicker = '';
+    closeButton.title = 'Back to Tapbacks';
+    closeButton.setAttribute('aria-label', 'Back to Tapbacks');
+    closeButton.textContent = '×';
+    closeButton.addEventListener('click', closeEmojiPicker);
+    header.append(title, closeButton);
+
+    const scroll = document.createElement('div');
+    scroll.id = 'highlight-and-react-emoji-scroll';
+    appendEmojiSection(scroll, 'Frequently Used', readRecents());
+    for (const category of EMOJI_CATEGORIES) {
+      appendEmojiSection(scroll, category.label, category.emoji);
+    }
+    picker.append(header, scroll);
+    document.body.append(picker);
+    document.getElementById(BAR_ID).dataset.expanded = 'true';
+    document.getElementById(MORE_ID)?.setAttribute('aria-expanded', 'true');
+    placeBar();
+    picker.querySelector('.highlight-and-react-emoji-grid button')?.focus({ preventScroll: true });
+  };
+
   const renderBar = () => {
     document.getElementById(BAR_ID)?.remove();
+    document.getElementById(PICKER_ID)?.remove();
+    renderScrim();
+
     const bar = document.createElement('div');
     bar.id = BAR_ID;
-    bar.setAttribute('role', 'toolbar');
-    bar.setAttribute('aria-label', 'React to highlighted text');
-    for (const reaction of REACTIONS) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = reaction;
-      button.title = `React ${reaction}`;
-      button.setAttribute('aria-label', `React ${reaction}`);
-      button.addEventListener('click', () => react(reaction));
-      bar.append(button);
+    bar.dataset.expanded = 'false';
+    bar.setAttribute('role', 'group');
+    bar.setAttribute('aria-label', 'Tapback Picker');
+
+    const strip = document.createElement('div');
+    strip.id = STRIP_ID;
+    strip.setAttribute('role', 'toolbar');
+    strip.setAttribute('aria-label', 'Tapbacks');
+    for (const reaction of STANDARD_REACTIONS) strip.append(createReactionButton(reaction));
+    for (const emoji of readRecents().slice(0, 2)) {
+      strip.append(createReactionButton(emojiReaction(emoji)));
     }
+
+    const more = document.createElement('button');
+    more.id = MORE_ID;
+    more.type = 'button';
+    more.title = 'Add custom emoji reaction';
+    more.setAttribute('aria-label', 'Add custom emoji reaction');
+    more.setAttribute('aria-haspopup', 'dialog');
+    more.setAttribute('aria-expanded', 'false');
+    more.textContent = '☺︎';
+    more.addEventListener('click', renderEmojiPicker);
+
+    bar.append(strip, more);
     document.body.append(bar);
     placeBar();
-    bar.querySelector('button')?.focus({ preventScroll: true });
+    strip.querySelector('button')?.focus({ preventScroll: true });
   };
 
   const openFromSelection = () => {
@@ -214,13 +715,12 @@
     return true;
   };
 
-  const onDoubleClick = (event) => {
-    if (!elementForNode(event.target)?.closest(MESSAGE_SELECTOR)) return;
-    requestAnimationFrame(openFromSelection);
-  };
-
   const onKeydown = (event) => {
     if (event.key === 'Escape') {
+      if (document.getElementById(PICKER_ID)) {
+        closeEmojiPicker();
+        return;
+      }
       close();
       return;
     }
@@ -237,12 +737,12 @@
   const onPointerDown = (event) => {
     if (!activeRange) return;
     if (document.getElementById(BAR_ID)?.contains(event.target)) return;
+    if (document.getElementById(PICKER_ID)?.contains(event.target)) return;
     if (pointInsideSelection(event.clientX, event.clientY)) return;
     close();
   };
 
   const onViewportChange = () => requestAnimationFrame(placeBar);
-  document.addEventListener('dblclick', onDoubleClick, true);
   document.addEventListener('keydown', onKeydown, true);
   document.addEventListener('pointerdown', onPointerDown, true);
   window.addEventListener('resize', onViewportChange);
@@ -250,13 +750,13 @@
 
   const cleanup = () => {
     close();
-    document.removeEventListener('dblclick', onDoubleClick, true);
     document.removeEventListener('keydown', onKeydown, true);
     document.removeEventListener('pointerdown', onPointerDown, true);
     window.removeEventListener('resize', onViewportChange);
     window.removeEventListener('scroll', onViewportChange, true);
     document.querySelectorAll('[data-highlight-and-react-reaction]').forEach((element) => {
       delete element.dataset.highlightAndReactReaction;
+      delete element.dataset.highlightAndReactReactionKey;
     });
   };
   window.__highlightAndReactCleanup = cleanup;

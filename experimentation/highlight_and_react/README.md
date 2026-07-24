@@ -3,9 +3,9 @@
 This isolated experiment now has two implementations:
 
 1. **Codex renderer injection (recommended):** Attune-compatible CSS and
-   JavaScript run inside Codex's Chromium renderer. Double-clicking selected
-   message text opens a Messages-style reaction bar at the exact text range.
-   Selecting text and pressing `Control–Option–R` (`⌃⌥R`) opens the same bar.
+   JavaScript run inside Codex's Chromium renderer. Selecting message text and
+   pressing `Control–Option–R` (`⌃⌥R`) opens a Messages-style Tapback picker at
+   the exact text range.
    Clicking outside the highlighted text and bar, or pressing Escape, dismisses
    it.
 2. **Native accessibility fallback:** the original app-independent Swift
@@ -13,11 +13,27 @@ This isolated experiment now has two implementations:
    `NSPanel` overlays.
 
 The renderer version uses Codex's real `[data-user-message-bubble]` component
-selector and stores a chosen emoji in
-`data-highlight-and-react-reaction` on that component. It highlights only the
-selected character range with the CSS Custom Highlight API and positions the
-toolbar from that range's client rectangles, avoiding DOM wrappers that could
-interfere with React.
+selector and stores the chosen Tapback key and display value in
+`data-highlight-and-react-reaction-key` and
+`data-highlight-and-react-reaction`. It highlights only the selected character
+range with the CSS Custom Highlight API and positions the toolbar from that
+range's client rectangles, avoiding DOM wrappers that could interfere with
+React.
+
+The Tapback UI is a clean-room recreation from the observable Messages UI;
+Messages itself is proprietary compiled software, so its literal source is not
+available. The recreation preserves the behavior that matters to the
+experiment:
+
+- six fixed Tapbacks in Messages order: Heart, Thumbs up, Thumbs down, Ha ha!,
+  Exclamation mark, and Question mark;
+- two recent emoji in the compact strip and a separate custom-emoji bubble;
+- an expanded categorized emoji picker with five persistent recents;
+- exactly one reaction per message: selecting the active reaction removes it,
+  while selecting another replaces it;
+- a dimmed conversation with the active message left visible;
+- Escape returns from the expanded picker to the compact strip, then dismisses
+  the interaction.
 
 ## Test the renderer implementation
 
@@ -25,17 +41,18 @@ This automated test launches and terminates only its own temporary Electron
 fixture. It does not touch the running Codex app:
 
 ```bash
-cd /Users/computer/uncover-worktrees/highlight_and_react/experimentation/highlight_and_react
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
 node --test Tests/renderer_injection.test.mjs
 ```
 
 The test verifies the complete interaction:
 
 - inject CSS and JavaScript over the Chromium DevTools protocol;
-- open from a double-clicked text selection;
+- open from a selected text range with `⌃⌥R`;
 - dismiss from an outside click;
 - open from `⌃⌥R`;
-- choose a reaction and encode it on the message component.
+- add, remove, and replace a reaction on the message component;
+- open the expanded picker and choose a custom emoji.
 
 For a visible, interactive fixture instead of the automated test, run:
 
@@ -43,8 +60,8 @@ For a visible, interactive fixture instead of the automated test, run:
 ./scripts/run_fixture_renderer.sh
 ```
 
-This opens a temporary Electron window. Double-click its sample text, or
-select text and press `⌃⌥R`; press Control-C when finished.
+This opens a temporary Electron window. Select sample text and press `⌃⌥R`;
+press Control-C when finished.
 
 ## Run it in Codex
 
@@ -52,7 +69,7 @@ Chromium DevTools must be enabled when Codex starts; it cannot be enabled on an
 already-running process. The safe launcher refuses to quit or restart Codex:
 
 ```bash
-cd /Users/computer/uncover-worktrees/highlight_and_react/experimentation/highlight_and_react
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
 ./scripts/launch_codex_renderer.sh
 ```
 
@@ -68,9 +85,8 @@ attach without launching anything:
 ./scripts/attach_codex_renderer.sh 9222
 ```
 
-Then double-click a word in a Codex message, or select a phrase and press
-`⌃⌥R`. The emoji bar should appear above the selected range. Click anywhere
-outside it to dismiss.
+Then select a phrase in a Codex message and press `⌃⌥R`. The Tapback picker
+should appear above the selected range. Click anywhere outside it to dismiss.
 
 The source file is directly compatible with Attune's `set-css` and
 `launch`/`attach` workflow. See [ATTUNE_RESEARCH.md](ATTUNE_RESEARCH.md) for the

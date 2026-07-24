@@ -65,7 +65,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-print "Fixture running. Double-click text or select it and press Control-Option-R."
+print "Fixture running. Select text and press Control-Option-R."
 print "Press Control-C to close the fixture and injector."
 node "$script_dir/devtools_injector.mjs" \
   --port "$debug_port" \

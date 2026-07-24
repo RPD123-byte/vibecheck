@@ -105,7 +105,8 @@ test('Attune source separates renderer CSS and JavaScript', async () => {
   const parts = splitWorkspaceSource(source);
   assert.match(parts.css, /#highlight-and-react-bar/);
   assert.doesNotMatch(parts.css, /@attune-script/);
-  assert.match(parts.script, /onDoubleClick/);
+  assert.match(parts.script, /onKeydown/);
+  assert.doesNotMatch(parts.script, /dblclick|onDoubleClick/);
 });
 
 test('interactive launcher discovers Electron from the renamed main checkout', () => {
@@ -117,7 +118,7 @@ test('interactive launcher discovers Electron from the renamed main checkout', (
   assert.doesNotMatch(electron, /\/Users\/computer\/uncover\//);
 });
 
-test('injected renderer opens, dismisses, shortcuts, and reacts', async (context) => {
+test('injected renderer matches compact and expanded Tapback behavior', async (context) => {
   const electron = findElectron();
   assert.ok(electron, 'Electron not found; set ELECTRON_PATH to its executable');
   const port = await availablePort();
@@ -142,21 +143,32 @@ test('injected renderer opens, dismisses, shortcuts, and reacts', async (context
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
-    document.getElementById('fixture-text').dispatchEvent(
-      new MouseEvent('dblclick', { bubbles: true }),
-    );
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
     const message = document.querySelector('[data-user-message-bubble]');
-    const openedByDoubleClick = Boolean(
+    window.__reactionActions = [];
+    message.addEventListener('highlight-and-react', (event) => {
+      window.__reactionActions.push(event.detail.action);
+    });
+    const openedByShortcutInitially = Boolean(
       document.getElementById('highlight-and-react-bar')
       && CSS.highlights.has('highlight-and-react-selection'),
     );
+    const compactButtons = document.querySelectorAll('#highlight-and-react-strip button').length;
+    const hasCustomEmojiButton = Boolean(document.getElementById('highlight-and-react-more'));
+    const hasScrim = Boolean(document.getElementById('highlight-and-react-scrim'));
 
     document.getElementById('outside').dispatchEvent(
       new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5 }),
     );
     const dismissedOutside = !document.getElementById('highlight-and-react-bar')
-      && !CSS.highlights.has('highlight-and-react-selection');
+      && !CSS.highlights.has('highlight-and-react-selection')
+      && !document.getElementById('highlight-and-react-scrim');
 
     selection.removeAllRanges();
     selection.addRange(range);
@@ -168,9 +180,51 @@ test('injected renderer opens, dismisses, shortcuts, and reacts', async (context
       altKey: true,
     }));
     const openedByShortcut = Boolean(document.getElementById('highlight-and-react-bar'));
-    document.querySelector('#highlight-and-react-bar button').click();
-    const reaction = message.dataset.highlightAndReactReaction;
+    document.querySelector('[data-reaction-key="standard:heart"]').click();
+    const addedReaction = message.dataset.highlightAndReactReaction;
+    const addedReactionKey = message.dataset.highlightAndReactReactionKey;
     const closedAfterReaction = !document.getElementById('highlight-and-react-bar');
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
+    const selectedHeart = document.querySelector(
+      '[data-reaction-key="standard:heart"]',
+    )?.getAttribute('aria-pressed');
+    document.querySelector('[data-reaction-key="standard:heart"]').click();
+    const removedReaction = !message.dataset.highlightAndReactReaction
+      && !message.dataset.highlightAndReactReactionKey;
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
+    document.getElementById('highlight-and-react-more').click();
+    const expandedPicker = Boolean(
+      document.getElementById('highlight-and-react-emoji-picker')
+      && document.getElementById('highlight-and-react-bar').dataset.expanded === 'true',
+    );
+    const emojiChoices = document.querySelectorAll(
+      '#highlight-and-react-emoji-picker .highlight-and-react-emoji-grid button',
+    ).length;
+    document.querySelector(
+      '#highlight-and-react-emoji-picker [data-reaction-key="emoji:😂"]',
+    ).click();
+    const customReaction = message.dataset.highlightAndReactReaction;
+    const customReactionKey = message.dataset.highlightAndReactReactionKey;
+    const closedAfterCustomReaction = !document.getElementById('highlight-and-react-bar')
+      && !document.getElementById('highlight-and-react-emoji-picker');
 
     const assistantText = document.getElementById('assistant-text').firstChild;
     const assistantRange = document.createRange();
@@ -178,27 +232,54 @@ test('injected renderer opens, dismisses, shortcuts, and reacts', async (context
     assistantRange.setEnd(assistantText, 9);
     selection.removeAllRanges();
     selection.addRange(assistantRange);
-    document.getElementById('assistant-text').dispatchEvent(
-      new MouseEvent('dblclick', { bubbles: true }),
-    );
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
     const assistantFallbackOpened = Boolean(document.getElementById('highlight-and-react-bar'));
     return {
-      openedByDoubleClick,
+      openedByShortcutInitially,
+      compactButtons,
+      hasCustomEmojiButton,
+      hasScrim,
       dismissedOutside,
       openedByShortcut,
-      reaction,
+      addedReaction,
+      addedReactionKey,
       closedAfterReaction,
+      selectedHeart,
+      removedReaction,
+      expandedPicker,
+      emojiChoices,
+      customReaction,
+      customReactionKey,
+      closedAfterCustomReaction,
+      reactionActions: window.__reactionActions,
       assistantFallbackOpened,
     };
   })()`);
 
   assert.deepEqual(result, {
-    openedByDoubleClick: true,
+    openedByShortcutInitially: true,
+    compactButtons: 8,
+    hasCustomEmojiButton: true,
+    hasScrim: true,
     dismissedOutside: true,
     openedByShortcut: true,
-    reaction: '❤️',
+    addedReaction: '🩷',
+    addedReactionKey: 'standard:heart',
     closedAfterReaction: true,
+    selectedHeart: 'true',
+    removedReaction: true,
+    expandedPicker: true,
+    emojiChoices: 302,
+    customReaction: '😂',
+    customReactionKey: 'emoji:😂',
+    closedAfterCustomReaction: true,
+    reactionActions: ['add', 'remove', 'add'],
     assistantFallbackOpened: true,
   });
 });
