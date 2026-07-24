@@ -14,6 +14,25 @@ import numpy as np
 from vibecheck.emotion.schema import EmotionReading
 from vibecheck.inference.adapters.base import EmotionAdapter
 
+LOW_LIGHT_P95_THRESHOLD = 64.0
+LOW_LIGHT_MIN_RANGE = 8.0
+
+
+def normalize_low_light_frame(frame: Any) -> np.ndarray | None:
+    """Stretch a genuinely underexposed frame without changing normal frames."""
+    values = np.asarray(frame)
+    if values.ndim != 3 or values.shape[2] != 3 or values.size == 0:
+        return None
+    low = float(values.min())
+    high = float(values.max())
+    if (
+        float(np.percentile(values, 95)) > LOW_LIGHT_P95_THRESHOLD
+        or high - low < LOW_LIGHT_MIN_RANGE
+    ):
+        return None
+    normalized = (values.astype(np.float32) - low) * (255.0 / (high - low))
+    return np.rint(np.clip(normalized, 0.0, 255.0)).astype(np.uint8)
+
 
 def bounded_face_boxes(
     boxes: Iterable[Any] | None,
@@ -109,6 +128,21 @@ class EmotiEffLibAdapter(EmotionAdapter):
             height=height,
             confidence_threshold=self.face_threshold,
         )
+        if face_box is None:
+            normalized = normalize_low_light_frame(frame)
+            if normalized is not None:
+                normalized_rgb = cv2.cvtColor(normalized, cv2.COLOR_BGR2RGB)
+                boxes, probabilities = self.detector.detect(normalized_rgb)
+                normalized_height, normalized_width = normalized_rgb.shape[:2]
+                face_box = select_largest_face_box(
+                    boxes,
+                    probabilities,
+                    width=normalized_width,
+                    height=normalized_height,
+                    confidence_threshold=self.face_threshold,
+                )
+                if face_box is not None:
+                    rgb = normalized_rgb
         if face_box is None:
             return None
         x1, y1, x2, y2 = face_box
