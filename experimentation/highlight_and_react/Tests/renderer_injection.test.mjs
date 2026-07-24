@@ -163,7 +163,8 @@ test('injected renderer opens, dismisses, shortcuts, and reacts', async (context
     selection.addRange(range);
     document.dispatchEvent(new KeyboardEvent('keydown', {
       bubbles: true,
-      key: 'r',
+      key: '®',
+      code: 'KeyR',
       ctrlKey: true,
       altKey: true,
     }));

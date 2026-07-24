@@ -231,7 +231,8 @@
       close();
       return;
     }
-    if (event.key.toLowerCase() !== 'r' || !event.ctrlKey || !event.altKey || event.metaKey) {
+    const isRKey = event.code === 'KeyR' || event.key.toLowerCase() === 'r';
+    if (!isRKey || !event.ctrlKey || !event.altKey || event.metaKey) {
       return;
     }
     event.preventDefault();

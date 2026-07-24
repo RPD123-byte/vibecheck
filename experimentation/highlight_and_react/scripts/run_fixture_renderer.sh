@@ -55,8 +55,12 @@ fi
   --remote-debugging-port="$debug_port" \
   "$project_dir/Fixtures/Renderer/main.mjs" &
 fixture_pid=$!
+injector_pid=''
 
 cleanup() {
+  if [[ -n "$injector_pid" ]]; then
+    kill "$injector_pid" 2>/dev/null || true
+  fi
   kill "$fixture_pid" 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
@@ -66,4 +70,7 @@ print "Press Control-C to close the fixture and injector."
 node "$script_dir/devtools_injector.mjs" \
   --port "$debug_port" \
   --source "$project_dir/renderer/highlight_and_react.css" \
-  --debug
+  --quiet &
+injector_pid=$!
+
+wait "$fixture_pid"

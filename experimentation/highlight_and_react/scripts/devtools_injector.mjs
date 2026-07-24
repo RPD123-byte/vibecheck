@@ -17,6 +17,7 @@ Options:
   --source FILE   Attune-compatible CSS/script source
   --once          Inject once and exit instead of watching
   --debug         Print target and injection details
+  --quiet         Suppress transient renderer-waiting messages
   --help          Show this help`);
 }
 
@@ -26,6 +27,7 @@ function parseOptions(arguments_) {
     source: defaultSource,
     once: false,
     debug: false,
+    quiet: false,
   };
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -33,6 +35,7 @@ function parseOptions(arguments_) {
     else if (argument === '--source') options.source = resolve(arguments_[++index]);
     else if (argument === '--once') options.once = true;
     else if (argument === '--debug') options.debug = true;
+    else if (argument === '--quiet') options.quiet = true;
     else if (argument === '--help' || argument === '-h') {
       usage();
       process.exit(0);
@@ -163,10 +166,10 @@ async function main() {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (message !== lastError) {
+      if (!options.quiet && message !== lastError) {
         console.error(`[highlight-and-react] waiting for renderer: ${message}`);
-        lastError = message;
       }
+      lastError = message;
       if (options.once) throw error;
     }
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
