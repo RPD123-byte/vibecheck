@@ -16,13 +16,24 @@ dist/
 
 # JavaScript tooling
 node_modules/
+/out/
+/src/electron/.vite/
+/src/electron/out/
+/src/electron/.webpack/
+/src/electron/forge.config.js
+/src/electron/test-results/
+/src/electron/playwright-report/
+/src/electron/blob-report/
+/src/electron/coverage/
 
 # Rust tooling
 target/
+/.build/
 
 # Experimental and vendored research work must not become core dependencies
 /experimentation/
 /emotiefflib_repo/
+goals/
 
 # Local biometric/model data and captured test images
 /face_database/
