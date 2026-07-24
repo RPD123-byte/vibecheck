@@ -6,7 +6,11 @@ import { dirname, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
-import { inject, splitWorkspaceSource } from '../scripts/devtools_injector.mjs';
+import {
+  inject,
+  loadSystemTapbackAssets,
+  splitWorkspaceSource,
+} from '../scripts/devtools_injector.mjs';
 
 const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(projectDirectory, 'renderer/highlight_and_react.css');
@@ -118,6 +122,21 @@ test('interactive launcher discovers Electron from the renamed main checkout', (
   assert.doesNotMatch(electron, /\/Users\/computer\/uncover\//);
 });
 
+test('installed Messages Tapback vectors are available to the injector', async () => {
+  const assets = await loadSystemTapbackAssets();
+  assert.deepEqual(Object.keys(assets).sort(), [
+    'exclamation',
+    'haha',
+    'heart',
+    'question',
+    'thumbs-down',
+    'thumbs-up',
+  ]);
+  for (const dataUrl of Object.values(assets)) {
+    assert.match(dataUrl, /^data:image\/png;base64,/);
+  }
+});
+
 test('injected renderer matches compact and expanded Tapback behavior', async (context) => {
   const electron = findElectron();
   assert.ok(electron, 'Electron not found; set ELECTRON_PATH to its executable');
@@ -160,6 +179,9 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       && CSS.highlights.has('highlight-and-react-selection'),
     );
     const compactButtons = document.querySelectorAll('#highlight-and-react-strip button').length;
+    const systemTapbackIcons = document.querySelectorAll(
+      '#highlight-and-react-strip .tapback-system-icon',
+    ).length;
     const hasCustomEmojiButton = Boolean(document.getElementById('highlight-and-react-more'));
     const hasScrim = Boolean(document.getElementById('highlight-and-react-scrim'));
     const compactHeight = getComputedStyle(
@@ -190,6 +212,7 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     document.querySelector('[data-reaction-key="standard:heart"]').click();
     const addedReaction = message.dataset.highlightAndReactReaction;
     const addedReactionKey = message.dataset.highlightAndReactReactionKey;
+    const addedReactionAsset = message.dataset.highlightAndReactReactionAsset;
     const closedAfterReaction = !document.getElementById('highlight-and-react-bar');
 
     selection.removeAllRanges();
@@ -254,6 +277,7 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     return {
       openedByShortcutInitially,
       compactButtons,
+      systemTapbackIcons,
       hasCustomEmojiButton,
       hasScrim,
       compactHeight,
@@ -262,6 +286,7 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       openedByShortcut,
       addedReaction,
       addedReactionKey,
+      addedReactionAsset,
       closedAfterReaction,
       selectedHeart,
       removedReaction,
@@ -279,6 +304,7 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
   assert.deepEqual(result, {
     openedByShortcutInitially: true,
     compactButtons: 8,
+    systemTapbackIcons: 6,
     hasCustomEmojiButton: true,
     hasScrim: true,
     compactHeight: '36px',
@@ -287,6 +313,7 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     openedByShortcut: true,
     addedReaction: '🩷',
     addedReactionKey: 'standard:heart',
+    addedReactionAsset: 'heart',
     closedAfterReaction: true,
     selectedHeart: 'true',
     removedReaction: true,

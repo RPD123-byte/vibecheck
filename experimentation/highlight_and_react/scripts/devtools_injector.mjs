@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
+import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectDirectory = resolve(scriptDirectory, '..');
 const defaultSource = resolve(projectDirectory, 'renderer/highlight_and_react.css');
+const systemTapbackRenderer = resolve(scriptDirectory, 'render_system_tapbacks.swift');
 const workspaceScriptPattern = /\/\*\s*@attune-script\s*\n([\s\S]*?)\n\s*@end-attune-script\s*\*\//g;
+const execFileAsync = promisify(execFile);
+let systemTapbackAssetsPromise;
 
 function usage() {
   console.log(`Usage: node scripts/devtools_injector.mjs --port PORT [options]
@@ -58,7 +63,20 @@ export function splitWorkspaceSource(source) {
   return { css, script: scripts.join('\n;\n') };
 }
 
-export function buildInjectionExpression(source) {
+export async function loadSystemTapbackAssets() {
+  if (process.platform !== 'darwin') return {};
+  systemTapbackAssetsPromise ??= execFileAsync(
+    'swift',
+    [systemTapbackRenderer],
+    { encoding: 'utf8', maxBuffer: 2 * 1024 * 1024 },
+  ).then(({ stdout }) => JSON.parse(stdout)).catch((error) => {
+    console.warn(`[highlight-and-react] system Tapback assets unavailable: ${error.message}`);
+    return {};
+  });
+  return systemTapbackAssetsPromise;
+}
+
+export function buildInjectionExpression(source, systemTapbackAssets = {}) {
   const { css, script } = splitWorkspaceSource(source);
   const hash = createHash('sha256').update(source).digest('hex');
   return `(() => {
@@ -66,9 +84,11 @@ export function buildInjectionExpression(source) {
     const hash = ${JSON.stringify(hash)};
     const css = ${JSON.stringify(css)};
     const script = ${JSON.stringify(script)};
+    const systemTapbackAssets = ${JSON.stringify(systemTapbackAssets)};
     const cleanupKey = '__highlightAndReactCleanup';
     const hashKey = '__highlightAndReactSourceHash';
     const current = document.getElementById(id);
+    window.__highlightAndReactSystemTapbacks = systemTapbackAssets;
     const changed = window[hashKey] !== hash;
     if (!current || current.dataset.sourceHash !== hash) {
       const style = current || document.createElement('style');
@@ -142,7 +162,7 @@ export async function inject(port, source, debug = false) {
   const targets = (await debugTargets(port))
     .filter((target) => target.type === 'page' && target.webSocketDebuggerUrl);
   if (!targets.length) throw new Error('No page renderer targets found');
-  const expression = buildInjectionExpression(source);
+  const expression = buildInjectionExpression(source, await loadSystemTapbackAssets());
   const results = await Promise.all(targets.map(async (target) => ({
     title: target.title,
     url: target.url,

@@ -27,6 +27,11 @@ experiment:
 
 - six fixed Tapbacks in Messages order: Heart, Thumbs up, Thumbs down, Ha ha!,
   Exclamation mark, and Question mark;
+- the built-in Tapback silhouettes are rendered at runtime from the exact
+  `AckFunction-*` vectors installed in macOS's `IMSharedUI.framework`; the
+  private artwork is not copied into this repository;
+- recent and custom reactions use the installed `Apple Color Emoji` font,
+  keeping the two icon sources separate just as Messages does;
 - two recent emoji in the compact strip and a separate custom-emoji bubble;
 - an expanded categorized emoji picker with five persistent recents;
 - exactly one reaction per message: selecting the active reaction removes it,

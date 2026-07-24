@@ -47,6 +47,37 @@
   white-space: pre;
 }
 
+[data-highlight-and-react-reaction-asset]::after {
+  width: 20px;
+  min-width: 20px;
+  height: 24px;
+  padding: 0;
+  background: var(--highlight-and-react-reaction-fill, #ff5d96);
+  content: "";
+  -webkit-mask: var(--highlight-and-react-reaction-mask) center / contain no-repeat;
+  mask: var(--highlight-and-react-reaction-mask) center / contain no-repeat;
+}
+
+[data-highlight-and-react-reaction-asset="heart"] {
+  --highlight-and-react-reaction-fill: linear-gradient(145deg, #ffafd0, #ff2d78);
+}
+
+[data-highlight-and-react-reaction-asset^="thumbs"] {
+  --highlight-and-react-reaction-fill: linear-gradient(155deg, #ffe27a, #f2a91f);
+}
+
+[data-highlight-and-react-reaction-asset="haha"] {
+  --highlight-and-react-reaction-fill: linear-gradient(180deg, #64d2ff, #0a84ff);
+}
+
+[data-highlight-and-react-reaction-asset="exclamation"] {
+  --highlight-and-react-reaction-fill: linear-gradient(180deg, #ff9f97, #ff453a);
+}
+
+[data-highlight-and-react-reaction-asset="question"] {
+  --highlight-and-react-reaction-fill: linear-gradient(180deg, #da8fff, #af52de);
+}
+
 #highlight-and-react-scrim {
   position: fixed;
   inset: 0;
@@ -177,6 +208,39 @@
     0 1px 0 rgb(255 255 255 / 52%),
     0 1px 2px rgb(0 0 0 / 12%);
   transform: scaleX(.9);
+}
+
+.tapback-system-icon {
+  display: block;
+  width: 20px;
+  height: 27px;
+  background: var(--tapback-icon-fill);
+  -webkit-mask: var(--tapback-icon-mask) center / contain no-repeat;
+  mask: var(--tapback-icon-mask) center / contain no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 16%));
+}
+
+.tapback-system-icon[data-tapback-asset="heart"] {
+  --tapback-icon-fill: linear-gradient(145deg, #ffb1d0 5%, #ff6aa7 48%, #ff2d78 100%);
+}
+
+.tapback-system-icon[data-tapback-asset^="thumbs"] {
+  --tapback-icon-fill: linear-gradient(155deg, #ffe782 4%, #ffc43d 56%, #f2a51b 100%);
+}
+
+.tapback-system-icon[data-tapback-asset="haha"] {
+  --tapback-icon-fill: linear-gradient(180deg, #6fd8ff 0%, #32ade6 48%, #0a84ff 100%);
+  width: 21px;
+}
+
+.tapback-system-icon[data-tapback-asset="exclamation"] {
+  --tapback-icon-fill: linear-gradient(180deg, #ffaaa3 0%, #ff6961 48%, #ff453a 100%);
+  width: 15px;
+}
+
+.tapback-system-icon[data-tapback-asset="question"] {
+  --tapback-icon-fill: linear-gradient(180deg, #dc91ff 0%, #bf5af2 48%, #af52de 100%);
+  width: 12px;
 }
 
 #highlight-and-react-bar .tapback-punctuation {
@@ -471,12 +535,12 @@
     'main li',
   ].join(',');
   const STANDARD_REACTIONS = [
-    { key: 'standard:heart', value: '🩷', label: 'Heart' },
-    { key: 'standard:thumbs-up', value: '👍', label: 'Thumbs up' },
-    { key: 'standard:thumbs-down', value: '👎', label: 'Thumbs down' },
-    { key: 'standard:haha', value: 'HA', label: 'Ha ha!', glyph: 'haha' },
-    { key: 'standard:exclamation', value: '‼️', label: 'Exclamation mark', glyph: 'exclamation' },
-    { key: 'standard:question', value: '❓', label: 'Question mark', glyph: 'question' },
+    { key: 'standard:heart', value: '🩷', label: 'Heart', asset: 'heart' },
+    { key: 'standard:thumbs-up', value: '👍', label: 'Thumbs up', asset: 'thumbs-up' },
+    { key: 'standard:thumbs-down', value: '👎', label: 'Thumbs down', asset: 'thumbs-down' },
+    { key: 'standard:haha', value: 'HA', label: 'Ha ha!', asset: 'haha', glyph: 'haha' },
+    { key: 'standard:exclamation', value: '‼️', label: 'Exclamation mark', asset: 'exclamation', glyph: 'exclamation' },
+    { key: 'standard:question', value: '❓', label: 'Question mark', asset: 'question', glyph: 'question' },
   ];
   const DEFAULT_RECENTS = ['😂', '💀', '🤞', '👼', '❤️'];
   const PICKER_CATEGORY_ICONS = ['◷', '☺︎', '♣︎', '●', '★', '✈︎', '▣', '♥︎', '⚑'];
@@ -672,6 +736,16 @@
   };
 
   const reactionGlyph = (reaction) => {
+    const systemAsset = reaction.asset
+      ? globalThis.__highlightAndReactSystemTapbacks?.[reaction.asset]
+      : null;
+    if (systemAsset) {
+      const glyph = document.createElement('span');
+      glyph.className = 'tapback-system-icon';
+      glyph.dataset.tapbackAsset = reaction.asset;
+      glyph.style.setProperty('--tapback-icon-mask', `url("${systemAsset}")`);
+      return glyph;
+    }
     if (!reaction.glyph) return document.createTextNode(reaction.value);
     const glyph = document.createElement('span');
     if (reaction.glyph === 'haha') {
@@ -710,9 +784,24 @@
     if (removing) {
       delete message.dataset.highlightAndReactReactionKey;
       delete message.dataset.highlightAndReactReaction;
+      delete message.dataset.highlightAndReactReactionAsset;
+      message.style.removeProperty('--highlight-and-react-reaction-mask');
     } else {
       message.dataset.highlightAndReactReactionKey = reaction.key;
       message.dataset.highlightAndReactReaction = reaction.value;
+      const systemAsset = reaction.asset
+        ? globalThis.__highlightAndReactSystemTapbacks?.[reaction.asset]
+        : null;
+      if (systemAsset) {
+        message.dataset.highlightAndReactReactionAsset = reaction.asset;
+        message.style.setProperty(
+          '--highlight-and-react-reaction-mask',
+          `url("${systemAsset}")`,
+        );
+      } else {
+        delete message.dataset.highlightAndReactReactionAsset;
+        message.style.removeProperty('--highlight-and-react-reaction-mask');
+      }
       if (reaction.customEmoji) rememberEmoji(reaction.value);
     }
 
@@ -931,6 +1020,8 @@
     document.querySelectorAll('[data-highlight-and-react-reaction]').forEach((element) => {
       delete element.dataset.highlightAndReactReaction;
       delete element.dataset.highlightAndReactReactionKey;
+      delete element.dataset.highlightAndReactReactionAsset;
+      element.style.removeProperty('--highlight-and-react-reaction-mask');
     });
   };
   window.__highlightAndReactCleanup = cleanup;
