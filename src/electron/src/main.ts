@@ -27,6 +27,7 @@ let shutdownInProgress = false;
 let actionPending = false;
 let actionError: string | null = null;
 let trayImageIsEmpty = true;
+let trayMenuPopupCount = 0;
 const preferences = new Preferences();
 let lastState: PublicState = {
   aggregate: "off",
@@ -150,6 +151,12 @@ function rebuildMenu(): void {
   tray.setToolTip(`Vibecheck — ${labelFor(lastState.aggregate)}`);
 }
 
+function showTrayMenu(): void {
+  if (!tray) return;
+  trayMenuPopupCount += 1;
+  tray.popUpContextMenu(trayMenu ?? undefined);
+}
+
 function publish(snapshot: RuntimeSnapshot): void {
   lastState = publicProjection(snapshot);
   actionError = null;
@@ -179,6 +186,7 @@ function installDevelopmentTestHook(): void {
         if (action === "quit") actions.quit();
       },
       dismissMenu: () => tray?.closeContextMenu(),
+      menuPopupCount: () => trayMenuPopupCount,
       trayImageIsEmpty: () => trayImageIsEmpty,
     },
   });
@@ -214,7 +222,10 @@ async function launch(): Promise<void> {
 }
 
 app.on("second-instance", () => {
-  app.focus({ steal: true });
+  showTrayMenu();
+});
+app.on("activate", () => {
+  showTrayMenu();
 });
 app.on("window-all-closed", () => {
   // The native-menu utility has no BrowserWindow and remains alive here.

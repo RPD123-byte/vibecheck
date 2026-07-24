@@ -25,6 +25,7 @@ interface TestHook {
   }>;
   invoke(action: Action, enabled?: boolean): Promise<void>;
   dismissMenu(): void;
+  menuPopupCount(): number;
   trayImageIsEmpty(): boolean;
 }
 
@@ -124,6 +125,31 @@ test("native menu drives the demo runtime without windows or orphans", async () 
     ]);
     expect(duplicateExit).toBe(0);
     expect(application.process().exitCode).toBeNull();
+    await expect
+      .poll(() =>
+        application.evaluate(() =>
+          (
+            globalThis as { __vibecheckE2E: TestHook }
+          ).__vibecheckE2E.menuPopupCount(),
+        ),
+      )
+      .toBe(1);
+    await application.evaluate(() =>
+      (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.dismissMenu(),
+    );
+    await application.evaluate(({ app }) => app.emit("activate"));
+    await expect
+      .poll(() =>
+        application.evaluate(() =>
+          (
+            globalThis as { __vibecheckE2E: TestHook }
+          ).__vibecheckE2E.menuPopupCount(),
+        ),
+      )
+      .toBe(2);
+    await application.evaluate(() =>
+      (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.dismissMenu(),
+    );
 
     await invoke(application, "notch", true);
     await expect
