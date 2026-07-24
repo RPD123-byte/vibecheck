@@ -113,6 +113,16 @@ async def test_rust_sidecar_consumes_real_socket_and_publishes_would_send() -> N
         assert result.event.payload["emotions"][0]["name"] == "disgust"
         assert "disgusted" in result.event.payload["message"]
         assert "may be imperfect" in result.event.payload["message"]
+        stopping = asyncio.create_task(anext(iterator))
+        os.killpg(process.pid, signal.SIGTERM)
+        stopped = await asyncio.wait_for(stopping, 5)
+        assert stopped.event.payload["state"] == "stopping"
+        assert await asyncio.wait_for(process.wait(), 5) == 0
+        deadline = asyncio.get_running_loop().time() + 2
+        while status_socket.exists():
+            if asyncio.get_running_loop().time() >= deadline:
+                raise TimeoutError("Rust sidecar did not remove its status socket")
+            await asyncio.sleep(0.01)
     finally:
         subscriber.close()
         await iterator.aclose()

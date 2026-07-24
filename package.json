@@ -1,0 +1,22 @@
+{
+  "name": "vibecheck",
+  "version": "0.2.0",
+  "private": true,
+  "workspaces": [
+    "src/electron"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "app:dev": "npm run start --workspace @vibecheck/menubar",
+    "app:package": "npm run package --workspace @vibecheck/menubar",
+    "app:make": "npm run make --workspace @vibecheck/menubar",
+    "js:format": "npm run format --workspace @vibecheck/menubar",
+    "js:format:check": "npm run format:check --workspace @vibecheck/menubar",
+    "js:typecheck": "npm run typecheck --workspace @vibecheck/menubar",
+    "js:test": "npm run test --workspace @vibecheck/menubar",
+    "js:test:e2e": "npm run test:e2e --workspace @vibecheck/menubar",
+    "js:audit": "npm audit --omit=dev --audit-level=high"
+  }
+}

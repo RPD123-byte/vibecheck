@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vibecheck"
-version = "0.1.0"
+version = "0.2.0"
 description = "On-device facial-expression inference, notch presentation, and Codex interruption"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
@@ -28,6 +28,9 @@ test = [
   "pytest-asyncio>=0.25",
   "ruff>=0.12",
   "websockets>=15",
+]
+release = [
+  "pyinstaller==6.21.0",
 ]
 
 [project.scripts]

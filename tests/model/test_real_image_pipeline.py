@@ -14,6 +14,7 @@ from typing import Any
 
 import pytest
 
+from vibecheck.inference.adapters.emotiefflib import EmotiEffLibAdapter
 from vibecheck.stream.subscriber import SnapshotSubscriber
 
 pytestmark = [
@@ -163,6 +164,25 @@ async def test_disgust_image_drives_notch_and_dry_run_interruption(
     finally:
         await stop_processes(processes)
         shutil.rmtree(runtime, ignore_errors=True)
+
+
+def test_underexposed_face_uses_low_light_fallback(tmp_path: Path) -> None:
+    import cv2
+    import numpy as np
+
+    image = cv2.imread(str(fetch_fixture("disgust", tmp_path)))
+    assert image is not None
+    underexposed = np.rint(image.astype(np.float32) * 0.10).astype(np.uint8)
+    assert int(underexposed.max()) <= 26
+    adapter = EmotiEffLibAdapter()
+    try:
+        reading = adapter.analyze_frame(underexposed)
+    finally:
+        adapter.close()
+
+    assert reading is not None
+    assert reading.dominant_emotion == "disgust"
+    assert reading.scores["disgust"] > 0.5
 
 
 @pytest.mark.asyncio

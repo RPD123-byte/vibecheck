@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "type": "bootstrap",
+  "runtime_id": "fixture-runtime",
+  "control_socket": "/tmp/vibecheck-501-fixture/control.sock",
+  "controller_token": "fixture-token-is-replaced-at-runtime"
+}

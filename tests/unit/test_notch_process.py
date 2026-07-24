@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 from vibecheck.inference.process import _parser as inference_parser
 from vibecheck.notch.process import _display_policy_from_args, _parser
 from vibecheck.runtime.config import RuntimeConfig
@@ -64,3 +66,30 @@ def test_runtime_owner_propagates_both_threshold_pairs(tmp_path: Path) -> None:
     assert value("--exit-threshold") == "0.55"
     assert value("--surprise-entry-threshold") == "0.4"
     assert value("--surprise-exit-threshold") == "0.35"
+
+
+def test_frozen_owner_dispatches_workers_without_interpreter_mode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    owner = RuntimeOwner(
+        RuntimeConfig(mode="display-only"),
+        python="/Applications/Vibecheck.app/runtime/vibecheck-runtime",
+        project_root=tmp_path,
+    )
+    owner.runtime_dir = tmp_path
+
+    workers = owner.configure_workers()
+
+    assert workers["inference"].command[:3] == [
+        owner.python,
+        "--frozen-worker",
+        "inference",
+    ]
+    assert workers["notch"].command[:3] == [
+        owner.python,
+        "--frozen-worker",
+        "notch",
+    ]
+    assert "-m" not in workers["inference"].command
+    assert "-m" not in workers["notch"].command

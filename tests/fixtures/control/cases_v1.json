@@ -1,0 +1,52 @@
+{
+  "get_state": {
+    "version": 1,
+    "id": "get",
+    "token": "runtime-token",
+    "type": "get_state"
+  },
+  "restart_failed_roles": {
+    "version": 1,
+    "id": "recover",
+    "token": "runtime-token",
+    "type": "restart_failed_roles",
+    "roles": [
+      "notch"
+    ]
+  },
+  "shutdown": {
+    "version": 1,
+    "id": "shutdown",
+    "token": "runtime-token",
+    "type": "shutdown"
+  },
+  "ack": {
+    "version": 1,
+    "type": "ack",
+    "id": "get",
+    "runtime_id": "fixture-runtime",
+    "state": {}
+  },
+  "stale_revision_error": {
+    "version": 1,
+    "type": "error",
+    "id": "stale",
+    "runtime_id": "fixture-runtime",
+    "error": {
+      "code": "stale_revision",
+      "message": "stale revision 0; current is 1"
+    },
+    "state": {}
+  },
+  "structured_error": {
+    "version": 1,
+    "type": "error",
+    "id": null,
+    "runtime_id": "fixture-runtime",
+    "error": {
+      "code": "invalid_json",
+      "message": "message is not valid JSON"
+    },
+    "state": {}
+  }
+}

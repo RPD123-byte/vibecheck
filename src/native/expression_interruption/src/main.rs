@@ -109,6 +109,7 @@ fn control_config(manage_gui: bool) -> Config {
 
 async fn run_engine(
     mut receiver: watch::Receiver<InputUpdate>,
+    mut shutdown: watch::Receiver<bool>,
     cli: &Cli,
     status: &StatusPublisher,
     handle: Option<&Handle>,
@@ -120,7 +121,23 @@ async fn run_engine(
     };
     status.publish(ready, &[], None, None, None).await;
     let mut policy = InterventionPolicy::new(cli.threshold, cli.hold_ms, cli.cooldown_ms);
-    while receiver.changed().await.is_ok() {
+    loop {
+        tokio::select! {
+            result = receiver.changed() => {
+                if result.is_err() {
+                    break;
+                }
+            }
+            result = shutdown.changed() => {
+                let _ = result;
+                status.publish("stopping", &[], None, None, None).await;
+                break;
+            }
+        }
+        if *shutdown.borrow() {
+            status.publish("stopping", &[], None, None, None).await;
+            break;
+        }
         let update = receiver.borrow_and_update().clone();
         let (event, discontinuity) = match update {
             InputUpdate::Reset => {
@@ -162,13 +179,36 @@ async fn run_engine(
             policy.mark_sent(&emotions, event.captured_at_ms);
             continue;
         }
-        let result = dispatch(
+        let dispatch_future = dispatch(
             handle.expect("live handle"),
             status,
             &emotions,
             cli.thread_id.as_deref(),
-        )
-        .await;
+        );
+        tokio::pin!(dispatch_future);
+        let result = tokio::select! {
+            result = &mut dispatch_future => result,
+            changed = shutdown.changed() => {
+                let _ = changed;
+                status.publish("stopping", &[], None, None, None).await;
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(4),
+                    dispatch_future,
+                ).await {
+                    Ok(result) => result,
+                    Err(_) => {
+                        status.publish(
+                            "drain_timeout",
+                            &emotions,
+                            cli.thread_id.as_deref(),
+                            None,
+                            Some("Timed out while conservatively draining the active dispatch."),
+                        ).await;
+                        break;
+                    }
+                }
+            }
+        };
         match result {
             DispatchResult::Latch => policy.mark_sent(&emotions, event.captured_at_ms),
             DispatchResult::Snooze => policy.snooze(event.captured_at_ms),
@@ -182,23 +222,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let status = StatusPublisher::bind(&cli.status_socket, cli.runtime_id.clone()).await?;
     let _status_guard = SocketGuard(cli.status_socket.clone());
     let (sender, receiver) = watch::channel(InputUpdate::Reset);
-    tokio::spawn(stream::consume(
+    let (shutdown_sender, shutdown_receiver) = watch::channel(false);
+    let stream_task = tokio::spawn(stream::consume(
         cli.emotion_socket.clone(),
         cli.freshness_ms,
         sender,
+        shutdown_receiver.clone(),
     ));
+    let signal_sender = shutdown_sender.clone();
+    let signal_task = tokio::spawn(async move {
+        let interrupt = async {
+            let _ = tokio::signal::ctrl_c().await;
+        };
+        #[cfg(unix)]
+        let terminate = async {
+            if let Ok(mut signal) =
+                tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            {
+                signal.recv().await;
+            }
+        };
+        #[cfg(not(unix))]
+        let terminate = std::future::pending::<()>();
+        tokio::select! {
+            () = interrupt => {}
+            () = terminate => {}
+        }
+        signal_sender.send_replace(true);
+    });
     if cli.dry_run {
-        run_engine(receiver, &cli, &status, None).await;
+        run_engine(receiver, shutdown_receiver, &cli, &status, None).await;
+        stream_task.abort();
+        signal_task.abort();
         return Ok(());
     }
     status.publish("connecting", &[], None, None, None).await;
     let config = control_config(cli.manage_gui);
     let run_cli = cli.clone();
     let run_status = status.clone();
+    let run_shutdown = shutdown_receiver;
     CodexControl::run(config, |handle| async move {
-        run_engine(receiver, &run_cli, &run_status, Some(&handle)).await;
+        run_engine(receiver, run_shutdown, &run_cli, &run_status, Some(&handle)).await;
     })
     .await?;
+    shutdown_sender.send_replace(true);
+    stream_task.abort();
+    signal_task.abort();
     Ok(())
 }
 
@@ -211,5 +280,35 @@ mod tests {
         let config = control_config(true);
         assert!(config.manage_gui);
         assert!(config.supervisor.restart_gui_on_initialize);
+    }
+
+    #[tokio::test]
+    async fn dry_run_shutdown_prevents_new_actions() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let status =
+            StatusPublisher::bind(&directory.path().join("status.sock"), "runtime".to_owned())
+                .await
+                .expect("status publisher");
+        let (_input_sender, input_receiver) = watch::channel(InputUpdate::Reset);
+        let (shutdown_sender, shutdown_receiver) = watch::channel(false);
+        let cli = Cli {
+            emotion_socket: directory.path().join("emotion.sock"),
+            status_socket: directory.path().join("status.sock"),
+            runtime_id: "runtime".into(),
+            dry_run: true,
+            manage_gui: false,
+            threshold: 0.30,
+            hold_ms: 1_000,
+            cooldown_ms: 15_000,
+            freshness_ms: 1_500,
+            thread_id: None,
+        };
+        shutdown_sender.send_replace(true);
+        tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            run_engine(input_receiver, shutdown_receiver, &cli, &status, None),
+        )
+        .await
+        .expect("engine should stop promptly");
     }
 }
