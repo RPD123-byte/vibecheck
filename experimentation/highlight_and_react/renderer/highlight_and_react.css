@@ -14,11 +14,6 @@
   text-underline-offset: 2px;
 }
 
-.highlight-and-react-active {
-  outline: 2px solid rgb(255 196 0 / 68%) !important;
-  outline-offset: 3px !important;
-}
-
 [data-highlight-and-react-reaction] {
   position: relative !important;
 }
@@ -128,7 +123,6 @@
   const close = () => {
     document.getElementById(BAR_ID)?.remove();
     removeSelectionHighlight();
-    activeMessage?.classList.remove('highlight-and-react-active');
     activeRange = null;
     activeMessage = null;
     activeRects = [];
@@ -213,7 +207,6 @@
     activeRange = range;
     activeMessage = message;
     activeRects = rects;
-    activeMessage.classList.add('highlight-and-react-active');
     if (globalThis.Highlight && globalThis.CSS?.highlights) {
       CSS.highlights.set(HIGHLIGHT_NAME, new Highlight(activeRange));
     }

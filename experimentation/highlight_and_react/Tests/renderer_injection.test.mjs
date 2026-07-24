@@ -149,7 +149,6 @@ test('injected renderer opens, dismisses, shortcuts, and reacts', async (context
     const message = document.querySelector('[data-user-message-bubble]');
     const openedByDoubleClick = Boolean(
       document.getElementById('highlight-and-react-bar')
-      && message.classList.contains('highlight-and-react-active')
       && CSS.highlights.has('highlight-and-react-selection'),
     );
 
@@ -157,7 +156,7 @@ test('injected renderer opens, dismisses, shortcuts, and reacts', async (context
       new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5 }),
     );
     const dismissedOutside = !document.getElementById('highlight-and-react-bar')
-      && !message.classList.contains('highlight-and-react-active');
+      && !CSS.highlights.has('highlight-and-react-selection');
 
     selection.removeAllRanges();
     selection.addRange(range);

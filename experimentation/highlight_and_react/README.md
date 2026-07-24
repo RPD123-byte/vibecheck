@@ -14,8 +14,9 @@ This isolated experiment now has two implementations:
 
 The renderer version uses Codex's real `[data-user-message-bubble]` component
 selector and stores a chosen emoji in
-`data-highlight-and-react-reaction` on that component. It highlights the exact
-range with the CSS Custom Highlight API, avoiding DOM wrappers that could
+`data-highlight-and-react-reaction` on that component. It highlights only the
+selected character range with the CSS Custom Highlight API and positions the
+toolbar from that range's client rectangles, avoiding DOM wrappers that could
 interfere with React.
 
 ## Test the renderer implementation

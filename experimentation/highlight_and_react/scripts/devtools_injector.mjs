@@ -155,16 +155,22 @@ export async function inject(port, source, debug = false) {
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   let lastError = '';
+  let attached = false;
   do {
     try {
       const source = await readFile(options.source, 'utf8');
       const results = await inject(options.port, source, options.debug);
+      if (!attached && !options.once && !options.quiet) {
+        console.log(`[highlight-and-react] attached to ${results.length} renderer target(s)`);
+      }
+      attached = true;
       lastError = '';
       if (options.once) {
         console.log(`Injected Highlight & React into ${results.length} renderer target(s).`);
         return;
       }
     } catch (error) {
+      attached = false;
       const message = error instanceof Error ? error.message : String(error);
       if (!options.quiet && message !== lastError) {
         console.error(`[highlight-and-react] waiting for renderer: ${message}`);
