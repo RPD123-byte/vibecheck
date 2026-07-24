@@ -57,26 +57,39 @@
 #highlight-and-react-scrim i {
   position: fixed;
   display: block;
-  background: rgb(0 0 0 / 48%);
+  background: rgb(0 0 0 / 56%);
   pointer-events: none;
 }
 
 #highlight-and-react-bar {
+  --tapback-surface: rgb(249 249 249 / 96%);
+  --tapback-surface-raised: rgb(250 250 250 / 98%);
+  --tapback-border: rgb(0 0 0 / 8%);
+  --tapback-highlight: rgb(255 255 255 / 86%);
+  --tapback-ink: #3a3a3c;
   position: fixed;
   z-index: 2147483647;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #fff;
-  filter: drop-shadow(0 12px 24px rgb(0 0 0 / 36%));
+  display: block;
+  color: var(--tapback-ink);
+  filter: drop-shadow(0 8px 20px rgb(0 0 0 / 28%));
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   isolation: isolate;
   transform-origin: var(--tapback-origin-x, 50%) bottom;
-  animation: highlight-and-react-present 150ms cubic-bezier(.2, .8, .2, 1);
+  animation: highlight-and-react-present 180ms cubic-bezier(.2, .82, .2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  #highlight-and-react-bar {
+    --tapback-surface: rgb(35 35 37 / 96%);
+    --tapback-surface-raised: rgb(45 45 47 / 97%);
+    --tapback-border: rgb(255 255 255 / 10%);
+    --tapback-highlight: rgb(255 255 255 / 10%);
+    --tapback-ink: #f2f2f7;
+  }
 }
 
 @keyframes highlight-and-react-present {
-  from { opacity: 0; transform: translateY(4px) scale(.9); }
+  from { opacity: 0; transform: translateY(6px) scale(.82); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -86,15 +99,15 @@
   align-items: center;
   gap: 1px;
   box-sizing: border-box;
-  height: 38px;
-  padding: 5px 7px;
-  border: 1px solid rgb(255 255 255 / 12%);
-  border-radius: 19px;
-  background: rgb(38 38 40 / 94%);
+  height: 36px;
+  padding: 4px 6px;
+  border: 1px solid var(--tapback-border);
+  border-radius: 18px;
+  background: var(--tapback-surface);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 9%),
-    0 8px 24px rgb(0 0 0 / 28%);
-  backdrop-filter: blur(26px) saturate(180%);
+    inset 0 1px 0 var(--tapback-highlight),
+    0 2px 8px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(40px) saturate(180%);
 }
 
 #highlight-and-react-strip::after {
@@ -102,9 +115,9 @@
   left: var(--tapback-tail-x, 50%);
   width: 11px;
   height: 11px;
-  border-right: 1px solid rgb(255 255 255 / 9%);
-  border-bottom: 1px solid rgb(255 255 255 / 9%);
-  background: rgb(38 38 40 / 94%);
+  border-right: 1px solid var(--tapback-border);
+  border-bottom: 1px solid var(--tapback-border);
+  background: var(--tapback-surface);
   content: "";
   transform: translateX(-50%) rotate(45deg);
 }
@@ -128,26 +141,26 @@
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #fff;
+  color: var(--tapback-ink);
   cursor: pointer;
   font: 19px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
   transition:
-    background 90ms ease,
-    box-shadow 90ms ease,
-    transform 110ms cubic-bezier(.2, .8, .2, 1);
+    background 100ms ease,
+    box-shadow 100ms ease,
+    transform 130ms cubic-bezier(.2, .8, .2, 1);
 }
 
 #highlight-and-react-bar button:hover {
-  background: rgb(255 255 255 / 14%);
-  transform: translateY(-3px) scale(1.2);
+  background: rgb(120 120 128 / 12%);
+  transform: translateY(-3px) scale(1.18);
 }
 
 #highlight-and-react-bar button[aria-pressed="true"] {
-  background: #0a84ff;
+  background: #0a84ff !important;
   box-shadow:
-    0 0 0 3px rgb(255 255 255 / 92%),
-    0 3px 9px rgb(0 0 0 / 34%);
-  transform: scale(1.08);
+    0 0 0 3px rgb(255 255 255 / 96%),
+    0 3px 10px rgb(0 0 0 / 28%);
+  transform: scale(.9);
 }
 
 #highlight-and-react-bar button:focus-visible {
@@ -157,41 +170,62 @@
 
 #highlight-and-react-bar .tapback-haha {
   color: #32ade6;
-  font: 900 8px/.7 -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
-  letter-spacing: -.04em;
+  font: 950 7.5px/.68 -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
+  letter-spacing: -.07em;
   text-align: center;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 34%);
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 52%),
+    0 1px 2px rgb(0 0 0 / 12%);
+  transform: scaleX(.9);
 }
 
 #highlight-and-react-bar .tapback-punctuation {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 950;
   line-height: 1;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 24%);
+  letter-spacing: -.14em;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 34%),
+    0 1px 2px rgb(0 0 0 / 10%);
 }
 
 #highlight-and-react-bar .tapback-exclamation {
-  color: #ff695e;
+  color: #ff6257;
 }
 
 #highlight-and-react-bar .tapback-question {
-  color: #bf7af0;
+  color: #bf5af2;
+  font-size: 24px;
+  letter-spacing: 0;
 }
 
 #highlight-and-react-more {
-  position: relative;
+  position: absolute;
+  left: var(--tapback-tail-x, 50%);
   width: 38px !important;
   height: 38px !important;
-  border: 1px solid rgb(255 255 255 / 12%) !important;
-  background: rgb(58 58 60 / 96%) !important;
+  overflow: visible;
+  border: 1px solid var(--tapback-border) !important;
+  background: var(--tapback-surface-raised) !important;
+  color: #8e8e93 !important;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 9%),
-    0 8px 24px rgb(0 0 0 / 28%);
+    inset 0 1px 0 var(--tapback-highlight),
+    0 2px 8px rgb(0 0 0 / 14%);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif !important;
   font-size: 25px !important;
   font-weight: 400 !important;
-  backdrop-filter: blur(26px) saturate(180%);
+  line-height: 1 !important;
+  backdrop-filter: blur(40px) saturate(180%);
+  transform: translateX(-50%);
+}
+
+#highlight-and-react-bar[data-placement="above"] #highlight-and-react-more {
+  top: 44px;
+}
+
+#highlight-and-react-bar[data-placement="below"] #highlight-and-react-more {
+  bottom: 44px;
 }
 
 #highlight-and-react-more::before,
@@ -204,57 +238,84 @@
 }
 
 #highlight-and-react-more::before {
-  right: 1px;
-  bottom: -6px;
-  width: 9px;
-  height: 9px;
+  right: 2px;
+  bottom: -7px;
+  width: 11px;
+  height: 11px;
 }
 
 #highlight-and-react-more::after {
   right: -4px;
-  bottom: -11px;
-  width: 5px;
-  height: 5px;
+  bottom: -13px;
+  width: 6px;
+  height: 6px;
 }
 
 #highlight-and-react-bar[data-placement="below"] #highlight-and-react-more::before {
-  top: -6px;
+  top: -7px;
   bottom: auto;
 }
 
 #highlight-and-react-bar[data-placement="below"] #highlight-and-react-more::after {
-  top: -11px;
+  top: -13px;
   bottom: auto;
 }
 
 #highlight-and-react-bar[data-expanded="true"] #highlight-and-react-strip {
-  display: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#highlight-and-react-bar[data-expanded="true"] #highlight-and-react-more::after {
+  top: -5px;
+  right: -5px;
+  bottom: auto;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  background: #3a3a3c;
+  color: #fff;
+  content: "×";
+  font: 15px/17px -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 #highlight-and-react-emoji-picker {
+  --picker-surface: rgb(246 246 246 / 97%);
+  --picker-border: rgb(0 0 0 / 11%);
+  --picker-ink: #1c1c1e;
+  --picker-secondary: rgb(60 60 67 / 62%);
+  --picker-control: rgb(118 118 128 / 12%);
   position: fixed;
   z-index: 2147483647;
   box-sizing: border-box;
-  width: min(360px, calc(100vw - 24px));
-  max-height: min(420px, calc(100vh - 24px));
+  width: min(332px, calc(100vw - 24px));
+  max-height: min(398px, calc(100vh - 24px));
   overflow: hidden;
-  border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 17px;
-  background: rgb(38 38 40 / 96%);
-  color: #fff;
+  border: 1px solid var(--picker-border);
+  border-radius: 15px;
+  background: var(--picker-surface);
+  color: var(--picker-ink);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 9%),
-    0 22px 70px rgb(0 0 0 / 52%);
+    inset 0 1px 0 rgb(255 255 255 / 58%),
+    0 18px 50px rgb(0 0 0 / 38%);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  backdrop-filter: blur(32px) saturate(180%);
-  animation: highlight-and-react-present 150ms cubic-bezier(.2, .8, .2, 1);
+  backdrop-filter: blur(42px) saturate(180%);
+  animation: highlight-and-react-present 180ms cubic-bezier(.2, .82, .2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  #highlight-and-react-emoji-picker {
+    --picker-surface: rgb(42 42 44 / 97%);
+    --picker-border: rgb(255 255 255 / 12%);
+    --picker-ink: #f2f2f7;
+    --picker-secondary: rgb(235 235 245 / 60%);
+    --picker-control: rgb(118 118 128 / 24%);
+  }
 }
 
 #highlight-and-react-emoji-picker header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 11px 13px 8px;
+  display: none;
 }
 
 #highlight-and-react-emoji-picker h2 {
@@ -276,8 +337,8 @@
 }
 
 #highlight-and-react-emoji-scroll {
-  max-height: min(350px, calc(100vh - 94px));
-  padding: 0 9px 12px;
+  max-height: min(307px, calc(100vh - 115px));
+  padding: 8px 9px 12px;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -292,11 +353,11 @@
 
 #highlight-and-react-emoji-picker h3 {
   margin: 0;
-  padding: 6px 4px;
-  color: rgb(255 255 255 / 54%);
-  font-size: 10px;
+  padding: 7px 5px 5px;
+  color: var(--picker-secondary);
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: .04em;
+  letter-spacing: .025em;
   text-transform: uppercase;
 }
 
@@ -317,17 +378,77 @@
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  font: 23px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
+  font: 25px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
 }
 
 .highlight-and-react-emoji-grid button:hover {
-  background: rgb(255 255 255 / 13%);
+  background: var(--picker-control);
   transform: scale(1.12);
 }
 
 .highlight-and-react-emoji-grid button:focus-visible {
   outline: 2px solid #64d2ff;
   outline-offset: -2px;
+}
+
+#highlight-and-react-picker-footer {
+  padding: 7px 9px 9px;
+  border-top: 1px solid var(--picker-border);
+  background: color-mix(in srgb, var(--picker-surface) 92%, transparent);
+}
+
+#highlight-and-react-picker-categories {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 1px;
+  margin-bottom: 7px;
+}
+
+#highlight-and-react-picker-categories button {
+  appearance: none;
+  display: grid;
+  height: 23px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--picker-secondary);
+  cursor: pointer;
+  font: 14px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+#highlight-and-react-picker-categories button:hover,
+#highlight-and-react-picker-categories button[aria-current="true"] {
+  background: var(--picker-control);
+  color: #0a84ff;
+}
+
+#highlight-and-react-emoji-search {
+  appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px 0 28px;
+  border: 0;
+  border-radius: 7px;
+  background:
+    linear-gradient(45deg, transparent 47%, var(--picker-secondary) 48% 54%, transparent 55%)
+      17px 17px / 7px 7px no-repeat,
+    radial-gradient(circle at 11px 11px, transparent 5px, var(--picker-secondary) 5.5px 6.5px, transparent 7px)
+      4px 3px / 21px 21px no-repeat,
+    var(--picker-control);
+  color: var(--picker-ink);
+  font: 13px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  outline: none;
+}
+
+#highlight-and-react-emoji-search:focus {
+  box-shadow: 0 0 0 2px #0a84ff;
+}
+
+#highlight-and-react-emoji-search::placeholder {
+  color: var(--picker-secondary);
 }
 
 /* @attune-script
@@ -358,30 +479,39 @@
     { key: 'standard:question', value: '❓', label: 'Question mark', glyph: 'question' },
   ];
   const DEFAULT_RECENTS = ['😂', '💀', '🤞', '👼', '❤️'];
+  const PICKER_CATEGORY_ICONS = ['◷', '☺︎', '♣︎', '●', '★', '✈︎', '▣', '♥︎', '⚑'];
   const EMOJI_CATEGORIES = [
     {
       label: 'Smileys & People',
-      emoji: '😀 😃 😄 😁 😆 🥹 😅 😂 🤣 🥲 ☺️ 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🥸 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣 😖 😫 😩 🥺 😢 😭 😮‍💨 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🫣 🤭 🤫 🤥 😶 🫥 😐 🫤 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕'.split(' '),
-    },
-    {
-      label: 'Gestures',
-      emoji: '👋 🤚 🖐️ ✋ 🖖 🫱 🫲 🫳 🫴 👌 🤌 🤏 ✌️ 🤞 🫰 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 🫵 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 🫶 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪'.split(' '),
-    },
-    {
-      label: 'Hearts & Symbols',
-      emoji: '❤️ 🩷 🧡 💛 💚 💙 🩵 💜 🤎 🖤 🩶 🤍 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 💋 💯 💢 💥 💫 💦 💨 🕳️ 💣 💬 👁️‍🗨️ 🗨️ 🗯️ 💭 💤'.split(' '),
+      emoji: '😀 😃 😄 😁 😆 🥹 😅 😂 🤣 🥲 ☺️ 😊 😇 🙂 🙃 😉 😌 😍 🥰 😘 😗 😙 😚 😋 😛 😝 😜 🤪 🤨 🧐 🤓 😎 🥸 🤩 🥳 😏 😒 😞 😔 😟 😕 🙁 ☹️ 😣 😖 😫 😩 🥺 😢 😭 😮‍💨 😤 😠 😡 🤬 🤯 😳 🥵 🥶 😱 😨 😰 😥 😓 🤗 🤔 🫣 🤭 🤫 🤥 😶 🫥 😐 🫤 😑 😬 🙄 😯 😦 😧 😮 😲 🥱 😴 🤤 😪 😵 🤐 🥴 🤢 🤮 🤧 😷 🤒 🤕 👋 🤚 🖐️ ✋ 🖖 🫱 🫲 🫳 🫴 👌 🤌 🤏 ✌️ 🤞 🫰 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 🫵 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 🫶 👐 🤲 🤝 🙏 ✍️ 💅 🤳 💪'.split(' '),
     },
     {
       label: 'Animals & Nature',
       emoji: '🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐻‍❄️ 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🙈 🙉 🙊 🐔 🐧 🐦 🐤 🦄 🐝 🦋 🐌 🐞 🌸 🌹 🌺 🌻 🌼 🌷 🌱 🌲 🌈 ⭐️ 🌟 ✨ ⚡️ 🔥'.split(' '),
     },
     {
-      label: 'Food & Activity',
-      emoji: '🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🍕 🍔 🍟 🌭 🍿 🍩 🍪 🎂 🍰 🧁 ☕️ 🍺 🍻 🥂 🍷 ⚽️ 🏀 🏈 ⚾️ 🎾 🏐 🎸 🎹 🎤 🎧 🎮 🎯'.split(' '),
+      label: 'Food & Drink',
+      emoji: '🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🍕 🍔 🍟 🌭 🍿 🍩 🍪 🎂 🍰 🧁 ☕️ 🍺 🍻 🥂 🍷'.split(' '),
     },
     {
-      label: 'Objects & Travel',
-      emoji: '🚗 🚕 🚌 🚎 🏎️ 🚓 🚑 🚒 🚲 ✈️ 🚀 🛸 ⌚️ 📱 💻 ⌨️ 🖥️ 📷 📸 🎥 📺 🔋 💡 🔦 📚 ✏️ 📝 💼 🎁 🎈 🎉 🎊 🪩 🔑 ❤️‍🔥'.split(' '),
+      label: 'Activity',
+      emoji: '⚽️ 🏀 🏈 ⚾️ 🎾 🏐 🎸 🎹 🎤 🎧 🎮 🎯'.split(' '),
+    },
+    {
+      label: 'Travel & Places',
+      emoji: '🚗 🚕 🚌 🚎 🏎️ 🚓 🚑 🚒 🚲 ✈️ 🚀 🛸'.split(' '),
+    },
+    {
+      label: 'Objects',
+      emoji: '⌚️ 📱 💻 ⌨️ 🖥️ 📷 📸 🎥 📺 🔋 💡 🔦 📚 ✏️ 📝 💼 🎁 🎈 🎉 🎊 🪩 🔑'.split(' '),
+    },
+    {
+      label: 'Symbols',
+      emoji: '❤️ 🩷 🧡 💛 💚 💙 🩵 💜 🤎 🖤 🩶 🤍 💔 ❤️‍🔥 ❤️‍🩹 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 💋 💯 💢 💥 💫 💦 💨 🕳️ 💣 💬 👁️‍🗨️ 🗨️ 🗯️ 💭 💤'.split(' '),
+    },
+    {
+      label: 'Flags',
+      emoji: '🏳️ 🏴 🏁 🚩 🏳️‍🌈 🏳️‍⚧️ 🇺🇸 🇨🇦 🇲🇽 🇧🇷 🇬🇧 🇫🇷 🇩🇪 🇮🇹 🇪🇸 🇮🇳 🇨🇳 🇯🇵 🇰🇷 🇦🇺'.split(' '),
     },
   ];
   let activeRange = null;
@@ -535,6 +665,7 @@
     if (strip) {
       const tailX = Math.max(14, Math.min(strip.offsetWidth - 14, center - left));
       strip.style.setProperty('--tapback-tail-x', `${Math.round(tailX)}px`);
+      bar.style.setProperty('--tapback-tail-x', `${Math.round(tailX)}px`);
     }
     placeScrim();
     placeEmojiPicker();
@@ -612,11 +743,11 @@
     const more = document.getElementById(MORE_ID);
     more?.setAttribute('aria-expanded', 'false');
     placeBar();
-    more?.focus({ preventScroll: true });
   };
 
   const appendEmojiSection = (scroll, label, emoji) => {
     const section = document.createElement('section');
+    section.dataset.category = label;
     const heading = document.createElement('h3');
     heading.textContent = label;
     const grid = document.createElement('div');
@@ -624,6 +755,46 @@
     for (const value of emoji) grid.append(createReactionButton(emojiReaction(value)));
     section.append(heading, grid);
     scroll.append(section);
+    return section;
+  };
+
+  const renderPickerFooter = (picker, sections) => {
+    const footer = document.createElement('footer');
+    footer.id = 'highlight-and-react-picker-footer';
+    const categories = document.createElement('div');
+    categories.id = 'highlight-and-react-picker-categories';
+    sections.forEach((section, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.title = section.dataset.category;
+      button.setAttribute('aria-label', section.dataset.category);
+      button.setAttribute('aria-current', String(index === 0));
+      button.textContent = PICKER_CATEGORY_ICONS[index] || '•';
+      button.addEventListener('click', () => {
+        section.scrollIntoView({ block: 'start' });
+        categories.querySelectorAll('button').forEach((candidate) => (
+          candidate.setAttribute('aria-current', String(candidate === button))
+        ));
+      });
+      categories.append(button);
+    });
+
+    const search = document.createElement('input');
+    search.id = 'highlight-and-react-emoji-search';
+    search.type = 'search';
+    search.placeholder = 'Describe an Emoji';
+    search.setAttribute('aria-label', 'Describe an Emoji');
+    search.addEventListener('input', () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      for (const section of sections) {
+        const labelMatches = section.dataset.category.toLocaleLowerCase().includes(query);
+        const emojiMatches = [...section.querySelectorAll('[data-reaction-key]')]
+          .some((button) => button.textContent.includes(query));
+        section.hidden = Boolean(query) && !labelMatches && !emojiMatches;
+      }
+    });
+    footer.append(categories, search);
+    picker.append(footer);
   };
 
   const renderEmojiPicker = () => {
@@ -647,16 +818,17 @@
 
     const scroll = document.createElement('div');
     scroll.id = 'highlight-and-react-emoji-scroll';
-    appendEmojiSection(scroll, 'Frequently Used', readRecents());
+    const sections = [appendEmojiSection(scroll, 'Frequently Used', readRecents())];
     for (const category of EMOJI_CATEGORIES) {
-      appendEmojiSection(scroll, category.label, category.emoji);
+      sections.push(appendEmojiSection(scroll, category.label, category.emoji));
     }
     picker.append(header, scroll);
+    renderPickerFooter(picker, sections);
     document.body.append(picker);
     document.getElementById(BAR_ID).dataset.expanded = 'true';
     document.getElementById(MORE_ID)?.setAttribute('aria-expanded', 'true');
     placeBar();
-    picker.querySelector('.highlight-and-react-emoji-grid button')?.focus({ preventScroll: true });
+    picker.querySelector('#highlight-and-react-emoji-search')?.focus({ preventScroll: true });
   };
 
   const renderBar = () => {
@@ -687,12 +859,14 @@
     more.setAttribute('aria-haspopup', 'dialog');
     more.setAttribute('aria-expanded', 'false');
     more.textContent = '☺︎';
-    more.addEventListener('click', renderEmojiPicker);
+    more.addEventListener('click', () => {
+      if (document.getElementById(PICKER_ID)) closeEmojiPicker();
+      else renderEmojiPicker();
+    });
 
     bar.append(strip, more);
     document.body.append(bar);
     placeBar();
-    strip.querySelector('button')?.focus({ preventScroll: true });
   };
 
   const openFromSelection = () => {

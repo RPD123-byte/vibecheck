@@ -162,6 +162,13 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     const compactButtons = document.querySelectorAll('#highlight-and-react-strip button').length;
     const hasCustomEmojiButton = Boolean(document.getElementById('highlight-and-react-more'));
     const hasScrim = Boolean(document.getElementById('highlight-and-react-scrim'));
+    const compactHeight = getComputedStyle(
+      document.getElementById('highlight-and-react-strip'),
+    ).height;
+    const customEmojiButtonSize = [
+      getComputedStyle(document.getElementById('highlight-and-react-more')).width,
+      getComputedStyle(document.getElementById('highlight-and-react-more')).height,
+    ];
 
     document.getElementById('outside').dispatchEvent(
       new PointerEvent('pointerdown', { bubbles: true, clientX: 5, clientY: 5 }),
@@ -218,6 +225,10 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     const emojiChoices = document.querySelectorAll(
       '#highlight-and-react-emoji-picker .highlight-and-react-emoji-grid button',
     ).length;
+    const nativePickerFurniture = Boolean(
+      document.getElementById('highlight-and-react-emoji-search')
+      && document.querySelectorAll('#highlight-and-react-picker-categories button').length === 9,
+    );
     document.querySelector(
       '#highlight-and-react-emoji-picker [data-reaction-key="emoji:😂"]',
     ).click();
@@ -245,6 +256,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       compactButtons,
       hasCustomEmojiButton,
       hasScrim,
+      compactHeight,
+      customEmojiButtonSize,
       dismissedOutside,
       openedByShortcut,
       addedReaction,
@@ -253,7 +266,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       selectedHeart,
       removedReaction,
       expandedPicker,
-      emojiChoices,
+      fullEmojiCatalog: emojiChoices >= 300,
+      nativePickerFurniture,
       customReaction,
       customReactionKey,
       closedAfterCustomReaction,
@@ -267,6 +281,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     compactButtons: 8,
     hasCustomEmojiButton: true,
     hasScrim: true,
+    compactHeight: '36px',
+    customEmojiButtonSize: ['38px', '38px'],
     dismissedOutside: true,
     openedByShortcut: true,
     addedReaction: '🩷',
@@ -275,7 +291,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     selectedHeart: 'true',
     removedReaction: true,
     expandedPicker: true,
-    emojiChoices: 302,
+    fullEmojiCatalog: true,
+    nativePickerFurniture: true,
     customReaction: '😂',
     customReactionKey: 'emoji:😂',
     closedAfterCustomReaction: true,
