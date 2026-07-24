@@ -15,10 +15,9 @@ same task with a short note such as:
 The goal is to help Codex notice reactions that are normally lost in a text-only
 conversation without recording or uploading camera footage.
 
-> [!IMPORTANT]
-> Vibecheck’s menu-bar app currently runs from source or as an unsigned local
-> build. A public Developer ID build still requires the protected notarized
-> release gate.
+> [!NOTE]
+> Vibecheck currently ships for Apple-silicon Macs. The downloadable app is
+> signed with Developer ID and notarized by Apple.
 
 ## Current behavior
 
@@ -35,21 +34,31 @@ conversation without recording or uploading camera footage.
 Expression detection is probabilistic and may be wrong. The message sent to
 Codex explicitly describes the result as an imperfect inference.
 
-## Requirements
+## Download and install
 
-The setup script checks these requirements and reports anything missing:
+1. Download
+   [Vibecheck v0.2.0 for Apple silicon](https://github.com/RPD123-byte/vibecheck/releases/download/v0.2.0/Vibecheck-darwin-arm64-0.2.0.zip).
+2. Double-click the ZIP to extract `Vibecheck.app`.
+3. Move `Vibecheck.app` to your **Applications** folder.
+4. Open Vibecheck from Applications.
+5. Click the Vibecheck icon in the macOS menu bar and enable **Show notch**,
+   **Codex interruption**, or both.
+6. Approve camera access when macOS asks.
+
+Requirements:
 
 - macOS
+- An Apple-silicon Mac
 - A Mac with a built-in display notch for the visual overlay
-- Python 3.11
-- Rust 1.91 or newer
-- Node.js 24
-- Git
-- Xcode Command Line Tools
 - The Codex desktop app for live interruption
-- Internet access during installation and the first model load
 
-## Installation
+Vibecheck is a menu-bar utility. It does not open a normal app window or show a
+Dock icon.
+
+## Run from source
+
+Source development additionally requires Python 3.11, Rust 1.91 or newer,
+Node.js 24, Git, Xcode Command Line Tools, and internet access during setup.
 
 ```bash
 git clone https://github.com/RPD123-byte/vibecheck.git
@@ -59,9 +68,7 @@ cd vibecheck
 
 The script creates `.venv`, installs the Python dependencies, and builds the
 Rust interruption component. Inference dependencies are large, so initial setup
-may take several minutes.
-
-### 7. Install the menu-bar app dependencies
+may take several minutes. Then install the menu-bar dependencies:
 
 ```bash
 npm ci
@@ -69,7 +76,10 @@ npm ci
 
 ## First run
 
-### Start the menu-bar app
+If you installed the downloadable app, open it from Applications and use its
+menu-bar icon.
+
+To start the app from source:
 
 ```bash
 npm run app:dev
@@ -133,8 +143,8 @@ If camera access is denied or the prompt does not appear, open:
 
 **System Settings → Privacy & Security → Camera**
 
-Enable access for the terminal or Python host used to launch Vibecheck, then
-restart the command.
+Enable access for **Vibecheck**. If you are running from source, enable access
+for the terminal or Python host instead. Then restart Vibecheck.
 
 Do not run the historical experiment and the production app at the same time.
 Two processes competing for the camera can cause failures or delayed frames.
@@ -336,7 +346,10 @@ The terminal output may report `no_active_turn`, `multiple_active_turns`,
 
 ## Updating
 
-From the repository:
+Download the newest build from the
+[releases page](https://github.com/RPD123-byte/vibecheck/releases).
+
+When running from source:
 
 ```bash
 git pull --ff-only
