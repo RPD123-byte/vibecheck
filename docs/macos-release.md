@@ -27,6 +27,29 @@ The current `codex-control` release uses `osascript` for the managed ChatGPT qui
 path, so the app declares Apple Events usage and the automation entitlement.
 This release does not request Accessibility access.
 
+## Preview resource budget
+
+The first local arm64 onedir build established these unsigned reference values:
+
+- frozen Python/Rust/model runtime: 505 MB;
+- complete application bundle: 816 MB;
+- compressed DMG: 278 MB;
+- compressed ZIP: 285 MB;
+- menu-only idle resident memory: approximately 253 MB across Electron and the
+  disabled Python owner;
+- active real-image pipeline resident memory: approximately 411 MB across the
+  Python owner, inference, notch, and Rust workers.
+
+The preview budget is at most 900 MB uncompressed for the app and 325 MB for
+each compressed artifact. A release exceeding either limit must explain the
+component regression. The largest current runtime components are Torch
+(214 MB), OpenCV (97 MB), ONNX Runtime (68 MB), NumPy (32 MB), and the frozen
+entry executable (31 MB).
+
+These size and memory budgets do not permit relaxing the 1.5-second emotion
+stream freshness deadline or persisting model input/output. Signed release CI
+retains a full Mach-O inventory so signing and architecture growth are visible.
+
 ## Local unsigned build
 
 Install Node 24, Python 3.11, Rust 1.91 or later, `uv`, and Xcode command-line

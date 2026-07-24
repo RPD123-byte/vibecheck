@@ -70,8 +70,8 @@
 - [x] 8.1 Spike and document a relocatable onedir frozen Python build from a clean environment, falling back from PyInstaller only if real dependency collection cannot be made reliable.
 - [x] 8.2 Add explicit collection hooks and resource lookup for EmotiEffLib, ONNX Runtime, OpenCV, PyObjC/AppKit/AVFoundation, the arm64 Rust interruption binary, and only the selected `enet_b0_8_best_afew.onnx` model with its Apache-2.0 notice.
 - [x] 8.3 Package the frozen runtime beneath Electron `Contents/Resources`, resolve it through `process.resourcesPath`, and prevent development interpreter/repository fallback in packaged mode.
-- [ ] 8.4 Inventory every Mach-O executable, dynamic library, native extension, helper, and framework in the final bundle with file type, architecture slices, identifier, and signing status.
-- [ ] 8.5 Run real image inference, notch startup, Rust dry-run, dynamic toggles, pause, and quit using only the packaged runtime and bundled model assets with network disabled.
+- [x] 8.4 Inventory every Mach-O executable, dynamic library, native extension, helper, and framework in the final bundle with file type, architecture slices, identifier, and signing status.
+- [x] 8.5 Run real image inference, notch startup, Rust dry-run, dynamic toggles, pause, and quit using only the packaged runtime and bundled model assets with network disabled.
 - [ ] 8.6 Measure packaged cold start, loading heartbeat, idle-off resources, active resources, app size, compressed DMG size, and largest components; establish an accepted arm64 preview size budget without weakening freshness or privacy behavior.
 
 ## 9. Developer ID Signing and Permissions
@@ -98,5 +98,5 @@
 - [ ] 11.1 Run Python lint/type checks and all default unit, protocol, process, model, visual, and source-guard tests from a clean clone without ignored planning or experimentation files.
 - [x] 11.2 Run Rust formatting, linting, unit, process, dry-run, and opt-in live Codex verification against the pinned `codex-control` release.
 - [x] 11.3 Run JavaScript formatting, type checking, dependency audit, main-process native-menu tests, Electron integration tests, and packaged zero-window/security assertions.
-- [ ] 11.4 Verify no expression data, frames, conversation contents, release secrets, mutable runtime files, or development paths are persisted or included unintentionally.
+- [x] 11.4 Verify no expression data, frames, conversation contents, release secrets, mutable runtime files, or development paths are persisted or included unintentionally.
 - [ ] 11.5 Perform the protected signed/notarized clean-install release gate and record the exact app version, Electron/Python/Rust/model versions, architecture, notarization submission, and final artifact hashes.

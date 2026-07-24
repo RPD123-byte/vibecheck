@@ -3,6 +3,7 @@ import { MakerDMG } from "@electron-forge/maker-dmg";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { VitePlugin } from "@electron-forge/plugin-vite";
 import path from "node:path";
+import packageManifest from "./package.json";
 
 const releaseSigning = process.env.VIBECHECK_RELEASE_SIGNING === "1";
 const runtimePath = path.resolve(
@@ -65,7 +66,7 @@ const config: ForgeConfig = {
     new MakerDMG(
       {
         format: "ULFO",
-        name: "Vibecheck-${version}-arm64",
+        name: `Vibecheck-${packageManifest.version}-arm64`,
       },
       ["darwin"],
     ),
