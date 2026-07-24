@@ -5,6 +5,7 @@ import {
   MenuActions,
   menuProjection,
 } from "./menu-template";
+import { FeaturePreferences, Preferences } from "./preferences";
 import { PublicState, publicProjection, RuntimeSnapshot } from "./protocol";
 import { RuntimeClient } from "./runtime-client";
 
@@ -26,6 +27,7 @@ let shutdownInProgress = false;
 let actionPending = false;
 let actionError: string | null = null;
 let trayImageIsEmpty = true;
+const preferences = new Preferences();
 let lastState: PublicState = {
   aggregate: "off",
   features: {
@@ -58,15 +60,18 @@ function labelFor(aggregate: PublicState["aggregate"]): string {
   )[aggregate];
 }
 
-async function allowCameraIfNeeded(enabled: boolean): Promise<void> {
+async function allowCameraIfNeeded(
+  enabled: boolean,
+  desired?: FeaturePreferences,
+): Promise<boolean> {
   if (!app.isPackaged && process.env.VIBECHECK_RUNTIME_MODE === "demo") {
-    return;
+    return true;
   }
   if (
     !enabled ||
     systemPreferences.getMediaAccessStatus("camera") === "granted"
   ) {
-    return;
+    return true;
   }
   const granted = await systemPreferences.askForMediaAccess("camera");
   if (!granted) {
@@ -74,10 +79,18 @@ async function allowCameraIfNeeded(enabled: boolean): Promise<void> {
       ...lastState,
       aggregate: "needs_permission",
       camera: "needs_permission",
+      features: desired
+        ? {
+            ...lastState.features,
+            notch_enabled: desired.notch_enabled,
+            integrations: { codex_enabled: desired.codex_enabled },
+          }
+        : lastState.features,
     };
     rebuildMenu();
-    throw new Error("Camera access is required to enable this feature");
+    return false;
   }
+  return true;
 }
 
 async function runMenuAction(action: () => Promise<void>): Promise<void> {
@@ -102,12 +115,16 @@ async function runMenuAction(action: () => Promise<void>): Promise<void> {
 const actions: MenuActions = {
   setNotch: (enabled) =>
     runMenuAction(async () => {
-      await allowCameraIfNeeded(enabled);
+      if (!(await allowCameraIfNeeded(enabled))) {
+        throw new Error("Camera access is required to enable this feature");
+      }
       await runtime?.setFeature("notch", enabled);
     }),
   setCodex: (enabled) =>
     runMenuAction(async () => {
-      await allowCameraIfNeeded(enabled);
+      if (!(await allowCameraIfNeeded(enabled))) {
+        throw new Error("Camera access is required to enable this feature");
+      }
       await runtime?.setFeature("codex", enabled);
     }),
   setPaused: (paused) =>
@@ -171,7 +188,12 @@ async function launch(): Promise<void> {
   app.setName("Vibecheck");
   app.dock?.hide();
   Menu.setApplicationMenu(null);
-  runtime = new RuntimeClient();
+  runtime = new RuntimeClient(preferences, undefined, (desired) =>
+    allowCameraIfNeeded(
+      desired.notch_enabled || desired.codex_enabled,
+      desired,
+    ),
+  );
   runtime.on("state", publish);
   runtime.on("terminal-failure", () => {
     lastState = { ...lastState, aggregate: "failed", canRecover: true };

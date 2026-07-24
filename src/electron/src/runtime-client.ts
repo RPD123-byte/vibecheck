@@ -31,6 +31,8 @@ interface PreferenceStore {
   write(value: FeaturePreferences): void;
 }
 
+type FeaturePreflight = (value: FeaturePreferences) => Promise<boolean>;
+
 export class RuntimeClient extends EventEmitter {
   private child: ChildProcessWithoutNullStreams | null = null;
   private socket: net.Socket | null = null;
@@ -45,6 +47,7 @@ export class RuntimeClient extends EventEmitter {
   constructor(
     private readonly preferences: PreferenceStore = new Preferences(),
     private readonly commandFactory?: () => OwnerCommand,
+    private readonly featurePreflight?: FeaturePreflight,
   ) {
     super();
   }
@@ -339,6 +342,9 @@ export class RuntimeClient extends EventEmitter {
     await this.request("get_state", {});
     const preferred = this.preferences.read();
     if (!preferred.notch_enabled && !preferred.codex_enabled) return;
+    if (this.featurePreflight && !(await this.featurePreflight(preferred))) {
+      return;
+    }
     await this.setFeatures({
       notch_enabled: preferred.notch_enabled,
       integrations: { codex_enabled: preferred.codex_enabled },

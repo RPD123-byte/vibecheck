@@ -41,6 +41,39 @@ class MemoryPreferences {
 }
 
 describe("RuntimeClient", () => {
+  it("preflights persisted camera features before reapplying them", async () => {
+    const directory = fs.mkdtempSync(
+      path.join(os.tmpdir(), "vibecheck-client-"),
+    );
+    directories.push(directory);
+    const script = path.join(directory, "fake-owner.cjs");
+    const socket = path.join(directory, "control.sock");
+    fs.writeFileSync(script, fakeOwnerSource());
+    const preferences = new MemoryPreferences();
+    preferences.value = {
+      notch_enabled: true,
+      codex_enabled: false,
+    };
+    const preflight = vi.fn(async () => false);
+    const client = new RuntimeClient(
+      preferences,
+      () => ({
+        executable: process.execPath,
+        args: [script, socket],
+        cwd: directory,
+      }),
+      preflight,
+    );
+
+    await client.start();
+
+    expect(preflight).toHaveBeenCalledWith(preferences.value);
+    expect(client.state?.features.notch_enabled).toBe(false);
+    expect(client.state?.features.revision).toBe(0);
+    expect(preferences.value.notch_enabled).toBe(true);
+    await client.shutdown();
+  });
+
   it("drives a real private socket, reconnects, rejects stale state, and quits", async () => {
     const directory = fs.mkdtempSync(
       path.join(os.tmpdir(), "vibecheck-client-"),
