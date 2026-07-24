@@ -25,6 +25,7 @@ interface TestHook {
   }>;
   invoke(action: Action, enabled?: boolean): Promise<void>;
   dismissMenu(): void;
+  trayClickListenerCount(): { mouseDown: number; rightClick: number };
   menuPopupCount(): number;
   trayImageIsEmpty(): boolean;
 }
@@ -53,6 +54,7 @@ test("native menu drives the demo runtime without windows or orphans", async () 
     args: appArguments,
     env: appEnvironment,
   });
+  const applicationProcess = application.process();
   try {
     await expect
       .poll(() =>
@@ -124,7 +126,7 @@ test("native menu drives the demo runtime without windows or orphans", async () 
       ),
     ]);
     expect(duplicateExit).toBe(0);
-    expect(application.process().exitCode).toBeNull();
+    expect(applicationProcess.exitCode).toBeNull();
     await expect
       .poll(() =>
         application.evaluate(() =>
@@ -150,6 +152,13 @@ test("native menu drives the demo runtime without windows or orphans", async () 
     await application.evaluate(() =>
       (globalThis as { __vibecheckE2E: TestHook }).__vibecheckE2E.dismissMenu(),
     );
+    expect(
+      await application.evaluate(() =>
+        (
+          globalThis as { __vibecheckE2E: TestHook }
+        ).__vibecheckE2E.trayClickListenerCount(),
+      ),
+    ).toEqual({ mouseDown: 1, rightClick: 1 });
 
     await invoke(application, "notch", true);
     await expect
@@ -192,9 +201,11 @@ test("native menu drives the demo runtime without windows or orphans", async () 
     ).toBe(0);
 
     await invoke(application, "quit");
-    await application.process().exited;
+    if (applicationProcess.exitCode === null) {
+      await once(applicationProcess, "exit");
+    }
   } finally {
-    if (application.process().exitCode === null) await application.close();
+    if (applicationProcess.exitCode === null) await application.close();
     fs.rmSync(testRoot, { recursive: true, force: true });
   }
   expect(runtimeDirectories(runtimePrefix)).toEqual(before);

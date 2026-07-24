@@ -147,7 +147,6 @@ function rebuildMenu(): void {
       error: actionError,
     }),
   );
-  tray.setContextMenu(trayMenu);
   tray.setToolTip(`Vibecheck — ${labelFor(lastState.aggregate)}`);
 }
 
@@ -186,6 +185,10 @@ function installDevelopmentTestHook(): void {
         if (action === "quit") actions.quit();
       },
       dismissMenu: () => tray?.closeContextMenu(),
+      trayClickListenerCount: () => ({
+        mouseDown: tray?.listenerCount("mouse-down") ?? 0,
+        rightClick: tray?.listenerCount("right-click") ?? 0,
+      }),
       menuPopupCount: () => trayMenuPopupCount,
       trayImageIsEmpty: () => trayImageIsEmpty,
     },
@@ -216,6 +219,8 @@ async function launch(): Promise<void> {
   }
   image.setTemplateImage(true);
   tray = new Tray(image);
+  tray.on("mouse-down", showTrayMenu);
+  tray.on("right-click", showTrayMenu);
   rebuildMenu();
   installDevelopmentTestHook();
   await runtimeReady;
