@@ -187,6 +187,14 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     const compactHeight = getComputedStyle(
       document.getElementById('highlight-and-react-strip'),
     ).height;
+    const compactGap = getComputedStyle(
+      document.getElementById('highlight-and-react-strip'),
+    ).gap;
+    const stripBounds = document.getElementById('highlight-and-react-strip')
+      .getBoundingClientRect();
+    const moreBounds = document.getElementById('highlight-and-react-more')
+      .getBoundingClientRect();
+    const customEmojiAtEnd = moreBounds.left >= stripBounds.right;
     const customEmojiButtonSize = [
       getComputedStyle(document.getElementById('highlight-and-react-more')).width,
       getComputedStyle(document.getElementById('highlight-and-react-more')).height,
@@ -281,6 +289,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       hasCustomEmojiButton,
       hasScrim,
       compactHeight,
+      compactGap,
+      customEmojiAtEnd,
       customEmojiButtonSize,
       dismissedOutside,
       openedByShortcut,
@@ -308,6 +318,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     hasCustomEmojiButton: true,
     hasScrim: true,
     compactHeight: '36px',
+    compactGap: '4px',
+    customEmojiAtEnd: true,
     customEmojiButtonSize: ['38px', '38px'],
     dismissedOutside: true,
     openedByShortcut: true,

@@ -100,7 +100,9 @@
   --tapback-ink: #3a3a3c;
   position: fixed;
   z-index: 2147483647;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--tapback-ink);
   filter: drop-shadow(0 8px 20px rgb(0 0 0 / 28%));
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
@@ -128,10 +130,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 1px;
+  gap: 4px;
   box-sizing: border-box;
   height: 36px;
-  padding: 4px 6px;
+  padding: 4px 8px;
   border: 1px solid var(--tapback-border);
   border-radius: 18px;
   background: var(--tapback-surface);
@@ -265,8 +267,7 @@
 }
 
 #highlight-and-react-more {
-  position: absolute;
-  left: var(--tapback-tail-x, 50%);
+  position: relative;
   width: 38px !important;
   height: 38px !important;
   overflow: visible;
@@ -281,15 +282,6 @@
   font-weight: 400 !important;
   line-height: 1 !important;
   backdrop-filter: blur(40px) saturate(180%);
-  transform: translateX(-50%);
-}
-
-#highlight-and-react-bar[data-placement="above"] #highlight-and-react-more {
-  top: 44px;
-}
-
-#highlight-and-react-bar[data-placement="below"] #highlight-and-react-more {
-  bottom: 44px;
 }
 
 #highlight-and-react-more::before,
