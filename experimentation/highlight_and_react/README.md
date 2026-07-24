@@ -1,19 +1,78 @@
 # Highlight & React experiment
 
-This is a deliberately isolated macOS prototype for placing a Messages-style
-reaction bar over content in Codex or another application.
+This isolated experiment now has two implementations:
 
-The experiment does not modify, inject code into, restart, or terminate the
-target application. Its primary interaction is selection-first: select text and
-press `Control–Option–R` (`⌃⌥R`). It asks macOS Accessibility for the selected
-text and its screen bounds, then presents two non-activating floating panels:
+1. **Codex renderer injection (recommended):** Attune-compatible CSS and
+   JavaScript run inside Codex's Chromium renderer. Double-clicking selected
+   message text opens a Messages-style reaction bar at the exact text range.
+   Selecting text and pressing `Control–Option–R` (`⌃⌥R`) opens the same bar.
+   Clicking outside the highlighted text and bar, or pressing Escape, dismisses
+   it.
+2. **Native accessibility fallback:** the original app-independent Swift
+   prototype reads the foreground app's Accessibility selection and draws
+   `NSPanel` overlays.
 
-1. a click-through highlight around the resolved target;
-2. a reaction bar above or below that target.
+The renderer version uses Codex's real `[data-user-message-bubble]` component
+selector and stores a chosen emoji in
+`data-highlight-and-react-reaction` on that component. It highlights the exact
+range with the CSS Custom Highlight API, avoiding DOM wrappers that could
+interfere with React.
 
-Choosing a reaction prints a JSON event to standard output. That event is the
-prototype seam for a future Electron service, local database, agent action, or
-app-specific adapter.
+## Test the renderer implementation
+
+This automated test launches and terminates only its own temporary Electron
+fixture. It does not touch the running Codex app:
+
+```bash
+cd /Users/computer/uncover-worktrees/highlight_and_react/experimentation/highlight_and_react
+node --test Tests/renderer_injection.test.mjs
+```
+
+The test verifies the complete interaction:
+
+- inject CSS and JavaScript over the Chromium DevTools protocol;
+- open from a double-clicked text selection;
+- dismiss from an outside click;
+- open from `⌃⌥R`;
+- choose a reaction and encode it on the message component.
+
+## Run it in Codex
+
+Chromium DevTools must be enabled when Codex starts; it cannot be enabled on an
+already-running process. The safe launcher refuses to quit or restart Codex:
+
+```bash
+cd /Users/computer/uncover-worktrees/highlight_and_react/experimentation/highlight_and_react
+./scripts/launch_codex_renderer.sh
+```
+
+If Codex is running, the script exits with an explanation. When you are ready,
+quit Codex yourself and run it again. It starts Codex with a localhost-only
+DevTools port and watches `renderer/highlight_and_react.css` for live edits.
+Pressing Control-C stops the injector but leaves Codex open.
+
+If Codex was already launched manually with `--remote-debugging-port=9222`,
+attach without launching anything:
+
+```bash
+./scripts/attach_codex_renderer.sh 9222
+```
+
+Then double-click a word in a Codex message, or select a phrase and press
+`⌃⌥R`. The emoji bar should appear above the selected range. Click anywhere
+outside it to dismiss.
+
+The source file is directly compatible with Attune's `set-css` and
+`launch`/`attach` workflow. See [ATTUNE_RESEARCH.md](ATTUNE_RESEARCH.md) for the
+upstream commits, exact mechanism, and the important finding that the cloned
+repositories do not themselves contain a double-click implementation.
+
+## Native accessibility fallback
+
+The fallback does not inject code into, restart, or terminate the target
+application. Select text and press `⌃⌥R`; it asks macOS Accessibility for the
+selected text and screen bounds, then presents a click-through highlight and a
+non-activating reaction panel.
 
 ## Try the overlay without permissions
 
@@ -24,7 +83,7 @@ swift run highlight-and-react --demo
 
 Use `--demo-seconds 10` to make the demo exit automatically.
 
-## Test the keyboard shortcut in the built-in fixture
+### Test the keyboard shortcut in the native fixture
 
 ```bash
 cd experimentation/highlight_and_react
@@ -42,7 +101,7 @@ In the fixture window:
 
 This is the same selection and shortcut path used in Codex.
 
-## Build a stable app bundle
+### Build a stable native app bundle
 
 ```bash
 cd experimentation/highlight_and_react
@@ -79,7 +138,7 @@ build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
   --debug-accessibility
 ```
 
-## Why this can be app-independent
+### Why the fallback can be app-independent
 
 The overlay uses three OS-level contracts rather than Codex internals:
 
@@ -92,7 +151,7 @@ The app-independent portion is the event monitor, target resolver, coordinate
 conversion, overlay placement, and reaction event. App adapters only need to
 improve target selection or decide what a reaction means.
 
-## Codex-specific uncertainty to test
+### Codex-specific fallback uncertainty
 
 Codex is Electron-based, and the useful Accessibility selection may belong to a
 text node or a larger web-area ancestor depending on how its accessibility tree
@@ -102,9 +161,15 @@ injection.
 
 ## Safety and current limitations
 
-- No process injection, private Codex API, screen scraping, or target-app restart.
-- The app only resolves selected content after the explicit shortcut.
-- Reactions are local JSON events; they do not alter Codex messages.
+- Renderer injection requires starting a Chromium app with a loopback-only
+  DevTools port. The provided launcher never kills an existing Codex process.
+- The renderer route does not modify Codex's signed app bundle or ASAR.
+- Attune's approach applies to Electron and compatible CEF apps, not every macOS
+  app. Native applications still need the Accessibility fallback.
+- Renderer reactions are local DOM state and disappear when React replaces the
+  message component or the renderer reloads; persistence needs a later service.
+- The native fallback only resolves selected content after the explicit
+  shortcut and prints reactions as local JSON events.
 - Secure text fields can expose little or no Accessibility text, by design.
 - Some apps flatten their Accessibility trees, so exact message bounds may need
   a small app-specific resolver.
@@ -117,4 +182,5 @@ injection.
 ```bash
 swift test
 ./scripts/build_app.sh
+node --test Tests/renderer_injection.test.mjs
 ```
