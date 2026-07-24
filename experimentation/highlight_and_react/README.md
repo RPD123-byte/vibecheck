@@ -36,6 +36,15 @@ The test verifies the complete interaction:
 - open from `⌃⌥R`;
 - choose a reaction and encode it on the message component.
 
+For a visible, interactive fixture instead of the automated test, run:
+
+```bash
+./scripts/run_fixture_renderer.sh
+```
+
+This opens a temporary Electron window. Double-click its sample text, or
+select text and press `⌃⌥R`; press Control-C when finished.
+
 ## Run it in Codex
 
 Chromium DevTools must be enabled when Codex starts; it cannot be enabled on an
