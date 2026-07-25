@@ -92,6 +92,76 @@
   pointer-events: none;
 }
 
+#highlight-and-react-element-overlay {
+  position: fixed;
+  z-index: 2147483646;
+  box-sizing: border-box;
+  border: 2px solid #64d2ff;
+  border-radius: var(--highlight-and-react-target-radius, 8px);
+  background: rgb(10 132 255 / 14%);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 70%),
+    0 0 0 4px rgb(10 132 255 / 22%),
+    0 8px 28px rgb(0 0 0 / 20%);
+  pointer-events: none;
+  transition:
+    left 70ms ease-out,
+    top 70ms ease-out,
+    width 70ms ease-out,
+    height 70ms ease-out;
+}
+
+#highlight-and-react-element-overlay[data-state="hover"] {
+  border-style: dashed;
+  background: rgb(100 210 255 / 12%);
+}
+
+#highlight-and-react-element-overlay[data-state="locked"] {
+  border-color: #0a84ff;
+  background: rgb(10 132 255 / 9%);
+}
+
+#highlight-and-react-element-overlay[data-state="locked"] #highlight-and-react-element-label {
+  display: none;
+}
+
+#highlight-and-react-element-label {
+  position: absolute;
+  top: -25px;
+  left: -2px;
+  max-width: min(360px, calc(100vw - 24px));
+  overflow: hidden;
+  padding: 3px 7px;
+  border-radius: 6px 6px 6px 0;
+  background: #0a84ff;
+  color: #fff;
+  font: 600 11px/17px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#highlight-and-react-element-hint {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 2147483647;
+  padding: 7px 11px;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 9px;
+  background: rgb(38 38 40 / 94%);
+  color: #fff;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 28%);
+  font: 600 12px/1.25 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  pointer-events: none;
+  transform: translateX(-50%);
+  backdrop-filter: blur(28px) saturate(180%);
+}
+
+html[data-highlight-and-react-picking="true"],
+html[data-highlight-and-react-picking="true"] * {
+  cursor: crosshair !important;
+}
+
 #highlight-and-react-bar {
   --tapback-surface: rgb(249 249 249 / 96%);
   --tapback-surface-raised: rgb(250 250 250 / 98%);
@@ -514,6 +584,8 @@
   const MORE_ID = 'highlight-and-react-more';
   const PICKER_ID = 'highlight-and-react-emoji-picker';
   const SCRIM_ID = 'highlight-and-react-scrim';
+  const ELEMENT_OVERLAY_ID = 'highlight-and-react-element-overlay';
+  const ELEMENT_HINT_ID = 'highlight-and-react-element-hint';
   const HIGHLIGHT_NAME = 'highlight-and-react-selection';
   const RECENTS_KEY = 'highlight-and-react-recent-emoji';
   const MESSAGE_SELECTOR = [
@@ -573,6 +645,9 @@
   let activeRange = null;
   let activeMessage = null;
   let activeRects = [];
+  let targetMode = null;
+  let hoveredElement = null;
+  let suppressNextClick = false;
 
   const elementForNode = (node) => (
     node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement
@@ -628,10 +703,16 @@
     document.getElementById(BAR_ID)?.remove();
     document.getElementById(PICKER_ID)?.remove();
     document.getElementById(SCRIM_ID)?.remove();
+    document.getElementById(ELEMENT_OVERLAY_ID)?.remove();
+    document.getElementById(ELEMENT_HINT_ID)?.remove();
+    delete document.documentElement.dataset.highlightAndReactPicking;
     removeSelectionHighlight();
     activeRange = null;
     activeMessage = null;
     activeRects = [];
+    targetMode = null;
+    hoveredElement = null;
+    suppressNextClick = false;
   };
 
   const renderScrim = () => {
@@ -669,6 +750,104 @@
     });
   };
 
+  const elementLabel = (element) => {
+    if (!element) return '';
+    const id = element.id ? `#${element.id}` : '';
+    const classes = [...element.classList]
+      .filter((name) => !name.startsWith('highlight-and-react'))
+      .slice(0, 2)
+      .map((name) => `.${name}`)
+      .join('');
+    const role = element.getAttribute('role');
+    return `${element.tagName.toLowerCase()}${id}${classes}${role ? `[role="${role}"]` : ''}`;
+  };
+
+  const usableElement = (element) => {
+    if (!(element instanceof Element)) return false;
+    if (element.closest(
+      `#${BAR_ID}, #${PICKER_ID}, #${ELEMENT_OVERLAY_ID}, #${ELEMENT_HINT_ID}`,
+    )) return false;
+    if (['HTML', 'BODY', 'SCRIPT', 'STYLE', 'LINK', 'META'].includes(element.tagName)) return false;
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return rect.width >= 4
+      && rect.height >= 4
+      && style.display !== 'none'
+      && style.visibility !== 'hidden'
+      && style.pointerEvents !== 'none';
+  };
+
+  const elementAtPoint = (x, y) => {
+    let candidate = document.elementFromPoint(x, y);
+    while (candidate && !usableElement(candidate)) candidate = candidate.parentElement;
+    return candidate;
+  };
+
+  const placeElementOverlay = (element, state) => {
+    if (!usableElement(element)) {
+      document.getElementById(ELEMENT_OVERLAY_ID)?.remove();
+      return;
+    }
+    let overlay = document.getElementById(ELEMENT_OVERLAY_ID);
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = ELEMENT_OVERLAY_ID;
+      overlay.setAttribute('aria-hidden', 'true');
+      const label = document.createElement('span');
+      label.id = 'highlight-and-react-element-label';
+      overlay.append(label);
+      document.body.append(overlay);
+    }
+    const rect = element.getBoundingClientRect();
+    const radius = getComputedStyle(element).borderRadius;
+    Object.assign(overlay.style, {
+      left: `${Math.round(rect.left)}px`,
+      top: `${Math.round(rect.top)}px`,
+      width: `${Math.round(rect.width)}px`,
+      height: `${Math.round(rect.height)}px`,
+    });
+    overlay.style.setProperty(
+      '--highlight-and-react-target-radius',
+      radius && radius !== '0px' ? radius : '8px',
+    );
+    overlay.dataset.state = state;
+    overlay.querySelector(`#highlight-and-react-element-label`).textContent =
+      state === 'hover' ? `${elementLabel(element)} · click to select` : elementLabel(element);
+  };
+
+  const enterElementPicker = () => {
+    close();
+    targetMode = 'picking-element';
+    document.documentElement.dataset.highlightAndReactPicking = 'true';
+    const hint = document.createElement('div');
+    hint.id = ELEMENT_HINT_ID;
+    hint.textContent = 'Hover an element and click to comment · Esc to cancel';
+    document.body.append(hint);
+    return true;
+  };
+
+  const lockElementTarget = (element) => {
+    if (!usableElement(element)) return false;
+    document.getElementById(ELEMENT_HINT_ID)?.remove();
+    delete document.documentElement.dataset.highlightAndReactPicking;
+    hoveredElement = null;
+    activeRange = null;
+    activeMessage = element;
+    activeRects = [element.getBoundingClientRect()];
+    targetMode = 'element';
+    placeElementOverlay(element, 'locked');
+    renderBar();
+    element.dispatchEvent(new CustomEvent('highlight-and-react-targeted', {
+      bubbles: true,
+      detail: {
+        targetType: 'element',
+        element: elementLabel(element),
+        text: element.innerText?.trim() || element.getAttribute('aria-label') || '',
+      },
+    }));
+    return true;
+  };
+
   const placeEmojiPicker = () => {
     const picker = document.getElementById(PICKER_ID);
     if (!picker || !activeRects.length) return;
@@ -692,8 +871,12 @@
 
   const placeBar = () => {
     const bar = document.getElementById(BAR_ID);
-    if (!bar || !activeRange) return;
-    activeRects = usableRects(activeRange);
+    if (!bar || !activeMessage) return;
+    activeRects = activeRange
+      ? usableRects(activeRange)
+      : [activeMessage.getBoundingClientRect()].filter(
+        (rect) => rect.width >= 1 && rect.height >= 1,
+      );
     if (!activeRects.length) {
       close();
       return;
@@ -723,7 +906,10 @@
       strip.style.setProperty('--tapback-tail-x', `${Math.round(tailX)}px`);
       bar.style.setProperty('--tapback-tail-x', `${Math.round(tailX)}px`);
     }
-    placeScrim();
+    if (targetMode === 'element') {
+      placeScrim();
+      placeElementOverlay(activeMessage, 'locked');
+    }
     placeEmojiPicker();
   };
 
@@ -766,7 +952,7 @@
   };
 
   const react = (reaction) => {
-    if (!activeMessage || !activeRange) return;
+    if (!activeMessage) return;
     const message = activeMessage;
     const previousKey = message.dataset.highlightAndReactReactionKey || null;
     const previousReaction = message.dataset.highlightAndReactReaction || null;
@@ -803,10 +989,14 @@
       reaction: removing ? null : reaction.value,
       previousKey,
       previousReaction,
-      text: activeRange.toString().trim(),
+      targetType: targetMode,
+      text: activeRange?.toString().trim()
+        || message.innerText?.trim()
+        || message.getAttribute('aria-label')
+        || '',
       messageSelector: message.matches('[data-user-message-bubble]')
         ? '[data-user-message-bubble]'
-        : message.tagName.toLowerCase(),
+        : elementLabel(message),
     };
     message.dispatchEvent(new CustomEvent('highlight-and-react', {
       bubbles: true,
@@ -915,7 +1105,8 @@
   const renderBar = () => {
     document.getElementById(BAR_ID)?.remove();
     document.getElementById(PICKER_ID)?.remove();
-    renderScrim();
+    if (targetMode === 'element') renderScrim();
+    else document.getElementById(SCRIM_ID)?.remove();
 
     const bar = document.createElement('div');
     bar.id = BAR_ID;
@@ -963,6 +1154,7 @@
     activeRange = range;
     activeMessage = message;
     activeRects = rects;
+    targetMode = 'text';
     if (globalThis.Highlight && globalThis.CSS?.highlights) {
       CSS.highlights.set(HIGHLIGHT_NAME, new Highlight(activeRange));
     }
@@ -985,28 +1177,65 @@
     }
     event.preventDefault();
     event.stopPropagation();
-    if (document.getElementById(BAR_ID)) close();
-    else openFromSelection();
+    if (document.getElementById(BAR_ID) || targetMode === 'picking-element') {
+      close();
+      return;
+    }
+    if (!openFromSelection()) enterElementPicker();
+  };
+
+  const onPointerMove = (event) => {
+    if (targetMode !== 'picking-element') return;
+    const candidate = elementAtPoint(event.clientX, event.clientY);
+    if (candidate === hoveredElement) return;
+    hoveredElement = candidate;
+    placeElementOverlay(candidate, 'hover');
   };
 
   const onPointerDown = (event) => {
-    if (!activeRange) return;
+    if (targetMode === 'picking-element') {
+      const candidate = elementAtPoint(event.clientX, event.clientY) || hoveredElement;
+      if (!candidate) {
+        close();
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      suppressNextClick = true;
+      lockElementTarget(candidate);
+      return;
+    }
+    if (!activeMessage) return;
     if (document.getElementById(BAR_ID)?.contains(event.target)) return;
     if (document.getElementById(PICKER_ID)?.contains(event.target)) return;
-    if (pointInsideSelection(event.clientX, event.clientY)) return;
+    if (targetMode === 'text' && pointInsideSelection(event.clientX, event.clientY)) return;
+    if (targetMode === 'element' && activeMessage.contains(event.target)) return;
     close();
+  };
+
+  const onClick = (event) => {
+    if (!suppressNextClick) return;
+    suppressNextClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
   };
 
   const onViewportChange = () => requestAnimationFrame(placeBar);
   document.addEventListener('keydown', onKeydown, true);
+  document.addEventListener('pointermove', onPointerMove, true);
   document.addEventListener('pointerdown', onPointerDown, true);
+  document.addEventListener('click', onClick, true);
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('scroll', onViewportChange, true);
 
   const cleanup = () => {
     close();
     document.removeEventListener('keydown', onKeydown, true);
+    document.removeEventListener('pointermove', onPointerMove, true);
     document.removeEventListener('pointerdown', onPointerDown, true);
+    document.removeEventListener('click', onClick, true);
     window.removeEventListener('resize', onViewportChange);
     window.removeEventListener('scroll', onViewportChange, true);
     document.querySelectorAll('[data-highlight-and-react-reaction]').forEach((element) => {

@@ -3,9 +3,9 @@
 This isolated experiment now has two implementations:
 
 1. **Codex renderer injection (recommended):** Attune-compatible CSS and
-   JavaScript run inside Codex's Chromium renderer. Selecting message text and
-   pressing `Control–Option–R` (`⌃⌥R`) opens a Messages-style Tapback picker at
-   the exact text range.
+   JavaScript run inside Codex's Chromium renderer. Pressing
+   `Control–Option–R` (`⌃⌥R`) opens a Messages-style Tapback picker at an exact
+   text selection, or starts an element picker when no text is selected.
    Clicking outside the highlighted text and bar, or pressing Escape, dismisses
    it.
 2. **Native accessibility fallback:** the original app-independent Swift
@@ -17,8 +17,15 @@ selector and stores the chosen Tapback key and display value in
 `data-highlight-and-react-reaction-key` and
 `data-highlight-and-react-reaction`. It highlights only the selected character
 range with the CSS Custom Highlight API and positions the toolbar from that
-range's client rectangles, avoiding DOM wrappers that could interfere with
-React.
+range's client rectangles. Text mode does not outline or spotlight the
+selection's containing component. This avoids DOM wrappers that could interfere
+with React.
+
+With no text selection, `⌃⌥R` enters element mode instead. Hovering draws a
+dashed inspector outline around the element under the pointer; clicking locks
+that element, consumes the click so the underlying control is not activated,
+and opens the reaction bar. The locked element is outlined and spotlighted
+because there is no text range to identify the target.
 
 The Tapback UI is a clean-room recreation from the observable Messages UI;
 Messages itself is proprietary compiled software, so its literal source is not
@@ -54,10 +61,12 @@ The test verifies the complete interaction:
 
 - inject CSS and JavaScript over the Chromium DevTools protocol;
 - open from a selected text range with `⌃⌥R`;
+- keep text mode scoped to the exact range without a component spotlight;
 - dismiss from an outside click;
 - open from `⌃⌥R`;
 - add, remove, and replace a reaction on the message component;
-- open the expanded picker and choose a custom emoji.
+- open the expanded picker and choose a custom emoji;
+- enter element mode with no selection, hover a component, lock it, and react.
 
 For a visible, interactive fixture instead of the automated test, run:
 
@@ -65,8 +74,9 @@ For a visible, interactive fixture instead of the automated test, run:
 ./scripts/run_fixture_renderer.sh
 ```
 
-This opens a temporary Electron window. Select sample text and press `⌃⌥R`;
-press Control-C when finished.
+This opens a temporary Electron window. Select sample text and press `⌃⌥R` to
+test exact-range mode. Clear the selection and press `⌃⌥R` to test element
+mode, then hover and click a component. Press Control-C when finished.
 
 ## Run it in Codex
 
@@ -91,7 +101,9 @@ attach without launching anything:
 ```
 
 Then select a phrase in a Codex message and press `⌃⌥R`. The Tapback picker
-should appear above the selected range. Click anywhere outside it to dismiss.
+should appear above only the selected range. With no selected text, press
+`⌃⌥R`, hover a Codex component, and click it to lock the component and open the
+picker. Click anywhere outside it to dismiss.
 
 The source file is directly compatible with Attune's `set-css` and
 `launch`/`attach` workflow. See [ATTUNE_RESEARCH.md](ATTUNE_RESEARCH.md) for the

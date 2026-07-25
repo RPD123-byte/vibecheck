@@ -184,6 +184,9 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     ).length;
     const hasCustomEmojiButton = Boolean(document.getElementById('highlight-and-react-more'));
     const hasScrim = Boolean(document.getElementById('highlight-and-react-scrim'));
+    const textHasElementOverlay = Boolean(
+      document.getElementById('highlight-and-react-element-overlay'),
+    );
     const compactHeight = getComputedStyle(
       document.getElementById('highlight-and-react-strip'),
     ).height;
@@ -282,12 +285,83 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       altKey: true,
     }));
     const assistantFallbackOpened = Boolean(document.getElementById('highlight-and-react-bar'));
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: 'Escape',
+      code: 'Escape',
+    }));
+    selection.removeAllRanges();
+    const elementTarget = document.getElementById('fixture-element-target');
+    window.__elementTargetEvents = [];
+    window.__elementTargetActivations = 0;
+    elementTarget.addEventListener('click', () => {
+      window.__elementTargetActivations += 1;
+    });
+    elementTarget.addEventListener('highlight-and-react-targeted', (event) => {
+      window.__elementTargetEvents.push(event.detail.targetType);
+    });
+    elementTarget.addEventListener('highlight-and-react', (event) => {
+      window.__elementTargetEvents.push(event.detail.targetType);
+    });
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
+    const elementPickingStarted = Boolean(
+      document.documentElement.dataset.highlightAndReactPicking
+      && document.getElementById('highlight-and-react-element-hint'),
+    );
+    const elementBounds = elementTarget.getBoundingClientRect();
+    const elementPoint = {
+      x: elementBounds.right - 16,
+      y: elementBounds.top + elementBounds.height / 2,
+    };
+    elementTarget.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: elementPoint.x,
+      clientY: elementPoint.y,
+    }));
+    const elementHovered = document.getElementById(
+      'highlight-and-react-element-overlay',
+    )?.dataset.state === 'hover';
+    elementTarget.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: elementPoint.x,
+      clientY: elementPoint.y,
+    }));
+    elementTarget.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      clientX: elementPoint.x,
+      clientY: elementPoint.y,
+    }));
+    const elementLocked = Boolean(
+      document.getElementById('highlight-and-react-bar')
+      && document.getElementById('highlight-and-react-scrim')
+      && document.getElementById('highlight-and-react-element-overlay')?.dataset.state === 'locked'
+      && getComputedStyle(
+        document.getElementById('highlight-and-react-element-label'),
+      ).display === 'none'
+      && !CSS.highlights.has('highlight-and-react-selection'),
+    );
+    document.querySelector('[data-reaction-key="standard:thumbs-up"]').click();
+    const elementReaction = elementTarget.dataset.highlightAndReactReactionKey;
+    const elementClosedAfterReaction = !document.getElementById(
+      'highlight-and-react-element-overlay',
+    ) && !document.getElementById('highlight-and-react-bar');
+
     return {
       openedByShortcutInitially,
       compactButtons,
       systemTapbackIcons,
       hasCustomEmojiButton,
       hasScrim,
+      textHasElementOverlay,
       compactHeight,
       compactGap,
       customEmojiAtEnd,
@@ -308,6 +382,13 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       closedAfterCustomReaction,
       reactionActions: window.__reactionActions,
       assistantFallbackOpened,
+      elementPickingStarted,
+      elementHovered,
+      elementLocked,
+      elementReaction,
+      elementClosedAfterReaction,
+      elementTargetEvents: window.__elementTargetEvents,
+      elementTargetActivations: window.__elementTargetActivations,
     };
   })()`);
 
@@ -316,7 +397,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     compactButtons: 8,
     systemTapbackIcons: 6,
     hasCustomEmojiButton: true,
-    hasScrim: true,
+    hasScrim: false,
+    textHasElementOverlay: false,
     compactHeight: '36px',
     compactGap: '4px',
     customEmojiAtEnd: true,
@@ -337,5 +419,12 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     closedAfterCustomReaction: true,
     reactionActions: ['add', 'remove', 'add'],
     assistantFallbackOpened: true,
+    elementPickingStarted: true,
+    elementHovered: true,
+    elementLocked: true,
+    elementReaction: 'standard:thumbs-up',
+    elementClosedAfterReaction: true,
+    elementTargetEvents: ['element', 'element'],
+    elementTargetActivations: 0,
   });
 });

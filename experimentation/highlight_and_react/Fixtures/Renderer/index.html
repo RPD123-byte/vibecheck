@@ -18,6 +18,19 @@
         color: white;
       }
       .assistant-message { max-width: 620px; margin-top: 38px; }
+      .element-target {
+        display: flex;
+        width: 260px;
+        margin-top: 54px;
+        padding: 16px;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid color-mix(in srgb, CanvasText 22%, transparent);
+        border-radius: 14px;
+        background: color-mix(in srgb, Canvas 90%, CanvasText 10%);
+        color: CanvasText;
+      }
+      .element-target svg { width: 28px; height: 28px; flex: none; }
       .outside { margin-top: 100px; padding: 30px; border: 1px dashed GrayText; }
     </style>
   </head>
@@ -30,6 +43,12 @@
     <main class="assistant-message">
       <p><span id="assistant-text">Assistant text uses the content-block fallback.</span></p>
     </main>
+    <button class="element-target" id="fixture-element-target" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="#0a84ff"/>
+      </svg>
+      Inspect this whole component
+    </button>
     <div class="outside" id="outside">Clicking here dismisses the highlight and reaction bar.</div>
   </body>
 </html>
