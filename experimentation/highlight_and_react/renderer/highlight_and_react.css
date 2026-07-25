@@ -598,6 +598,26 @@ html[data-highlight-and-react-picking="true"] * {
     'main blockquote',
     'main li',
   ].join(',');
+  const SEMANTIC_TEXT_TARGET_SELECTOR = [
+    'p',
+    'li',
+    'pre',
+    'blockquote',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'td',
+    'th',
+    'label',
+    'button',
+    'a',
+    '[role="article"]',
+    '[role="listitem"]',
+    '[role="button"]',
+  ].join(',');
   const STANDARD_REACTIONS = [
     { key: 'standard:heart', value: '🩷', label: 'Heart', asset: 'heart' },
     { key: 'standard:thumbs-up', value: '👍', label: 'Thumbs up', asset: 'thumbs-up' },
@@ -654,9 +674,21 @@ html[data-highlight-and-react-picking="true"] * {
   );
 
   const messageForRange = (range) => {
-    const start = elementForNode(range.startContainer)?.closest(MESSAGE_SELECTOR);
-    const end = elementForNode(range.endContainer)?.closest(MESSAGE_SELECTOR);
-    return start && start === end ? start : null;
+    const startElement = elementForNode(range.startContainer);
+    const endElement = elementForNode(range.endContainer);
+    const startMessage = startElement?.closest(MESSAGE_SELECTOR);
+    const endMessage = endElement?.closest(MESSAGE_SELECTOR);
+    if (startMessage && startMessage === endMessage) return startMessage;
+
+    const common = elementForNode(range.commonAncestorContainer);
+    const semanticTarget = common?.closest(SEMANTIC_TEXT_TARGET_SELECTOR);
+    if (semanticTarget
+      && semanticTarget.contains(startElement)
+      && semanticTarget.contains(endElement)) {
+      return semanticTarget;
+    }
+    if (!common || ['HTML', 'BODY'].includes(common.tagName)) return null;
+    return common;
   };
 
   const usableRects = (range) => [...range.getClientRects()]

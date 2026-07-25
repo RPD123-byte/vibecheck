@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
@@ -16,6 +16,7 @@ const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(projectDirectory, 'renderer/highlight_and_react.css');
 const fixtureMain = resolve(projectDirectory, 'Fixtures/Renderer/main.mjs');
 const fixtureLauncher = resolve(projectDirectory, 'scripts/run_fixture_renderer.sh');
+const genericLauncher = resolve(projectDirectory, 'scripts/launch_electron_renderer.sh');
 
 function findElectron() {
   const executable = 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron';
@@ -120,6 +121,39 @@ test('interactive launcher discovers Electron from the renamed main checkout', (
   }).trim();
   assert.ok(existsSync(electron), `Electron path does not exist: ${electron}`);
   assert.doesNotMatch(electron, /\/Users\/computer\/uncover\//);
+});
+
+test('shared launcher resolves an arbitrary Electron app bundle', () => {
+  const electron = findElectron();
+  assert.ok(electron, 'Electron not found; set ELECTRON_PATH to its executable');
+  const electronApp = resolve(dirname(electron), '../..');
+  const resolvedExecutable = execFileSync(
+    genericLauncher,
+    ['--app', electronApp, '--print-executable'],
+    { cwd: projectDirectory, encoding: 'utf8' },
+  ).trim();
+  assert.equal(resolvedExecutable, electron);
+});
+
+test('shared launcher rejects native apps instead of substituting another UI', () => {
+  const textEdit = '/System/Applications/TextEdit.app';
+  if (!existsSync(textEdit)) return;
+  const result = spawnSync(
+    genericLauncher,
+    ['--app', textEdit, '--print-executable'],
+    { cwd: projectDirectory, encoding: 'utf8' },
+  );
+  assert.equal(result.status, 3);
+  assert.match(result.stderr, /native AppKit apps are unsupported/);
+});
+
+test('Codex launcher delegates to the shared Electron launcher', async () => {
+  const source = await readFile(
+    resolve(projectDirectory, 'scripts/launch_codex_renderer.sh'),
+    'utf8',
+  );
+  assert.match(source, /launch_electron_renderer\.sh/);
+  assert.doesNotMatch(source, /remote-debugging-port/);
 });
 
 test('installed Messages Tapback vectors are available to the injector', async () => {
@@ -291,6 +325,32 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       key: 'Escape',
       code: 'Escape',
     }));
+    const genericTarget = document.getElementById('generic-text-target');
+    const genericRange = document.createRange();
+    genericRange.setStart(genericTarget.firstChild, 0);
+    genericRange.setEnd(genericTarget.querySelector('strong').firstChild, 6);
+    selection.removeAllRanges();
+    selection.addRange(genericRange);
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
+    const genericFallbackOpened = Boolean(
+      document.getElementById('highlight-and-react-bar')
+      && CSS.highlights.has('highlight-and-react-selection')
+      && !document.getElementById('highlight-and-react-element-overlay'),
+    );
+    document.querySelector('[data-reaction-key="standard:question"]').click();
+    const genericReaction = genericTarget.dataset.highlightAndReactReactionKey;
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: 'Escape',
+      code: 'Escape',
+    }));
     selection.removeAllRanges();
     const elementTarget = document.getElementById('fixture-element-target');
     window.__elementTargetEvents = [];
@@ -382,6 +442,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       closedAfterCustomReaction,
       reactionActions: window.__reactionActions,
       assistantFallbackOpened,
+      genericFallbackOpened,
+      genericReaction,
       elementPickingStarted,
       elementHovered,
       elementLocked,
@@ -419,6 +481,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     closedAfterCustomReaction: true,
     reactionActions: ['add', 'remove', 'add'],
     assistantFallbackOpened: true,
+    genericFallbackOpened: true,
+    genericReaction: 'standard:question',
     elementPickingStarted: true,
     elementHovered: true,
     elementLocked: true,

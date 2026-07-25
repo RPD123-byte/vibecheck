@@ -9,6 +9,7 @@ private struct Options {
     var demoSeconds: TimeInterval?
     var debugAccessibility = false
     var fixture = false
+    var legacyGlobal = false
     var requestPermission = false
 
     static func parse(_ arguments: [String]) -> Options {
@@ -25,6 +26,8 @@ private struct Options {
                 options.debugAccessibility = true
             case "--fixture":
                 options.fixture = true
+            case "--legacy-global":
+                options.legacyGlobal = true
             case "--demo-seconds":
                 if arguments.indices.contains(index + 1) {
                     options.demoSeconds = TimeInterval(arguments[index + 1])
@@ -39,6 +42,7 @@ private struct Options {
                       --demo-seconds SECONDS    Exit automatically after a demo
                       --debug-accessibility     Log selection Accessibility details
                       --fixture                 Open a selectable keyboard-shortcut test window
+                      --legacy-global           Run the different legacy native shortcut path
                       --request-permission      Ask macOS for Accessibility permission
                       --help                    Show this help
                     """
@@ -840,6 +844,19 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if options.fixture {
             showFixture()
+        }
+        if !options.fixture, !options.legacyGlobal {
+            fputs(
+                """
+                The native global overlay is legacy research and uses a different UI.
+                Use the shared Electron renderer scripts for Highlight & React.
+                Pass --legacy-global only when intentionally testing the native prototype.
+
+                """,
+                stderr
+            )
+            NSApp.terminate(nil)
+            return
         }
 
         guard accessibilityIsTrusted(prompt: options.requestPermission) else {
