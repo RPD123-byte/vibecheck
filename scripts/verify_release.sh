@@ -17,6 +17,9 @@ spctl --assess --type execute --verbose=4 "${app_path}"
 xcrun stapler validate "${app_path}"
 xcrun stapler validate "${dmg_path}"
 hdiutil verify "${dmg_path}"
+"$(dirname "${BASH_SOURCE[0]}")/verify_dmg_icon.sh" \
+  "${dmg_path}" \
+  "$(dirname "${BASH_SOURCE[0]}")/../src/electron/resources/app-icon.icns"
 
 find "${app_path}" -type f -print0 |
   while IFS= read -r -d '' file_path; do

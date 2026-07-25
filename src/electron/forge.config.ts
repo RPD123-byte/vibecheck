@@ -93,6 +93,7 @@ const config: ForgeConfig = {
     new MakerDMG(
       {
         format: "ULFO",
+        icon: path.resolve(__dirname, "resources/app-icon.icns"),
         name: `Vibecheck-${packageManifest.version}-arm64`,
       },
       ["darwin"],
