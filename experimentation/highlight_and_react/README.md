@@ -2,15 +2,17 @@
 
 This isolated experiment now has two implementations:
 
-1. **Codex renderer injection (recommended):** Attune-compatible CSS and
-   JavaScript run inside Codex's Chromium renderer. Pressing
+1. **Global native app:** a Swift menu-bar process owns `Control–Option–R`
+   (`⌃⌥R`) through a macOS event tap. It checks the frontmost app for selected
+   Accessibility text; if there is none, it enters an Accessibility
+   element-hover picker. This path works across native and Electron apps that
+   expose macOS Accessibility, without injecting into or restarting the target.
+2. **Optional Electron renderer injection:** Attune-compatible CSS and
+   JavaScript run inside an enabled Chromium renderer. Pressing
    `Control–Option–R` (`⌃⌥R`) opens a Messages-style Tapback picker at an exact
    text selection, or starts an element picker when no text is selected.
    Clicking outside the highlighted text and bar, or pressing Escape, dismisses
    it.
-2. **Native accessibility fallback:** the original app-independent Swift
-   prototype reads the foreground app's Accessibility selection and draws
-   `NSPanel` overlays.
 
 The renderer version uses Codex's real `[data-user-message-bubble]` component
 selector and stores the chosen Tapback key and display value in
@@ -110,12 +112,17 @@ The source file is directly compatible with Attune's `set-css` and
 upstream commits, exact mechanism, and the important finding that the cloned
 repositories do not themselves contain a double-click implementation.
 
-## Native accessibility fallback
+## Run it globally in any accessible macOS app
 
-The fallback does not inject code into, restart, or terminate the target
-application. Select text and press `⌃⌥R`; it asks macOS Accessibility for the
-selected text and screen bounds, then presents a click-through highlight and a
-non-activating reaction panel.
+The native app does not inject code into, restart, or terminate the target
+application. It remains in the menu bar and owns the shortcut globally:
+
+- with selected text, `⌃⌥R` resolves the exact Accessibility text bounds and
+  opens the reaction panel without highlighting its containing element;
+- with no selected text, `⌃⌥R` starts element mode, hovering draws a dashed blue
+  Accessibility-element preview, and clicking consumes the selection click,
+  locks the element, and opens the panel;
+- Escape, the shortcut again, or an outside click dismisses the interaction.
 
 ## Try the overlay without permissions
 
@@ -128,8 +135,10 @@ Use `--demo-seconds 10` to make the demo exit automatically.
 
 ### Test the keyboard shortcut in the native fixture
 
+The fixture runs locally even before permissions are granted:
+
 ```bash
-cd experimentation/highlight_and_react
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
 ./scripts/build_app.sh
 build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
   --fixture --debug-accessibility
@@ -139,17 +148,23 @@ In the fixture window:
 
 1. Select `Select this sentence, then press Control–Option–R.`
 2. Press `Control–Option–R` (`⌃⌥R`).
-3. The selection should get a yellow outline and the emoji bar should appear.
-4. Click elsewhere in the window; both overlay panels should disappear.
+3. The exact text should get a yellow outline and the emoji bar should appear.
+4. Press Escape, clear the text selection, and press `⌃⌥R` again.
+5. Hover and click `Inspectable fixture button`; its dashed preview should lock
+   into a solid blue outline and the click should not activate the button.
 
-This is the same selection and shortcut path used in Codex.
+The permission-free automated version exercises the element resolution,
+preview, locked state, and click-consumption contract:
+
+```bash
+swift run highlight-and-react --fixture-auto-test
+```
 
 ### Build a stable native app bundle
 
 ```bash
-cd experimentation/highlight_and_react
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
 ./scripts/build_app.sh
-open build/HighlightAndReact.app
 ```
 
 The app needs Accessibility access to resolve UI elements and Input Monitoring
@@ -158,27 +173,30 @@ access to observe the global shortcut and outside clicks:
 - System Settings > Privacy & Security > Accessibility
 - System Settings > Privacy & Security > Input Monitoring
 
-The prototype never requests these permissions on a normal launch. Run the
-binary with `--request-permission` only when you intentionally want the
-Accessibility prompt:
+Build the bundle once before granting permissions so its code identity remains
+stable. The prototype never requests permissions on a normal launch. Run the
+binary with `--request-permission` when you intentionally want the
+Accessibility and Input Monitoring prompts:
 
 ```bash
-build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
-  --request-permission
+./scripts/run_native_global.sh --request-permission
 ```
 
-After permission is granted, select text in Codex and press `⌃⌥R`. Press the
-shortcut again to hide the overlay, or click anywhere outside the selected text
-and reaction bar. The shortcut itself is consumed so it cannot replace the
-selection; every other keyboard and mouse event passes through unchanged.
-
-For the first live Codex run, add `--debug-accessibility`. It prints the role,
-bounds, text preview, and supported selection attributes. That makes tuning
-Codex selection handling empirical:
+After both permissions are granted, launch the built app:
 
 ```bash
-build/HighlightAndReact.app/Contents/MacOS/highlight-and-react \
-  --debug-accessibility
+./scripts/run_native_global.sh
+```
+
+Now switch to any accessible app. Select text and press `⌃⌥R`, or clear the
+selection and press it to inspect elements. The shortcut and the element-lock
+click are consumed; unrelated keyboard and mouse events pass through unchanged.
+
+For the first live run, add `--debug-accessibility`. It prints the app, role,
+bounds, text preview, and supported selection attributes:
+
+```bash
+./scripts/run_native_global.sh --debug-accessibility
 ```
 
 ### Why the fallback can be app-independent
@@ -188,19 +206,13 @@ The overlay uses three OS-level contracts rather than Codex internals:
 - `CGEventTap` identifies `⌃⌥R` and outside clicks.
 - `AXSelectedText` plus parameterized bounds resolves the selected text;
   Electron/WebKit text-marker attributes are supported as a fallback.
+- `AXUIElementCopyElementAtPosition` resolves the interface element underneath
+  the pointer when no text is selected.
 - `NSPanel` draws above other applications without taking keyboard focus.
 
 The app-independent portion is the event monitor, target resolver, coordinate
 conversion, overlay placement, and reaction event. App adapters only need to
 improve target selection or decide what a reaction means.
-
-### Codex-specific fallback uncertainty
-
-Codex is Electron-based, and the useful Accessibility selection may belong to a
-text node or a larger web-area ancestor depending on how its accessibility tree
-is authored. The next useful experiment is to inspect those selection
-attributes on an authorized machine without introducing any Codex process
-injection.
 
 ## Safety and current limitations
 
@@ -211,8 +223,11 @@ injection.
   app. Native applications still need the Accessibility fallback.
 - Renderer reactions are local DOM state and disappear when React replaces the
   message component or the renderer reloads; persistence needs a later service.
-- The native fallback only resolves selected content after the explicit
-  shortcut and prints reactions as local JSON events.
+- Native reactions are currently emitted as local JSON events; durable comments
+  and persistence need a later service.
+- Accessibility exposes semantic UI elements, not arbitrary DOM nodes or CSS.
+  The optional renderer backend remains more precise in Electron apps where
+  injection has been explicitly enabled.
 - Secure text fields can expose little or no Accessibility text, by design.
 - Some apps flatten their Accessibility trees, so exact message bounds may need
   a small app-specific resolver.
@@ -224,6 +239,7 @@ injection.
 
 ```bash
 swift test
+swift run highlight-and-react --fixture-auto-test
 ./scripts/build_app.sh
 node --test Tests/renderer_injection.test.mjs
 ```
