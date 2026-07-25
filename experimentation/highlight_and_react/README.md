@@ -119,6 +119,53 @@ Selecting text and pressing `⌃⌥R` uses exact browser Range geometry in any
 document structure. With no selection, the same shortcut enables the generic
 DOM element hover-and-click picker.
 
+## Run it in every currently open Electron app
+
+Use the machine-wide launcher when you want one command instead of naming Slack,
+Codex, Cursor, and other apps separately. Running it without options is a safe
+preview:
+
+```bash
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
+./scripts/launch_all_electron_renderers.sh
+```
+
+The preview discovers currently running Electron/CEF apps and shows the
+unique localhost port that would be assigned to each. It does not launch every
+installed app, and it ignores native AppKit apps and standalone browsers.
+
+When the preview is correct, run the explicit restart form from an external
+terminal:
+
+```bash
+./scripts/launch_all_electron_renderers.sh --restart
+```
+
+That command gracefully quits and relaunches every discovered supported app,
+then keeps one shared-renderer injector attached to each app. It never
+force-kills a process. Because Codex itself is included when it is running,
+starting this command from Terminal will close and reopen Codex; finish or save
+active tasks first. Keep the terminal open while using the experiment.
+Control-C stops only the injectors and leaves the relaunched apps open.
+
+Each Electron application is a separate Chromium process, so there cannot be
+one DevTools port shared by the whole machine. The machine-wide launcher hides
+that detail by assigning ports automatically.
+
+The CSS/JavaScript payload is already embedded into each supported app's page
+at runtime. The launcher itself cannot be embedded into ordinary site
+JavaScript: browser and Electron renderer sandboxes are intentionally unable to
+quit applications or execute local shell commands. Removing the terminal step
+later requires a trusted local host component (for example, the Vibecheck menu
+bar app) that owns discovery and relaunch, while the existing renderer payload
+continues to own the in-page UI.
+
+Standalone browsers are deliberately excluded. Current Chrome releases require
+remote debugging to use a separate non-default browser profile, which would not
+contain the user's normal signed-in site state. A browser extension is the
+correct packaging for using the same interaction on ordinary websites; it is a
+separate delivery mechanism from Electron app injection.
+
 ## Run it in Codex
 
 Chromium DevTools must be enabled when Codex starts; it cannot be enabled on an

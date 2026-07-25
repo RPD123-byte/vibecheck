@@ -17,6 +17,10 @@ const sourcePath = resolve(projectDirectory, 'renderer/highlight_and_react.css')
 const fixtureMain = resolve(projectDirectory, 'Fixtures/Renderer/main.mjs');
 const fixtureLauncher = resolve(projectDirectory, 'scripts/run_fixture_renderer.sh');
 const genericLauncher = resolve(projectDirectory, 'scripts/launch_electron_renderer.sh');
+const allAppsLauncher = resolve(
+  projectDirectory,
+  'scripts/launch_all_electron_renderers.sh',
+);
 
 function findElectron() {
   const executable = 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron';
@@ -161,6 +165,27 @@ test('shared launcher requires explicit restart and never force-kills apps', asy
   assert.match(source, /--restart/);
   assert.match(source, /osascript/);
   assert.doesNotMatch(source, /kill -9|pkill|killall/);
+});
+
+test('machine-wide launcher previews safely and delegates every app to the shared renderer', async () => {
+  const source = await readFile(allAppsLauncher, 'utf8');
+  assert.match(source, /launch_electron_renderer\.sh/);
+  assert.match(source, /Without --restart this command is a read-only preview/);
+  assert.match(source, /ps -axo command=/);
+  assert.match(source, /icudtl\.dat/);
+  assert.match(source, /Skipped standalone browsers/);
+  assert.doesNotMatch(source, /kill -9|pkill|killall/);
+
+  const result = spawnSync(
+    allAppsLauncher,
+    [],
+    { cwd: projectDirectory, encoding: 'utf8' },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /Preview only; no application was changed|No running Electron/,
+  );
 });
 
 test('installed Messages Tapback vectors are available to the injector', async () => {

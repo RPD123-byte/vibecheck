@@ -73,6 +73,16 @@ if [[ -z "$executable_name" || ! -x "$executable" ]]; then
   exit 1
 fi
 
+case "$bundle_identifier" in
+  com.google.Chrome*|com.brave.Browser*|com.microsoft.edgemac*|\
+  com.operasoftware.Opera*|com.vivaldi.Vivaldi*|org.chromium.Chromium*|\
+  company.thebrowser.*)
+    print -u2 "$app_path is a standalone browser, not an Electron application."
+    print -u2 "Its normal profile cannot be enabled for remote debugging safely; use a browser extension for websites."
+    exit 7
+    ;;
+esac
+
 if $print_executable; then
   print "$executable"
   exit 0
@@ -84,7 +94,8 @@ if [[ "$debug_port" != <-> ]] \
   exit 2
 fi
 
-if curl -fsS --max-time 1 "http://127.0.0.1:$debug_port/json/list" >/dev/null 2>&1; then
+if /usr/sbin/lsof -nP -iTCP:"$debug_port" -sTCP:LISTEN 2>/dev/null \
+  | /usr/bin/grep -q .; then
   print -u2 "DevTools port $debug_port is already in use."
   print -u2 "Choose a different --port so the injector cannot attach to the wrong app."
   exit 5
