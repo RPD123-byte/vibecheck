@@ -156,6 +156,13 @@ test('Codex launcher delegates to the shared Electron launcher', async () => {
   assert.doesNotMatch(source, /remote-debugging-port/);
 });
 
+test('shared launcher requires explicit restart and never force-kills apps', async () => {
+  const source = await readFile(genericLauncher, 'utf8');
+  assert.match(source, /--restart/);
+  assert.match(source, /osascript/);
+  assert.doesNotMatch(source, /kill -9|pkill|killall/);
+});
+
 test('installed Messages Tapback vectors are available to the injector', async () => {
   const assets = await loadSystemTapbackAssets();
   assert.deepEqual(Object.keys(assets).sort(), [

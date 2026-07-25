@@ -92,10 +92,21 @@ cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/high
   --port 9224
 ```
 
+If it is already running and you intentionally want one command to gracefully
+quit and relaunch it, add `--restart`:
+
+```bash
+./scripts/launch_electron_renderer.sh \
+  --app /Applications/Slack.app \
+  --port 9224 \
+  --restart
+```
+
 The launcher verifies that the bundle contains a Chromium runtime, refuses to
-terminate an already-running app, starts it with a loopback-only DevTools port,
-and injects the same `renderer/highlight_and_react.css` used by Codex. Use a
-different port for each simultaneously attached application.
+force-kill an app, starts it with a loopback-only DevTools port, and injects the
+same `renderer/highlight_and_react.css` used by Codex. Without `--restart`, a
+running app is left untouched. Use a different port for each simultaneously
+attached application.
 
 If an Electron app was already started manually with a DevTools port, attach
 without launching it:
@@ -111,7 +122,8 @@ DOM element hover-and-click picker.
 ## Run it in Codex
 
 Chromium DevTools must be enabled when Codex starts; it cannot be enabled on an
-already-running process. The safe launcher refuses to quit or restart Codex:
+already-running process. Without an explicit `--restart`, the safe launcher
+refuses to quit or restart Codex:
 
 ```bash
 cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
@@ -122,6 +134,10 @@ If Codex is running, the script exits with an explanation. When you are ready,
 quit Codex yourself and run it again. It starts Codex with a localhost-only
 DevTools port and watches `renderer/highlight_and_react.css` for live edits.
 Pressing Control-C stops the injector but leaves Codex open.
+
+From an external terminal, `./scripts/launch_codex_renderer.sh --restart`
+performs the same graceful quit-and-relaunch flow. Running it ends the current
+Codex session, so only use that option after saving or finishing active tasks.
 
 If Codex was already launched manually with `--remote-debugging-port=9222`,
 attach without launching anything:
