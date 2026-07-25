@@ -1,7 +1,7 @@
 {
   "name": "@vibecheck/menubar",
   "productName": "Vibecheck",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Private on-device expression controls for Vibecheck",
   "main": ".vite/build/main.js",
   "private": true,

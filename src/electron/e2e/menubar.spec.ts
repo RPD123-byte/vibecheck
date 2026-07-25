@@ -1,6 +1,6 @@
 import { _electron as electron, expect, test } from "@playwright/test";
 import electronPath from "electron";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { once } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
@@ -98,6 +98,29 @@ test("native menu drives the demo runtime without windows or orphans", async () 
         packagedTrayIcon,
       ),
     ).toBe(false);
+    const packagedApp = path.resolve(
+      __dirname,
+      "../out/Vibecheck-darwin-arm64/Vibecheck.app",
+    );
+    const packagedIconName = execFileSync(
+      "/usr/bin/plutil",
+      [
+        "-extract",
+        "CFBundleIconFile",
+        "raw",
+        "-o",
+        "-",
+        path.join(packagedApp, "Contents/Info.plist"),
+      ],
+      { encoding: "utf8" },
+    ).trim();
+    expect(
+      largestIconLayer(
+        path.join(packagedApp, "Contents/Resources", packagedIconName),
+      ),
+    ).toEqual(
+      largestIconLayer(path.resolve(__dirname, "../resources/app-icon.icns")),
+    );
     await expect
       .poll(() => state(application).then((value) => value.aggregate))
       .toBe("off");
@@ -240,4 +263,15 @@ function runtimeDirectories(prefix: string): string[] {
     .readdirSync("/tmp")
     .filter((entry) => entry.startsWith(prefix))
     .sort();
+}
+
+function largestIconLayer(icon: string): Buffer {
+  const output = fs.mkdtempSync(path.join(os.tmpdir(), "vibecheck-iconset-"));
+  const iconset = path.join(output, "icon.iconset");
+  try {
+    execFileSync("/usr/bin/iconutil", ["-c", "iconset", icon, "-o", iconset]);
+    return fs.readFileSync(path.join(iconset, "icon_512x512@2x.png"));
+  } finally {
+    fs.rmSync(output, { recursive: true, force: true });
+  }
 }

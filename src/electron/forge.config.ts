@@ -53,6 +53,7 @@ const config: ForgeConfig = {
     appCategoryType: "public.app-category.utilities",
     asar: true,
     executableName: "Vibecheck",
+    icon: path.resolve(__dirname, "resources/app-icon.icns"),
     extendInfo: {
       LSUIElement: true,
       NSCameraUsageDescription:

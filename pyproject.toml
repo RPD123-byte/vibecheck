@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vibecheck"
-version = "0.2.0"
+version = "0.2.1"
 description = "On-device facial-expression inference, notch presentation, and Codex interruption"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
