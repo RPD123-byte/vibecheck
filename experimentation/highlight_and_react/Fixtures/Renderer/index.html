@@ -32,6 +32,17 @@
       }
       .element-target svg { width: 28px; height: 28px; flex: none; }
       .outside { margin-top: 100px; padding: 30px; border: 1px dashed GrayText; }
+      #paper-fixture-canvas {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 5;
+        width: 260px;
+        height: 150px;
+        border: 1px solid #5e5ce6;
+        border-radius: 10px;
+        background: #25252a;
+      }
     </style>
   </head>
   <body>
@@ -55,5 +66,61 @@
       </p>
     </aside>
     <div class="outside" id="outside">Clicking here dismisses the highlight and reaction bar.</div>
+    <div data-paper-editor id="paper-fixture-editor">
+      <canvas
+        aria-hidden="true"
+        id="paper-fixture-canvas"
+        width="520"
+        height="300"
+      ></canvas>
+    </div>
+    <script>
+      const paperFixtureEditor = document.getElementById('paper-fixture-editor');
+      const paperFixtureCanvas = document.getElementById('paper-fixture-canvas');
+      const paperFixtureNode = {
+        id: 'paper-card-1',
+        label: 'Paper canvas card',
+        component: 'Frame',
+        get bounds() {
+          const rect = paperFixtureCanvas.getBoundingClientRect();
+          return {
+            minX: rect.left + 24,
+            minY: rect.top + 20,
+            maxX: rect.right - 24,
+            maxY: rect.bottom - 20,
+          };
+        },
+      };
+      const paperFixtureState = {
+        fileDataId: 'fixture-file',
+        cameraState: {
+          viewportToWorld(point) {
+            return point;
+          },
+          worldToViewportRect(bounds) {
+            return bounds;
+          },
+        },
+        pointerState: {
+          includeLockedNodesInHover: false,
+          calculateNodeAtPoint(point) {
+            const bounds = paperFixtureNode.bounds;
+            const contains = point.x >= bounds.minX
+              && point.x <= bounds.maxX
+              && point.y >= bounds.minY
+              && point.y <= bounds.maxY;
+            return contains
+              ? { node: paperFixtureNode, deepestNode: paperFixtureNode, location: 'body' }
+              : { node: null, deepestNode: null, location: null };
+          },
+        },
+      };
+      Object.defineProperty(paperFixtureEditor, '__reactFiber$fixture', {
+        value: {
+          memoizedProps: { editorState: paperFixtureState },
+          return: null,
+        },
+      });
+    </script>
   </body>
 </html>

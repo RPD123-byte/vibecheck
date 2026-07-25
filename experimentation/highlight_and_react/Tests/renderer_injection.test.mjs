@@ -115,6 +115,8 @@ test('Attune source separates renderer CSS and JavaScript', async () => {
   assert.match(parts.css, /#highlight-and-react-bar/);
   assert.doesNotMatch(parts.css, /@attune-script/);
   assert.match(parts.script, /onKeydown/);
+  assert.match(parts.script, /paperTargetAtPoint/);
+  assert.doesNotMatch(parts.css, /\[data-highlight-and-react-reaction\]\s*\{/);
   assert.doesNotMatch(parts.script, /dblclick|onDoubleClick/);
 });
 
@@ -447,6 +449,113 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       'highlight-and-react-element-overlay',
     ) && !document.getElementById('highlight-and-react-bar');
 
+    const paperEditor = document.getElementById('paper-fixture-editor');
+    const paperCanvas = document.getElementById('paper-fixture-canvas');
+    window.__paperTargetEvents = [];
+    window.__paperReactionEvents = [];
+    window.__paperCanvasActivations = 0;
+    paperEditor.addEventListener('highlight-and-react-targeted', (event) => {
+      window.__paperTargetEvents.push(event.detail);
+    });
+    paperEditor.addEventListener('highlight-and-react', (event) => {
+      window.__paperReactionEvents.push(event.detail);
+    });
+    paperCanvas.addEventListener('click', () => {
+      window.__paperCanvasActivations += 1;
+    });
+    const paperPositionBefore = getComputedStyle(paperCanvas).position;
+    selection.removeAllRanges();
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
+    const paperCanvasBounds = paperCanvas.getBoundingClientRect();
+    const paperPoint = {
+      x: paperCanvasBounds.left + paperCanvasBounds.width / 2,
+      y: paperCanvasBounds.top + paperCanvasBounds.height / 2,
+    };
+    paperCanvas.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: paperPoint.x,
+      clientY: paperPoint.y,
+    }));
+    const paperHoverOverlay = document.getElementById(
+      'highlight-and-react-element-overlay',
+    );
+    const paperHovered = Boolean(
+      paperHoverOverlay?.dataset.state === 'hover'
+      && paperHoverOverlay.textContent.includes('Paper canvas card')
+      && Math.round(paperHoverOverlay.getBoundingClientRect().width)
+        === Math.round(paperCanvasBounds.width - 48),
+    );
+    paperCanvas.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: paperPoint.x,
+      clientY: paperPoint.y,
+    }));
+    paperCanvas.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      clientX: paperPoint.x,
+      clientY: paperPoint.y,
+    }));
+    const paperLocked = Boolean(
+      document.getElementById('highlight-and-react-bar')
+      && document.getElementById('highlight-and-react-element-overlay')?.dataset.state === 'locked'
+      && window.__paperTargetEvents.at(-1)?.targetType === 'paper-node'
+      && window.__paperTargetEvents.at(-1)?.targetKey === 'paper:fixture-file:paper-card-1',
+    );
+    document.querySelector('[data-reaction-key="standard:question"]').click();
+    const paperBadge = [...document.querySelectorAll('.highlight-and-react-reaction-badge')]
+      .find((badge) => badge.dataset.highlightAndReactTargetKey
+        === 'paper:fixture-file:paper-card-1');
+    const paperReactionAdded = Boolean(
+      paperBadge?.dataset.highlightAndReactReactionKey === 'standard:question'
+      && getComputedStyle(paperBadge).position === 'fixed'
+      && window.__paperReactionEvents.at(-1)?.action === 'add'
+      && window.__paperReactionEvents.at(-1)?.targetType === 'paper-node'
+    );
+    const paperCanvasLayoutPreserved = getComputedStyle(paperCanvas).position
+      === paperPositionBefore
+      && !paperCanvas.dataset.highlightAndReactReactionKey;
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      key: '®',
+      code: 'KeyR',
+      ctrlKey: true,
+      altKey: true,
+    }));
+    paperCanvas.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true,
+      clientX: paperPoint.x,
+      clientY: paperPoint.y,
+    }));
+    paperCanvas.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: paperPoint.x,
+      clientY: paperPoint.y,
+    }));
+    paperCanvas.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      clientX: paperPoint.x,
+      clientY: paperPoint.y,
+    }));
+    const paperQuestionSelected = document.querySelector(
+      '[data-reaction-key="standard:question"]',
+    )?.getAttribute('aria-pressed');
+    document.querySelector('[data-reaction-key="standard:question"]').click();
+    const paperReactionRemoved = window.__paperReactionEvents.at(-1)?.action === 'remove'
+      && ![...document.querySelectorAll('.highlight-and-react-reaction-badge')]
+        .some((badge) => badge.dataset.highlightAndReactTargetKey
+          === 'paper:fixture-file:paper-card-1');
+
     return {
       openedByShortcutInitially,
       compactButtons,
@@ -483,6 +592,13 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       elementClosedAfterReaction,
       elementTargetEvents: window.__elementTargetEvents,
       elementTargetActivations: window.__elementTargetActivations,
+      paperHovered,
+      paperLocked,
+      paperReactionAdded,
+      paperCanvasLayoutPreserved,
+      paperCanvasActivations: window.__paperCanvasActivations,
+      paperQuestionSelected,
+      paperReactionRemoved,
     };
   })()`);
 
@@ -522,5 +638,12 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     elementClosedAfterReaction: true,
     elementTargetEvents: ['element', 'element'],
     elementTargetActivations: 0,
+    paperHovered: true,
+    paperLocked: true,
+    paperReactionAdded: true,
+    paperCanvasLayoutPreserved: true,
+    paperCanvasActivations: 0,
+    paperQuestionSelected: 'true',
+    paperReactionRemoved: true,
   });
 });

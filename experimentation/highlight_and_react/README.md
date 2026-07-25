@@ -29,6 +29,19 @@ that element, consumes the click so the underlying control is not activated,
 and opens the reaction bar. The locked element is outlined and spotlighted
 because there is no text range to identify the target.
 
+Canvas-backed editors require a logical target adapter because shapes painted
+inside a `<canvas>` are not DOM elements. The Paper adapter detects Paper's
+editor canvas, converts the pointer from viewport coordinates into Paper world
+coordinates, asks Paper's editor hit tester for the logical node, and converts
+that node's live bounds back into viewport coordinates for the same overlay and
+Tapback bar. Paper's DOM sidebars continue through the normal element path.
+
+Reaction badges are independent fixed overlays. Targets retain only namespaced
+reaction state; the stylesheet never changes a target's `position`, display, or
+layout. This is important for Paper because its full-window canvas is fixed and
+would be displaced if a generic badge implementation changed its positioning
+mode.
+
 The Tapback UI is a clean-room recreation from the observable Messages UI;
 Messages itself is proprietary compiled software, so its literal source is not
 available. The recreation preserves the behavior that matters to the
@@ -69,6 +82,8 @@ The test verifies the complete interaction:
 - add, remove, and replace a reaction on the message component;
 - open the expanded picker and choose a custom emoji;
 - enter element mode with no selection, hover a component, lock it, and react.
+- resolve a logical node inside a childless Paper-style canvas, add and remove a
+  reaction, and preserve the canvas's fixed layout.
 
 For a visible, interactive fixture instead of the automated test, run:
 
@@ -118,6 +133,11 @@ without launching it:
 Selecting text and pressing `⌃⌥R` uses exact browser Range geometry in any
 document structure. With no selection, the same shortcut enables the generic
 DOM element hover-and-click picker.
+
+In Paper, the same no-selection shortcut switches automatically to logical
+canvas hit testing when the pointer is over the editor canvas. Hovering a Paper
+frame, text layer, or other painted node outlines that node's bounds rather
+than the full canvas. Clicking locks the node and opens the same reaction UI.
 
 ## Run it in every currently open Electron app
 
@@ -231,8 +251,15 @@ Use `--demo-seconds 10` to make the demo exit automatically.
 - The shared renderer path applies to Electron and compatible CEF apps, not
   native AppKit applications. The launcher fails explicitly for unsupported
   bundles instead of silently changing the design or click behavior.
+- DOM-backed applications work through standards-based browser APIs. Paper
+  canvas targeting uses Paper's current private React editor state and hit-test
+  methods, so a Paper release can require an adapter update. If the internal
+  capability is unavailable, the renderer falls back to selecting the canvas
+  element rather than breaking the normal DOM path.
 - Renderer reactions are local DOM state and disappear when React replaces the
-  message component or the renderer reloads; persistence needs a later service.
+  message component or the renderer reloads. Paper reactions are keyed locally
+  by file and logical node ID. Persistence for either path needs a later
+  service.
 
 ## Verify
 

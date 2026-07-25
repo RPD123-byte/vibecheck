@@ -14,14 +14,8 @@
   text-underline-offset: 2px;
 }
 
-[data-highlight-and-react-reaction] {
-  position: relative !important;
-}
-
-[data-highlight-and-react-reaction]::after {
-  position: absolute;
-  top: -12px;
-  right: -12px;
+.highlight-and-react-reaction-badge {
+  position: fixed;
   z-index: 2147483645;
   display: grid;
   min-width: 26px;
@@ -32,14 +26,12 @@
   border-radius: 999px;
   background: color-mix(in srgb, Canvas 92%, CanvasText 8%);
   box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
-  content: attr(data-highlight-and-react-reaction);
   font: 16px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
   pointer-events: none;
 }
 
-[data-highlight-and-react-reaction-key="standard:haha"]::after {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-key="standard:haha"] {
   color: #32ade6;
-  content: "HA\A HA";
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
   font-size: 9px;
   font-weight: 900;
@@ -47,34 +39,33 @@
   white-space: pre;
 }
 
-[data-highlight-and-react-reaction-asset]::after {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset] {
   width: 20px;
   min-width: 20px;
   height: 24px;
   padding: 0;
   background: var(--highlight-and-react-reaction-fill, #ff5d96);
-  content: "";
   -webkit-mask: var(--highlight-and-react-reaction-mask) center / contain no-repeat;
   mask: var(--highlight-and-react-reaction-mask) center / contain no-repeat;
 }
 
-[data-highlight-and-react-reaction-asset="heart"] {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="heart"] {
   --highlight-and-react-reaction-fill: linear-gradient(145deg, #ffafd0, #ff2d78);
 }
 
-[data-highlight-and-react-reaction-asset^="thumbs"] {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset^="thumbs"] {
   --highlight-and-react-reaction-fill: linear-gradient(155deg, #ffe27a, #f2a91f);
 }
 
-[data-highlight-and-react-reaction-asset="haha"] {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="haha"] {
   --highlight-and-react-reaction-fill: linear-gradient(180deg, #64d2ff, #0a84ff);
 }
 
-[data-highlight-and-react-reaction-asset="exclamation"] {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="exclamation"] {
   --highlight-and-react-reaction-fill: linear-gradient(180deg, #ff9f97, #ff453a);
 }
 
-[data-highlight-and-react-reaction-asset="question"] {
+.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="question"] {
   --highlight-and-react-reaction-fill: linear-gradient(180deg, #da8fff, #af52de);
 }
 
@@ -586,6 +577,7 @@ html[data-highlight-and-react-picking="true"] * {
   const SCRIM_ID = 'highlight-and-react-scrim';
   const ELEMENT_OVERLAY_ID = 'highlight-and-react-element-overlay';
   const ELEMENT_HINT_ID = 'highlight-and-react-element-hint';
+  const REACTION_BADGE_CLASS = 'highlight-and-react-reaction-badge';
   const HIGHLIGHT_NAME = 'highlight-and-react-selection';
   const RECENTS_KEY = 'highlight-and-react-recent-emoji';
   const MESSAGE_SELECTOR = [
@@ -663,11 +655,14 @@ html[data-highlight-and-react-picking="true"] * {
     },
   ];
   let activeRange = null;
-  let activeMessage = null;
+  let activeTarget = null;
   let activeRects = [];
   let targetMode = null;
-  let hoveredElement = null;
+  let hoveredTarget = null;
   let suppressNextClick = false;
+  let badgeRefreshFrame = null;
+  const logicalReactionState = new Map();
+  const paperEditorStateCache = new WeakMap();
 
   const elementForNode = (node) => (
     node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement
@@ -740,10 +735,10 @@ html[data-highlight-and-react-picking="true"] * {
     delete document.documentElement.dataset.highlightAndReactPicking;
     removeSelectionHighlight();
     activeRange = null;
-    activeMessage = null;
+    activeTarget = null;
     activeRects = [];
     targetMode = null;
-    hoveredElement = null;
+    hoveredTarget = null;
     suppressNextClick = false;
   };
 
@@ -758,8 +753,8 @@ html[data-highlight-and-react-picking="true"] * {
 
   const placeScrim = () => {
     const pieces = [...(document.getElementById(SCRIM_ID)?.children || [])];
-    if (pieces.length !== 4 || !activeMessage) return;
-    const rect = activeMessage.getBoundingClientRect();
+    const rect = unionRects(targetRects(activeTarget));
+    if (pieces.length !== 4 || !rect) return;
     const padding = 6;
     const top = Math.max(0, rect.top - padding);
     const left = Math.max(0, rect.left - padding);
@@ -809,14 +804,189 @@ html[data-highlight-and-react-picking="true"] * {
       && style.pointerEvents !== 'none';
   };
 
-  const elementAtPoint = (x, y) => {
-    let candidate = document.elementFromPoint(x, y);
-    while (candidate && !usableElement(candidate)) candidate = candidate.parentElement;
-    return candidate;
+  const domTarget = (element) => ({
+    kind: 'dom',
+    element,
+    key: element,
+  });
+
+  // Paper paints editor nodes into one canvas. Its React editor state supplies
+  // the logical hit test and world/viewport transforms that the DOM cannot.
+  const paperEditorState = (editorElement) => {
+    if (!editorElement) return null;
+    if (paperEditorStateCache.has(editorElement)) {
+      return paperEditorStateCache.get(editorElement);
+    }
+    const fiberKey = Reflect.ownKeys(editorElement)
+      .find((key) => String(key).startsWith('__reactFiber'));
+    let fiber = fiberKey ? editorElement[fiberKey] : null;
+    let editorState = null;
+    while (fiber) {
+      const candidate = fiber.memoizedProps?.editorState;
+      if (candidate?.pointerState?.calculateNodeAtPoint
+        && candidate?.cameraState?.viewportToWorld
+        && candidate?.cameraState?.worldToViewportRect) {
+        editorState = candidate;
+        break;
+      }
+      fiber = fiber.return;
+    }
+    if (editorState) paperEditorStateCache.set(editorElement, editorState);
+    return editorState;
   };
 
-  const placeElementOverlay = (element, state) => {
-    if (!usableElement(element)) {
+  const paperTargetAtPoint = (element, x, y) => {
+    if (!(element instanceof HTMLCanvasElement)) return null;
+    const editorElement = element?.closest?.('[data-paper-editor]');
+    if (!editorElement) return null;
+    const editorState = paperEditorState(editorElement);
+    if (!editorState) return null;
+    try {
+      const worldPoint = editorState.cameraState.viewportToWorld({ x, y }, false);
+      const result = editorState.pointerState.calculateNodeAtPoint(
+        worldPoint,
+        editorState.pointerState.includeLockedNodesInHover,
+      );
+      const node = result?.deepestNode || result?.node;
+      if (!node?.id || !node?.bounds) return null;
+      const hostElement = editorElement.querySelector('canvas') || editorElement;
+      return {
+        kind: 'paper-node',
+        key: `paper:${editorState.fileDataId || location.pathname}:${node.id}`,
+        element: hostElement,
+        editorElement,
+        editorState,
+        node,
+        nodeId: node.id,
+        label: node.label || node.name || node.component || `Node ${node.id}`,
+        component: node.component || node.constructor?.name || 'Node',
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const targetAtPoint = (x, y) => {
+    let candidate = document.elementFromPoint(x, y);
+    while (candidate && !usableElement(candidate)) candidate = candidate.parentElement;
+    if (!candidate) return null;
+    return paperTargetAtPoint(candidate, x, y) || domTarget(candidate);
+  };
+
+  const targetEquals = (left, right) => (
+    left === right
+    || Boolean(left && right && left.kind === right.kind && left.key === right.key)
+  );
+
+  const rectFromBounds = (bounds) => {
+    if (!bounds) return null;
+    const left = Number(bounds.left ?? bounds.minX);
+    const top = Number(bounds.top ?? bounds.minY);
+    const right = Number(bounds.right ?? bounds.maxX);
+    const bottom = Number(bounds.bottom ?? bounds.maxY);
+    if (![left, top, right, bottom].every(Number.isFinite)) return null;
+    return {
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+    };
+  };
+
+  const targetRects = (target) => {
+    if (!target) return [];
+    if (target.kind === 'paper-node') {
+      try {
+        const viewportBounds = target.editorState.cameraState
+          .worldToViewportRect(target.node.bounds);
+        const rect = rectFromBounds(viewportBounds);
+        return rect && rect.width >= 1 && rect.height >= 1 ? [rect] : [];
+      } catch {
+        return [];
+      }
+    }
+    if (!target.element?.isConnected || !usableElement(target.element)) return [];
+    const rect = target.element.getBoundingClientRect();
+    return rect.width >= 1 && rect.height >= 1 ? [rect] : [];
+  };
+
+  const unionRects = (rects) => {
+    if (!rects?.length) return null;
+    const left = Math.min(...rects.map((rect) => rect.left));
+    const top = Math.min(...rects.map((rect) => rect.top));
+    const right = Math.max(...rects.map((rect) => rect.right));
+    const bottom = Math.max(...rects.map((rect) => rect.bottom));
+    return {
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+    };
+  };
+
+  const targetLabel = (target) => (
+    target?.kind === 'paper-node'
+      ? `${target.label} · ${target.component}`
+      : elementLabel(target?.element)
+  );
+
+  const targetText = (target) => {
+    if (target?.kind === 'paper-node') return target.label;
+    return target?.element?.innerText?.trim()
+      || target?.element?.getAttribute('aria-label')
+      || '';
+  };
+
+  const targetContainsPoint = (target, x, y, eventTarget) => {
+    if (target?.kind === 'dom') return target.element.contains(eventTarget);
+    return targetRects(target).some((rect) => (
+      x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+    ));
+  };
+
+  const reactionForTarget = (target) => {
+    if (!target) return null;
+    if (target.kind === 'paper-node') {
+      return logicalReactionState.get(target.key)?.reaction || null;
+    }
+    const key = target.element.dataset.highlightAndReactReactionKey;
+    if (!key) return null;
+    return {
+      key,
+      value: target.element.dataset.highlightAndReactReaction || '',
+      asset: target.element.dataset.highlightAndReactReactionAsset || null,
+    };
+  };
+
+  const updateTargetReaction = (target, reaction) => {
+    if (target.kind === 'paper-node') {
+      if (reaction) logicalReactionState.set(target.key, { target, reaction });
+      else logicalReactionState.delete(target.key);
+      return;
+    }
+    const element = target.element;
+    if (!reaction) {
+      delete element.dataset.highlightAndReactReactionKey;
+      delete element.dataset.highlightAndReactReaction;
+      delete element.dataset.highlightAndReactReactionAsset;
+      return;
+    }
+    element.dataset.highlightAndReactReactionKey = reaction.key;
+    element.dataset.highlightAndReactReaction = reaction.value;
+    if (reaction.asset) {
+      element.dataset.highlightAndReactReactionAsset = reaction.asset;
+    } else {
+      delete element.dataset.highlightAndReactReactionAsset;
+    }
+  };
+
+  const placeElementOverlay = (target, state) => {
+    const rect = unionRects(targetRects(target));
+    if (!rect) {
       document.getElementById(ELEMENT_OVERLAY_ID)?.remove();
       return;
     }
@@ -830,8 +1000,9 @@ html[data-highlight-and-react-picking="true"] * {
       overlay.append(label);
       document.body.append(overlay);
     }
-    const rect = element.getBoundingClientRect();
-    const radius = getComputedStyle(element).borderRadius;
+    const radius = target.kind === 'dom'
+      ? getComputedStyle(target.element).borderRadius
+      : '6px';
     Object.assign(overlay.style, {
       left: `${Math.round(rect.left)}px`,
       top: `${Math.round(rect.top)}px`,
@@ -844,7 +1015,7 @@ html[data-highlight-and-react-picking="true"] * {
     );
     overlay.dataset.state = state;
     overlay.querySelector(`#highlight-and-react-element-label`).textContent =
-      state === 'hover' ? `${elementLabel(element)} · click to select` : elementLabel(element);
+      state === 'hover' ? `${targetLabel(target)} · click to select` : targetLabel(target);
   };
 
   const enterElementPicker = () => {
@@ -858,23 +1029,24 @@ html[data-highlight-and-react-picking="true"] * {
     return true;
   };
 
-  const lockElementTarget = (element) => {
-    if (!usableElement(element)) return false;
+  const lockElementTarget = (target) => {
+    if (!targetRects(target).length) return false;
     document.getElementById(ELEMENT_HINT_ID)?.remove();
     delete document.documentElement.dataset.highlightAndReactPicking;
-    hoveredElement = null;
+    hoveredTarget = null;
     activeRange = null;
-    activeMessage = element;
-    activeRects = [element.getBoundingClientRect()];
+    activeTarget = target;
+    activeRects = targetRects(target);
     targetMode = 'element';
-    placeElementOverlay(element, 'locked');
+    placeElementOverlay(target, 'locked');
     renderBar();
-    element.dispatchEvent(new CustomEvent('highlight-and-react-targeted', {
+    target.element.dispatchEvent(new CustomEvent('highlight-and-react-targeted', {
       bubbles: true,
       detail: {
-        targetType: 'element',
-        element: elementLabel(element),
-        text: element.innerText?.trim() || element.getAttribute('aria-label') || '',
+        targetType: target.kind === 'paper-node' ? 'paper-node' : 'element',
+        targetKey: target.kind === 'paper-node' ? target.key : null,
+        element: targetLabel(target),
+        text: targetText(target),
       },
     }));
     return true;
@@ -903,12 +1075,10 @@ html[data-highlight-and-react-picking="true"] * {
 
   const placeBar = () => {
     const bar = document.getElementById(BAR_ID);
-    if (!bar || !activeMessage) return;
+    if (!bar || !activeTarget) return;
     activeRects = activeRange
       ? usableRects(activeRange)
-      : [activeMessage.getBoundingClientRect()].filter(
-        (rect) => rect.width >= 1 && rect.height >= 1,
-      );
+      : targetRects(activeTarget);
     if (!activeRects.length) {
       close();
       return;
@@ -940,9 +1110,62 @@ html[data-highlight-and-react-picking="true"] * {
     }
     if (targetMode === 'element') {
       placeScrim();
-      placeElementOverlay(activeMessage, 'locked');
+      placeElementOverlay(activeTarget, 'locked');
     }
     placeEmojiPicker();
+  };
+
+  const renderReactionBadges = () => {
+    document.querySelectorAll(`.${REACTION_BADGE_CLASS}`).forEach((badge) => badge.remove());
+    const entries = [
+      ...[...document.querySelectorAll('[data-highlight-and-react-reaction-key]')]
+        .filter((element) => !element.classList.contains(REACTION_BADGE_CLASS))
+        .map((element) => {
+          const target = domTarget(element);
+          return { target, reaction: reactionForTarget(target) };
+        }),
+      ...logicalReactionState.values(),
+    ];
+    for (const { target, reaction } of entries) {
+      if (!reaction) continue;
+      const rect = unionRects(targetRects(target));
+      if (!rect) continue;
+      const badge = document.createElement('div');
+      badge.className = REACTION_BADGE_CLASS;
+      badge.dataset.highlightAndReactReactionKey = reaction.key;
+      badge.dataset.highlightAndReactReaction = reaction.value;
+      if (target.kind === 'paper-node') {
+        badge.dataset.highlightAndReactTargetKey = target.key;
+      }
+      badge.setAttribute('aria-hidden', 'true');
+      const systemAsset = reaction.asset
+        ? globalThis.__highlightAndReactSystemTapbacks?.[reaction.asset]
+        : null;
+      if (systemAsset) {
+        badge.dataset.highlightAndReactReactionAsset = reaction.asset;
+        badge.style.setProperty(
+          '--highlight-and-react-reaction-mask',
+          `url("${systemAsset}")`,
+        );
+      } else if (reaction.key === 'standard:haha') {
+        badge.textContent = 'HA\nHA';
+      } else {
+        badge.textContent = reaction.value;
+      }
+      Object.assign(badge.style, {
+        left: `${Math.round(Math.max(4, Math.min(window.innerWidth - 28, rect.right - 12)))}px`,
+        top: `${Math.round(Math.max(4, Math.min(window.innerHeight - 28, rect.top - 12)))}px`,
+      });
+      document.body.append(badge);
+    }
+  };
+
+  const scheduleBadgeRefresh = () => {
+    if (badgeRefreshFrame !== null) return;
+    badgeRefreshFrame = requestAnimationFrame(() => {
+      badgeRefreshFrame = null;
+      renderReactionBadges();
+    });
   };
 
   const reactionGlyph = (reaction) => {
@@ -976,7 +1199,7 @@ html[data-highlight-and-react-picking="true"] * {
     button.setAttribute('aria-label', reaction.customEmoji ? `React ${reaction.value}` : reaction.label);
     button.setAttribute(
       'aria-pressed',
-      String(activeMessage?.dataset.highlightAndReactReactionKey === reaction.key),
+      String(reactionForTarget(activeTarget)?.key === reaction.key),
     );
     button.append(reactionGlyph(reaction));
     button.addEventListener('click', () => react(reaction));
@@ -984,36 +1207,21 @@ html[data-highlight-and-react-picking="true"] * {
   };
 
   const react = (reaction) => {
-    if (!activeMessage) return;
-    const message = activeMessage;
-    const previousKey = message.dataset.highlightAndReactReactionKey || null;
-    const previousReaction = message.dataset.highlightAndReactReaction || null;
+    if (!activeTarget) return;
+    const target = activeTarget;
+    const previous = reactionForTarget(target);
+    const previousKey = previous?.key || null;
+    const previousReaction = previous?.value || null;
     const removing = previousKey === reaction.key;
     const action = removing ? 'remove' : previousKey ? 'replace' : 'add';
 
     if (removing) {
-      delete message.dataset.highlightAndReactReactionKey;
-      delete message.dataset.highlightAndReactReaction;
-      delete message.dataset.highlightAndReactReactionAsset;
-      message.style.removeProperty('--highlight-and-react-reaction-mask');
+      updateTargetReaction(target, null);
     } else {
-      message.dataset.highlightAndReactReactionKey = reaction.key;
-      message.dataset.highlightAndReactReaction = reaction.value;
-      const systemAsset = reaction.asset
-        ? globalThis.__highlightAndReactSystemTapbacks?.[reaction.asset]
-        : null;
-      if (systemAsset) {
-        message.dataset.highlightAndReactReactionAsset = reaction.asset;
-        message.style.setProperty(
-          '--highlight-and-react-reaction-mask',
-          `url("${systemAsset}")`,
-        );
-      } else {
-        delete message.dataset.highlightAndReactReactionAsset;
-        message.style.removeProperty('--highlight-and-react-reaction-mask');
-      }
+      updateTargetReaction(target, reaction);
       if (reaction.customEmoji) rememberEmoji(reaction.value);
     }
+    renderReactionBadges();
 
     const detail = {
       action,
@@ -1021,16 +1229,18 @@ html[data-highlight-and-react-picking="true"] * {
       reaction: removing ? null : reaction.value,
       previousKey,
       previousReaction,
-      targetType: targetMode,
+      targetType: target.kind === 'paper-node' ? 'paper-node' : targetMode,
+      targetKey: target.kind === 'paper-node' ? target.key : null,
       text: activeRange?.toString().trim()
-        || message.innerText?.trim()
-        || message.getAttribute('aria-label')
+        || targetText(target)
         || '',
-      messageSelector: message.matches('[data-user-message-bubble]')
+      messageSelector: target.kind === 'paper-node'
+        ? target.key
+        : target.element.matches('[data-user-message-bubble]')
         ? '[data-user-message-bubble]'
-        : elementLabel(message),
+        : elementLabel(target.element),
     };
-    message.dispatchEvent(new CustomEvent('highlight-and-react', {
+    target.element.dispatchEvent(new CustomEvent('highlight-and-react', {
       bubbles: true,
       detail,
     }));
@@ -1184,7 +1394,7 @@ html[data-highlight-and-react-picking="true"] * {
 
     close();
     activeRange = range;
-    activeMessage = message;
+    activeTarget = domTarget(message);
     activeRects = rects;
     targetMode = 'text';
     if (globalThis.Highlight && globalThis.CSS?.highlights) {
@@ -1217,16 +1427,17 @@ html[data-highlight-and-react-picking="true"] * {
   };
 
   const onPointerMove = (event) => {
+    scheduleBadgeRefresh();
     if (targetMode !== 'picking-element') return;
-    const candidate = elementAtPoint(event.clientX, event.clientY);
-    if (candidate === hoveredElement) return;
-    hoveredElement = candidate;
+    const candidate = targetAtPoint(event.clientX, event.clientY);
+    if (targetEquals(candidate, hoveredTarget)) return;
+    hoveredTarget = candidate;
     placeElementOverlay(candidate, 'hover');
   };
 
   const onPointerDown = (event) => {
     if (targetMode === 'picking-element') {
-      const candidate = elementAtPoint(event.clientX, event.clientY) || hoveredElement;
+      const candidate = targetAtPoint(event.clientX, event.clientY) || hoveredTarget;
       if (!candidate) {
         close();
         return;
@@ -1238,11 +1449,12 @@ html[data-highlight-and-react-picking="true"] * {
       lockElementTarget(candidate);
       return;
     }
-    if (!activeMessage) return;
+    if (!activeTarget) return;
     if (document.getElementById(BAR_ID)?.contains(event.target)) return;
     if (document.getElementById(PICKER_ID)?.contains(event.target)) return;
     if (targetMode === 'text' && pointInsideSelection(event.clientX, event.clientY)) return;
-    if (targetMode === 'element' && activeMessage.contains(event.target)) return;
+    if (targetMode === 'element'
+      && targetContainsPoint(activeTarget, event.clientX, event.clientY, event.target)) return;
     close();
   };
 
@@ -1254,11 +1466,15 @@ html[data-highlight-and-react-picking="true"] * {
     event.stopImmediatePropagation();
   };
 
-  const onViewportChange = () => requestAnimationFrame(placeBar);
+  const onViewportChange = () => {
+    requestAnimationFrame(placeBar);
+    scheduleBadgeRefresh();
+  };
   document.addEventListener('keydown', onKeydown, true);
   document.addEventListener('pointermove', onPointerMove, true);
   document.addEventListener('pointerdown', onPointerDown, true);
   document.addEventListener('click', onClick, true);
+  window.addEventListener('wheel', scheduleBadgeRefresh, true);
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('scroll', onViewportChange, true);
 
@@ -1268,13 +1484,16 @@ html[data-highlight-and-react-picking="true"] * {
     document.removeEventListener('pointermove', onPointerMove, true);
     document.removeEventListener('pointerdown', onPointerDown, true);
     document.removeEventListener('click', onClick, true);
+    window.removeEventListener('wheel', scheduleBadgeRefresh, true);
     window.removeEventListener('resize', onViewportChange);
     window.removeEventListener('scroll', onViewportChange, true);
+    if (badgeRefreshFrame !== null) cancelAnimationFrame(badgeRefreshFrame);
+    document.querySelectorAll(`.${REACTION_BADGE_CLASS}`).forEach((badge) => badge.remove());
+    logicalReactionState.clear();
     document.querySelectorAll('[data-highlight-and-react-reaction]').forEach((element) => {
       delete element.dataset.highlightAndReactReaction;
       delete element.dataset.highlightAndReactReactionKey;
       delete element.dataset.highlightAndReactReactionAsset;
-      element.style.removeProperty('--highlight-and-react-reaction-mask');
     });
   };
   window.__highlightAndReactCleanup = cleanup;
