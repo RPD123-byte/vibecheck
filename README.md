@@ -37,7 +37,7 @@ Codex explicitly describes the result as an imperfect inference.
 ## Download and install
 
 1. Download
-   [Vibecheck v0.2.1 for Apple silicon](https://github.com/RPD123-byte/vibecheck/releases/download/v0.2.1/Vibecheck-darwin-arm64-0.2.1.zip).
+   [Vibecheck v0.2.2 for Apple silicon](https://github.com/RPD123-byte/vibecheck/releases/download/v0.2.2/Vibecheck-darwin-arm64-0.2.2.zip).
 2. Double-click the ZIP to extract `Vibecheck.app`.
 3. Move `Vibecheck.app` to your **Applications** folder.
 4. Open Vibecheck from Applications.
