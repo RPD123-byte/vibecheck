@@ -67,10 +67,12 @@ trap cleanup EXIT INT TERM
 
 print "Fixture running. Select text and press Control-Option-R."
 print "Press Control-C to close the fixture and injector."
+clipboard_bridge=$("$script_dir/build_clipboard_bridge.sh")
 node "$script_dir/devtools_injector.mjs" \
   --port "$debug_port" \
   --source "$project_dir/renderer/highlight_and_react.css" \
   --context-mode clipboard \
+  --clipboard-bridge "$clipboard_bridge" \
   --quiet &
 injector_pid=$!
 

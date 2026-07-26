@@ -7,6 +7,14 @@ context_mode=${HIGHLIGHT_CONTEXT_MODE:-codex}
 typeset -a context_arguments
 context_arguments=(--context-mode "$context_mode")
 
+if [[ "$context_mode" != "off" ]]; then
+  clipboard_bridge=${HIGHLIGHT_CLIPBOARD_BRIDGE:-}
+  if [[ -z "$clipboard_bridge" ]]; then
+    clipboard_bridge=$("$script_dir/build_clipboard_bridge.sh")
+  fi
+  context_arguments+=(--clipboard-bridge "$clipboard_bridge")
+fi
+
 if [[ "$context_mode" == "codex" ]]; then
   context_bridge=${HIGHLIGHT_CONTEXT_BRIDGE:-}
   if [[ -z "$context_bridge" ]]; then

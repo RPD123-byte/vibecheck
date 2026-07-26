@@ -54,8 +54,12 @@ The host captures a padded PNG crop of the selected component from the live
 Chromium renderer after the picker closes. Viewport bounds are translated to
 page coordinates and clipped to the visible viewport, so the same path works
 for Paper canvas nodes and scrolled DOM elements. The clipboard contains both a
-plain-language text summary and the PNG. The Codex turn receives the same text
-plus the screenshot as a `localImage` input.
+plain-language text summary and the PNG. They are exposed as separate pasteboard
+items for Electron (`text/plain` plus an `image/png` file), while an RTFD
+representation embeds both for native rich-text editors. Text-only tools such
+as `pbpaste` deliberately show only the text flavor; they cannot render the
+image item. The Codex turn receives the same text plus the screenshot directly
+as a `localImage` input.
 
 The host injector always copies that context to the macOS clipboard first. It
 then asks an experiment-local bridge to inspect Codex:

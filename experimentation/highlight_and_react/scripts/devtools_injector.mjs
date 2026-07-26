@@ -27,6 +27,7 @@ Options:
   --debug         Print target and injection details
   --quiet         Suppress transient renderer-waiting messages
   --context-mode MODE  Context delivery: off, clipboard, or codex (default: off)
+  --clipboard-bridge FILE  Multi-item macOS clipboard writer executable
   --context-bridge FILE  Experiment-local Codex bridge executable
   --help          Show this help`);
 }
@@ -39,6 +40,7 @@ function parseOptions(arguments_) {
     debug: false,
     quiet: false,
     contextMode: 'off',
+    clipboardBridge: '',
     contextBridge: '',
   };
   for (let index = 0; index < arguments_.length; index += 1) {
@@ -49,6 +51,9 @@ function parseOptions(arguments_) {
     else if (argument === '--debug') options.debug = true;
     else if (argument === '--quiet') options.quiet = true;
     else if (argument === '--context-mode') options.contextMode = arguments_[++index];
+    else if (argument === '--clipboard-bridge') {
+      options.clipboardBridge = resolve(arguments_[++index]);
+    }
     else if (argument === '--context-bridge') {
       options.contextBridge = resolve(arguments_[++index]);
     }
@@ -64,6 +69,9 @@ function parseOptions(arguments_) {
   }
   if (!['off', 'clipboard', 'codex'].includes(options.contextMode)) {
     throw new Error('--context-mode must be off, clipboard, or codex');
+  }
+  if (options.contextMode !== 'off' && !options.clipboardBridge) {
+    throw new Error('--clipboard-bridge is required when context delivery is enabled');
   }
   if (options.contextMode === 'codex' && !options.contextBridge) {
     throw new Error('--context-bridge is required when --context-mode is codex');
@@ -322,6 +330,7 @@ async function main() {
         for (const event of events) {
           const delivery = await deliverContextEvent(event, {
             mode: options.contextMode,
+            clipboardBridgePath: options.clipboardBridge,
             bridgePath: options.contextBridge,
           });
           printDeliveryResult(delivery);

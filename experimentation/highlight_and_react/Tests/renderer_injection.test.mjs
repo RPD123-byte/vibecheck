@@ -204,8 +204,9 @@ test('host context delivery copies before conservatively invoking the Codex brid
   const result = await deliverContextEvent(event, {
     mode: 'codex',
     bridgePath: '/fixture/context-bridge',
-    copy: async (text, screenshotPath) => {
-      calls.push(['copy', text, screenshotPath]);
+    clipboardBridgePath: '/fixture/clipboard-bridge',
+    copy: async (text, screenshotPath, clipboardBridgePath) => {
+      calls.push(['copy', text, screenshotPath, clipboardBridgePath]);
       return { status: 'copied' };
     },
     bridge: async (text, bridgePath, screenshotPath) => {
@@ -214,7 +215,12 @@ test('host context delivery copies before conservatively invoking the Codex brid
     },
   });
   assert.deepEqual(calls, [
-    ['copy', 'clipboard component context', '/fixture/selected-component.png'],
+    [
+      'copy',
+      'clipboard component context',
+      '/fixture/selected-component.png',
+      '/fixture/clipboard-bridge',
+    ],
     [
       'bridge',
       'agent component context',

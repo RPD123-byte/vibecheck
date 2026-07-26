@@ -1,14 +1,5 @@
 import { spawn } from 'node:child_process';
 
-const clipboardScript = String.raw`
-on run argv
-  set imagePath to item 1 of argv
-  set textValue to item 2 of argv
-  set imageData to read (POSIX file imagePath) as «class PNGf»
-  set the clipboard to {«class utf8»:textValue, «class PNGf»:imageData}
-end run
-`;
-
 function runProcess(executable, arguments_, input) {
   return new Promise((resolve, reject) => {
     const child = spawn(executable, arguments_, {
@@ -32,13 +23,12 @@ function runProcess(executable, arguments_, input) {
   });
 }
 
-export async function copyToClipboard(text, screenshotPath) {
+export async function copyToClipboard(text, screenshotPath, clipboardBridgePath) {
+  if (screenshotPath && !clipboardBridgePath) {
+    throw new Error('multi-item clipboard bridge path is missing');
+  }
   const result = screenshotPath
-    ? await runProcess(
-      '/usr/bin/osascript',
-      ['-', screenshotPath, text],
-      clipboardScript,
-    )
+    ? await runProcess(clipboardBridgePath, [screenshotPath], text)
     : await runProcess('/usr/bin/pbcopy', [], text);
   if (result.code !== 0) {
     throw new Error(
@@ -75,6 +65,7 @@ export async function deliverContextEvent(event, options = {}) {
   const {
     mode = 'clipboard',
     bridgePath,
+    clipboardBridgePath,
     copy = copyToClipboard,
     bridge = runContextBridge,
   } = options;
@@ -96,7 +87,11 @@ export async function deliverContextEvent(event, options = {}) {
   let clipboard;
   const screenshotPath = event.screenshot?.path;
   try {
-    clipboard = await copy(event.clipboardText, screenshotPath);
+    clipboard = await copy(
+      event.clipboardText,
+      screenshotPath,
+      clipboardBridgePath,
+    );
   } catch (error) {
     clipboard = {
       status: 'failed',
