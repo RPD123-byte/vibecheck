@@ -1,4 +1,5 @@
 use codex_control::{ActionOutcome, CodexControl, Config, Handle};
+use serde::Deserialize;
 use serde_json::{Value, json};
 use std::io::{self, Read};
 use std::time::Duration;
@@ -8,6 +9,30 @@ enum ActiveSelection {
     None,
     One { thread_id: String, turn_id: String },
     Multiple(usize),
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct ReactionContext {
+    message: String,
+    screenshot_path: Option<String>,
+}
+
+impl ReactionContext {
+    fn user_input(&self) -> Vec<Value> {
+        let mut input = vec![json!({
+            "type": "text",
+            "text": self.message,
+        })];
+        if let Some(path) = self.screenshot_path.as_deref() {
+            input.push(json!({
+                "type": "localImage",
+                "path": path,
+                "detail": "original",
+            }));
+        }
+        input
+    }
 }
 
 fn select_active_turn(active: Vec<(String, String)>) -> ActiveSelection {
@@ -68,7 +93,7 @@ async fn inspect(handle: &Handle) -> Value {
     }
 }
 
-async fn deliver(handle: &Handle, message: String) -> Value {
+async fn deliver(handle: &Handle, context: ReactionContext) -> Value {
     let (thread_id, turn_id) = match current_selection(handle).await {
         ActiveSelection::None => {
             return json!({
@@ -96,15 +121,7 @@ async fn deliver(handle: &Handle, message: String) -> Value {
         });
     }
 
-    let outcome = handle
-        .start(
-            &thread_id,
-            vec![json!({
-                "type": "text",
-                "text": message,
-            })],
-        )
-        .await;
+    let outcome = handle.start(&thread_id, context.user_input()).await;
     match outcome {
         ActionOutcome::Confirmed { .. } => json!({
             "status": "sent",
@@ -136,10 +153,17 @@ fn control_config() -> Config {
     config
 }
 
-fn read_message() -> io::Result<String> {
-    let mut message = String::new();
-    io::stdin().read_to_string(&mut message)?;
-    Ok(message.trim().to_owned())
+fn read_context() -> io::Result<ReactionContext> {
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input)?;
+    let input = input.trim();
+    if let Ok(context) = serde_json::from_str::<ReactionContext>(input) {
+        return Ok(context);
+    }
+    Ok(ReactionContext {
+        message: input.to_owned(),
+        screenshot_path: None,
+    })
 }
 
 #[tokio::main]
@@ -155,11 +179,14 @@ async fn main() {
         std::process::exit(2);
     }
 
-    let message = if inspect_only {
-        String::new()
+    let context = if inspect_only {
+        ReactionContext {
+            message: String::new(),
+            screenshot_path: None,
+        }
     } else {
-        match read_message() {
-            Ok(message) if !message.is_empty() => message,
+        match read_context() {
+            Ok(context) if !context.message.is_empty() => context,
             Ok(_) => {
                 eprintln!("context message is empty");
                 std::process::exit(2);
@@ -175,8 +202,9 @@ async fn main() {
             "{}",
             json!({
                 "status": "dry_run",
-                "messageLength": message.len(),
-                "message": message,
+                "messageLength": context.message.len(),
+                "message": context.message,
+                "screenshotPath": context.screenshot_path,
             })
         );
         return;
@@ -186,7 +214,7 @@ async fn main() {
         if inspect_only {
             inspect(&handle).await
         } else {
-            deliver(&handle, message).await
+            deliver(&handle, context).await
         }
     })
     .await;
@@ -253,7 +281,14 @@ mod tests {
             .await
             .expect("mock app server");
         let result = CodexControl::run(mock_config(socket), |handle| async move {
-            deliver(&handle, "context".into()).await
+            deliver(
+                &handle,
+                ReactionContext {
+                    message: "context".into(),
+                    screenshot_path: None,
+                },
+            )
+            .await
         })
         .await
         .expect("Codex control run");
@@ -285,7 +320,14 @@ mod tests {
             .set_fault(Fault::InterruptCompletionBeforeResponse)
             .await;
         let result = CodexControl::run(mock_config(socket), |handle| async move {
-            deliver(&handle, "component plus reaction".into()).await
+            deliver(
+                &handle,
+                ReactionContext {
+                    message: "component plus reaction".into(),
+                    screenshot_path: Some("/tmp/selected-component.png".into()),
+                },
+            )
+            .await
         })
         .await
         .expect("Codex control run");
@@ -300,6 +342,9 @@ mod tests {
             request["method"] == "turn/start"
                 && request["params"]["threadId"] == "thread"
                 && request["params"]["input"][0]["text"] == "component plus reaction"
+                && request["params"]["input"][1]["type"] == "localImage"
+                && request["params"]["input"][1]["path"] == "/tmp/selected-component.png"
+                && request["params"]["input"][1]["detail"] == "original"
         }));
         server.shutdown().await;
     }

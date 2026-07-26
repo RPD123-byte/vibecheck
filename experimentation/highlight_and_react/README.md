@@ -36,11 +36,11 @@ coordinates, asks Paper's editor hit tester for the logical node, and converts
 that node's live bounds back into viewport coordinates for the same overlay and
 Tapback bar. Paper's DOM sidebars continue through the normal element path.
 
-Reaction badges are independent fixed overlays. Targets retain only namespaced
-reaction state; the stylesheet never changes a target's `position`, display, or
-layout. This is important for Paper because its full-window canvas is fixed and
-would be displaced if a generic badge implementation changed its positioning
-mode.
+Reactions are transient feedback events, not persistent decorations. Choosing
+a reaction closes the picker and removes the selection overlay; it does not add
+a badge to the component. Targets retain only namespaced state so choosing the
+same reaction again can still mean remove, but the stylesheet never changes a
+target's `position`, display, or layout.
 
 Adding or replacing a reaction also creates structured agent context. The
 context contains the emoji and reaction label, application and URL, target
@@ -49,6 +49,13 @@ representation. DOM targets use a cloned `outerHTML` snapshot without the
 experiment's reaction attributes; Paper targets use the logical file/node IDs,
 label, component type, and canvas bounds. Removing the active reaction does not
 send context.
+
+The host captures a padded PNG crop of the selected component from the live
+Chromium renderer after the picker closes. Viewport bounds are translated to
+page coordinates and clipped to the visible viewport, so the same path works
+for Paper canvas nodes and scrolled DOM elements. The clipboard contains both a
+plain-language text summary and the PNG. The Codex turn receives the same text
+plus the screenshot as a `localImage` input.
 
 The host injector always copies that context to the macOS clipboard first. It
 then asks an experiment-local bridge to inspect Codex:
@@ -107,8 +114,10 @@ The test verifies the complete interaction:
 - enter element mode with no selection, hover a component, lock it, and react.
 - resolve a logical node inside a childless Paper-style canvas, add and remove a
   reaction, and preserve the canvas's fixed layout;
-- queue exact-range, DOM-component, and Paper-node context exactly once; and
-- copy context before invoking a mock conservative Codex bridge.
+- verify that reactions never leave a component badge behind;
+- queue exact-range, DOM-component, and Paper-node context exactly once;
+- capture a valid clipped PNG for every queued component; and
+- copy text and image context before invoking a mock conservative Codex bridge.
 
 For a visible, interactive fixture instead of the automated test, run:
 
@@ -119,8 +128,8 @@ For a visible, interactive fixture instead of the automated test, run:
 This opens a temporary Electron window. Select sample text and press `⌃⌥R` to
 test exact-range mode. Clear the selection and press `⌃⌥R` to test element
 mode, then hover and click a component. Added/replaced reactions are copied to
-the clipboard, but this fixture deliberately does not interrupt Codex. Press
-Control-C when finished.
+the clipboard as a readable summary plus a component screenshot, but this
+fixture deliberately does not interrupt Codex. Press Control-C when finished.
 
 ## Run it in another Electron app
 

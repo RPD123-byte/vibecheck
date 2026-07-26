@@ -1,5 +1,14 @@
 import { spawn } from 'node:child_process';
 
+const clipboardScript = String.raw`
+on run argv
+  set imagePath to item 1 of argv
+  set textValue to item 2 of argv
+  set imageData to read (POSIX file imagePath) as «class PNGf»
+  set the clipboard to {«class utf8»:textValue, «class PNGf»:imageData}
+end run
+`;
+
 function runProcess(executable, arguments_, input) {
   return new Promise((resolve, reject) => {
     const child = spawn(executable, arguments_, {
@@ -23,17 +32,33 @@ function runProcess(executable, arguments_, input) {
   });
 }
 
-export async function copyToClipboard(text) {
-  const result = await runProcess('/usr/bin/pbcopy', [], text);
+export async function copyToClipboard(text, screenshotPath) {
+  const result = screenshotPath
+    ? await runProcess(
+      '/usr/bin/osascript',
+      ['-', screenshotPath, text],
+      clipboardScript,
+    )
+    : await runProcess('/usr/bin/pbcopy', [], text);
   if (result.code !== 0) {
-    throw new Error(result.stderr.trim() || `pbcopy exited with ${result.code}`);
+    throw new Error(
+      result.stderr.trim()
+      || `clipboard writer exited with ${result.code}`,
+    );
   }
-  return { status: 'copied' };
+  return {
+    status: 'copied',
+    includesScreenshot: Boolean(screenshotPath),
+  };
 }
 
-export async function runContextBridge(text, bridgePath) {
+export async function runContextBridge(text, bridgePath, screenshotPath) {
   if (!bridgePath) throw new Error('Codex context bridge path is missing');
-  const result = await runProcess(bridgePath, [], text);
+  const input = JSON.stringify({
+    message: text,
+    screenshotPath: screenshotPath || null,
+  });
+  const result = await runProcess(bridgePath, [], input);
   if (result.code !== 0) {
     throw new Error(
       result.stderr.trim()
@@ -69,8 +94,9 @@ export async function deliverContextEvent(event, options = {}) {
   }
 
   let clipboard;
+  const screenshotPath = event.screenshot?.path;
   try {
-    clipboard = await copy(event.clipboardText);
+    clipboard = await copy(event.clipboardText, screenshotPath);
   } catch (error) {
     clipboard = {
       status: 'failed',
@@ -81,7 +107,11 @@ export async function deliverContextEvent(event, options = {}) {
   let codex = { status: 'skipped' };
   if (mode === 'codex') {
     try {
-      codex = await bridge(event.agentMessage || event.clipboardText, bridgePath);
+      codex = await bridge(
+        event.agentMessage || event.clipboardText,
+        bridgePath,
+        screenshotPath,
+      );
     } catch (error) {
       codex = {
         status: 'bridge_failed',

@@ -2,8 +2,9 @@
 
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { deliverContextEvent } from './context_delivery.mjs';
@@ -12,6 +13,7 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectDirectory = resolve(scriptDirectory, '..');
 const defaultSource = resolve(projectDirectory, 'renderer/highlight_and_react.css');
 const systemTapbackRenderer = resolve(scriptDirectory, 'render_system_tapbacks.swift');
+const defaultScreenshotDirectory = join(tmpdir(), 'highlight-and-react-context');
 const workspaceScriptPattern = /\/\*\s*@attune-script\s*\n([\s\S]*?)\n\s*@end-attune-script\s*\*\//g;
 const execFileAsync = promisify(execFile);
 let systemTapbackAssetsPromise;
@@ -135,7 +137,7 @@ async function debugTargets(port) {
   return response.json();
 }
 
-async function evaluate(webSocketDebuggerUrl, expression) {
+async function cdpCommand(webSocketDebuggerUrl, method, params = {}) {
   const socket = new WebSocket(webSocketDebuggerUrl);
   await new Promise((resolvePromise, reject) => {
     const timeout = setTimeout(() => reject(new Error('DevTools connection timed out')), 3000);
@@ -151,7 +153,7 @@ async function evaluate(webSocketDebuggerUrl, expression) {
 
   try {
     return await new Promise((resolvePromise, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Runtime.evaluate timed out')), 3000);
+      const timeout = setTimeout(() => reject(new Error(`${method} timed out`)), 3000);
       socket.addEventListener('message', (event) => {
         const message = JSON.parse(String(event.data));
         if (message.id !== 1) return;
@@ -159,18 +161,78 @@ async function evaluate(webSocketDebuggerUrl, expression) {
         if (message.error || message.result?.exceptionDetails) {
           reject(new Error(JSON.stringify(message.error || message.result.exceptionDetails)));
         } else {
-          resolvePromise(message.result?.result?.value);
+          resolvePromise(message.result);
         }
       });
       socket.send(JSON.stringify({
         id: 1,
-        method: 'Runtime.evaluate',
-        params: { expression, returnByValue: true },
+        method,
+        params,
       }));
     });
   } finally {
     socket.close();
   }
+}
+
+async function evaluate(webSocketDebuggerUrl, expression) {
+  const result = await cdpCommand(webSocketDebuggerUrl, 'Runtime.evaluate', {
+    expression,
+    returnByValue: true,
+  });
+  return result?.result?.value;
+}
+
+function screenshotClip(bounds, viewport, padding = 12) {
+  if (!bounds || !viewport) return null;
+  const viewportWidth = Number(viewport.clientWidth);
+  const viewportHeight = Number(viewport.clientHeight);
+  const rawLeft = Number(bounds.x) - padding;
+  const rawTop = Number(bounds.y) - padding;
+  const rawRight = Number(bounds.x) + Number(bounds.width) + padding;
+  const rawBottom = Number(bounds.y) + Number(bounds.height) + padding;
+  if (![viewportWidth, viewportHeight, rawLeft, rawTop, rawRight, rawBottom]
+    .every(Number.isFinite)) return null;
+  const left = Math.max(0, Math.min(viewportWidth, rawLeft));
+  const top = Math.max(0, Math.min(viewportHeight, rawTop));
+  const right = Math.max(left, Math.min(viewportWidth, rawRight));
+  const bottom = Math.max(top, Math.min(viewportHeight, rawBottom));
+  if (right - left < 1 || bottom - top < 1) return null;
+  return {
+    x: Number(viewport.pageX || 0) + left,
+    y: Number(viewport.pageY || 0) + top,
+    width: right - left,
+    height: bottom - top,
+    scale: 1,
+  };
+}
+
+async function captureComponentScreenshot(
+  webSocketDebuggerUrl,
+  event,
+  screenshotDirectory,
+) {
+  const metrics = await cdpCommand(webSocketDebuggerUrl, 'Page.getLayoutMetrics');
+  const viewport = metrics.cssVisualViewport || metrics.visualViewport;
+  const clip = screenshotClip(event.target?.bounds, viewport);
+  if (!clip) throw new Error('selected component has no visible screenshot bounds');
+  const result = await cdpCommand(webSocketDebuggerUrl, 'Page.captureScreenshot', {
+    format: 'png',
+    fromSurface: true,
+    captureBeyondViewport: false,
+    clip,
+  });
+  if (!result?.data) throw new Error('renderer returned no screenshot data');
+  await mkdir(screenshotDirectory, { recursive: true });
+  const safeId = String(event.id || Date.now()).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const path = join(screenshotDirectory, `${safeId}.png`);
+  await writeFile(path, result.data, 'base64');
+  return {
+    path,
+    mimeType: 'image/png',
+    width: Math.round(clip.width),
+    height: Math.round(clip.height),
+  };
 }
 
 export async function inject(port, source, debug = false) {
@@ -187,7 +249,8 @@ export async function inject(port, source, debug = false) {
   return results;
 }
 
-export async function drainContextEvents(port) {
+export async function drainContextEvents(port, options = {}) {
+  const screenshotDirectory = options.screenshotDirectory || defaultScreenshotDirectory;
   const targets = (await debugTargets(port))
     .filter((target) => target.type === 'page' && target.webSocketDebuggerUrl);
   const expression = `(() => {
@@ -199,16 +262,34 @@ export async function drainContextEvents(port) {
   const batches = await Promise.all(targets.map(async (target) => ({
     title: target.title,
     url: target.url,
+    webSocketDebuggerUrl: target.webSocketDebuggerUrl,
     events: await evaluate(target.webSocketDebuggerUrl, expression),
   })));
-  return batches.flatMap((batch) => (
-    Array.isArray(batch.events)
-      ? batch.events.map((event) => ({
+  const events = [];
+  for (const batch of batches) {
+    if (!Array.isArray(batch.events)) continue;
+    for (const event of batch.events) {
+      let screenshot;
+      try {
+        screenshot = await captureComponentScreenshot(
+          batch.webSocketDebuggerUrl,
+          event,
+          screenshotDirectory,
+        );
+      } catch (error) {
+        screenshot = {
+          status: 'failed',
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+      events.push({
         ...event,
         renderer: { title: batch.title, url: batch.url },
-      }))
-      : []
-  ));
+        screenshot,
+      });
+    }
+  }
+  return events;
 }
 
 function printDeliveryResult(result) {

@@ -14,61 +14,6 @@
   text-underline-offset: 2px;
 }
 
-.highlight-and-react-reaction-badge {
-  position: fixed;
-  z-index: 2147483645;
-  display: grid;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 4px;
-  place-items: center;
-  border: 2px solid Canvas;
-  border-radius: 999px;
-  background: color-mix(in srgb, Canvas 92%, CanvasText 8%);
-  box-shadow: 0 3px 12px rgb(0 0 0 / 24%);
-  font: 16px/1 Apple Color Emoji, "Segoe UI Emoji", sans-serif;
-  pointer-events: none;
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-key="standard:haha"] {
-  color: #32ade6;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
-  font-size: 9px;
-  font-weight: 900;
-  line-height: 0.72;
-  white-space: pre;
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset] {
-  width: 20px;
-  min-width: 20px;
-  height: 24px;
-  padding: 0;
-  background: var(--highlight-and-react-reaction-fill, #ff5d96);
-  -webkit-mask: var(--highlight-and-react-reaction-mask) center / contain no-repeat;
-  mask: var(--highlight-and-react-reaction-mask) center / contain no-repeat;
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="heart"] {
-  --highlight-and-react-reaction-fill: linear-gradient(145deg, #ffafd0, #ff2d78);
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset^="thumbs"] {
-  --highlight-and-react-reaction-fill: linear-gradient(155deg, #ffe27a, #f2a91f);
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="haha"] {
-  --highlight-and-react-reaction-fill: linear-gradient(180deg, #64d2ff, #0a84ff);
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="exclamation"] {
-  --highlight-and-react-reaction-fill: linear-gradient(180deg, #ff9f97, #ff453a);
-}
-
-.highlight-and-react-reaction-badge[data-highlight-and-react-reaction-asset="question"] {
-  --highlight-and-react-reaction-fill: linear-gradient(180deg, #da8fff, #af52de);
-}
-
 #highlight-and-react-scrim {
   position: fixed;
   inset: 0;
@@ -577,7 +522,6 @@ html[data-highlight-and-react-picking="true"] * {
   const SCRIM_ID = 'highlight-and-react-scrim';
   const ELEMENT_OVERLAY_ID = 'highlight-and-react-element-overlay';
   const ELEMENT_HINT_ID = 'highlight-and-react-element-hint';
-  const REACTION_BADGE_CLASS = 'highlight-and-react-reaction-badge';
   const CONTEXT_OUTBOX_KEY = '__highlightAndReactContextOutbox';
   const HIGHLIGHT_NAME = 'highlight-and-react-selection';
   const RECENTS_KEY = 'highlight-and-react-recent-emoji';
@@ -661,7 +605,6 @@ html[data-highlight-and-react-picking="true"] * {
   let targetMode = null;
   let hoveredTarget = null;
   let suppressNextClick = false;
-  let badgeRefreshFrame = null;
   const logicalReactionState = new Map();
   const paperEditorStateCache = new WeakMap();
 
@@ -994,24 +937,27 @@ html[data-highlight-and-react-picking="true"] * {
     const text = boundedText(targetText(target), 4_000);
     const lines = [
       '[Highlight & React context]',
+      'A user reacted to the selected UI component shown in the attached screenshot.',
+      '',
       `Reaction: ${reaction.value} (${reaction.label})`,
+      `Selected component: ${component.label} (${component.component})`,
       `Application: ${document.title || 'Untitled application'}`,
-      `URL: ${location.href}`,
-      `Target type: ${component.targetType}`,
-      `Target: ${component.label}`,
     ];
-    if (component.targetKey) lines.push(`Target key: ${component.targetKey}`);
     if (selectedText) lines.push(`Selected text: ${boundedText(selectedText, 4_000)}`);
-    if (text && text !== selectedText) lines.push(`Component text: ${text}`);
+    if (text && text !== selectedText) lines.push(`Visible component text: ${text}`);
+    lines.push('A screenshot of this component is attached.');
+    lines.push('', 'Technical reference:');
+    lines.push(`- URL: ${location.href}`);
+    lines.push(`- Target type: ${component.targetType}`);
+    if (component.targetKey) lines.push(`- Target key: ${component.targetKey}`);
     if (component.bounds) {
       lines.push(
-        `Viewport bounds: x=${component.bounds.x}, y=${component.bounds.y}, `
+        `- Viewport bounds: x=${component.bounds.x}, y=${component.bounds.y}, `
         + `width=${component.bounds.width}, height=${component.bounds.height}`,
       );
     }
     lines.push(
-      '',
-      'Component representation:',
+      '- Component snapshot:',
       component.representation,
       '',
       'Use this reaction as feedback and context for the work currently in progress.',
@@ -1228,59 +1174,6 @@ html[data-highlight-and-react-picking="true"] * {
     placeEmojiPicker();
   };
 
-  const renderReactionBadges = () => {
-    document.querySelectorAll(`.${REACTION_BADGE_CLASS}`).forEach((badge) => badge.remove());
-    const entries = [
-      ...[...document.querySelectorAll('[data-highlight-and-react-reaction-key]')]
-        .filter((element) => !element.classList.contains(REACTION_BADGE_CLASS))
-        .map((element) => {
-          const target = domTarget(element);
-          return { target, reaction: reactionForTarget(target) };
-        }),
-      ...logicalReactionState.values(),
-    ];
-    for (const { target, reaction } of entries) {
-      if (!reaction) continue;
-      const rect = unionRects(targetRects(target));
-      if (!rect) continue;
-      const badge = document.createElement('div');
-      badge.className = REACTION_BADGE_CLASS;
-      badge.dataset.highlightAndReactReactionKey = reaction.key;
-      badge.dataset.highlightAndReactReaction = reaction.value;
-      if (target.kind === 'paper-node') {
-        badge.dataset.highlightAndReactTargetKey = target.key;
-      }
-      badge.setAttribute('aria-hidden', 'true');
-      const systemAsset = reaction.asset
-        ? globalThis.__highlightAndReactSystemTapbacks?.[reaction.asset]
-        : null;
-      if (systemAsset) {
-        badge.dataset.highlightAndReactReactionAsset = reaction.asset;
-        badge.style.setProperty(
-          '--highlight-and-react-reaction-mask',
-          `url("${systemAsset}")`,
-        );
-      } else if (reaction.key === 'standard:haha') {
-        badge.textContent = 'HA\nHA';
-      } else {
-        badge.textContent = reaction.value;
-      }
-      Object.assign(badge.style, {
-        left: `${Math.round(Math.max(4, Math.min(window.innerWidth - 28, rect.right - 12)))}px`,
-        top: `${Math.round(Math.max(4, Math.min(window.innerHeight - 28, rect.top - 12)))}px`,
-      });
-      document.body.append(badge);
-    }
-  };
-
-  const scheduleBadgeRefresh = () => {
-    if (badgeRefreshFrame !== null) return;
-    badgeRefreshFrame = requestAnimationFrame(() => {
-      badgeRefreshFrame = null;
-      renderReactionBadges();
-    });
-  };
-
   const reactionGlyph = (reaction) => {
     const systemAsset = reaction.asset
       ? globalThis.__highlightAndReactSystemTapbacks?.[reaction.asset]
@@ -1334,8 +1227,6 @@ html[data-highlight-and-react-picking="true"] * {
       updateTargetReaction(target, reaction);
       if (reaction.customEmoji) rememberEmoji(reaction.value);
     }
-    renderReactionBadges();
-
     const detail = {
       action,
       key: removing ? null : reaction.key,
@@ -1541,7 +1432,6 @@ html[data-highlight-and-react-picking="true"] * {
   };
 
   const onPointerMove = (event) => {
-    scheduleBadgeRefresh();
     if (targetMode !== 'picking-element') return;
     const candidate = targetAtPoint(event.clientX, event.clientY);
     if (targetEquals(candidate, hoveredTarget)) return;
@@ -1582,13 +1472,11 @@ html[data-highlight-and-react-picking="true"] * {
 
   const onViewportChange = () => {
     requestAnimationFrame(placeBar);
-    scheduleBadgeRefresh();
   };
   document.addEventListener('keydown', onKeydown, true);
   document.addEventListener('pointermove', onPointerMove, true);
   document.addEventListener('pointerdown', onPointerDown, true);
   document.addEventListener('click', onClick, true);
-  window.addEventListener('wheel', scheduleBadgeRefresh, true);
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('scroll', onViewportChange, true);
 
@@ -1598,11 +1486,8 @@ html[data-highlight-and-react-picking="true"] * {
     document.removeEventListener('pointermove', onPointerMove, true);
     document.removeEventListener('pointerdown', onPointerDown, true);
     document.removeEventListener('click', onClick, true);
-    window.removeEventListener('wheel', scheduleBadgeRefresh, true);
     window.removeEventListener('resize', onViewportChange);
     window.removeEventListener('scroll', onViewportChange, true);
-    if (badgeRefreshFrame !== null) cancelAnimationFrame(badgeRefreshFrame);
-    document.querySelectorAll(`.${REACTION_BADGE_CLASS}`).forEach((badge) => badge.remove());
     logicalReactionState.clear();
     document.querySelectorAll('[data-highlight-and-react-reaction]').forEach((element) => {
       delete element.dataset.highlightAndReactReaction;

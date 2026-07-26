@@ -5,7 +5,7 @@ import { createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import {
   drainContextEvents,
   inject,
@@ -13,6 +13,7 @@ import {
   splitWorkspaceSource,
 } from '../scripts/devtools_injector.mjs';
 import { deliverContextEvent } from '../scripts/context_delivery.mjs';
+import { tmpdir } from 'node:os';
 
 const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(projectDirectory, 'renderer/highlight_and_react.css');
@@ -198,22 +199,28 @@ test('host context delivery copies before conservatively invoking the Codex brid
     id: 'context-1',
     clipboardText: 'clipboard component context',
     agentMessage: 'agent component context',
+    screenshot: { path: '/fixture/selected-component.png' },
   };
   const result = await deliverContextEvent(event, {
     mode: 'codex',
     bridgePath: '/fixture/context-bridge',
-    copy: async (text) => {
-      calls.push(['copy', text]);
+    copy: async (text, screenshotPath) => {
+      calls.push(['copy', text, screenshotPath]);
       return { status: 'copied' };
     },
-    bridge: async (text, bridgePath) => {
-      calls.push(['bridge', text, bridgePath]);
+    bridge: async (text, bridgePath, screenshotPath) => {
+      calls.push(['bridge', text, bridgePath, screenshotPath]);
       return { status: 'no_active_turn', activeTurnCount: 0 };
     },
   });
   assert.deepEqual(calls, [
-    ['copy', 'clipboard component context'],
-    ['bridge', 'agent component context', '/fixture/context-bridge'],
+    ['copy', 'clipboard component context', '/fixture/selected-component.png'],
+    [
+      'bridge',
+      'agent component context',
+      '/fixture/context-bridge',
+      '/fixture/selected-component.png',
+    ],
   ]);
   assert.deepEqual(result, {
     eventId: 'context-1',
@@ -555,12 +562,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       && window.__paperTargetEvents.at(-1)?.targetKey === 'paper:fixture-file:paper-card-1',
     );
     document.querySelector('[data-reaction-key="standard:question"]').click();
-    const paperBadge = [...document.querySelectorAll('.highlight-and-react-reaction-badge')]
-      .find((badge) => badge.dataset.highlightAndReactTargetKey
-        === 'paper:fixture-file:paper-card-1');
     const paperReactionAdded = Boolean(
-      paperBadge?.dataset.highlightAndReactReactionKey === 'standard:question'
-      && getComputedStyle(paperBadge).position === 'fixed'
+      !document.querySelector('.highlight-and-react-reaction-badge')
       && window.__paperReactionEvents.at(-1)?.action === 'add'
       && window.__paperReactionEvents.at(-1)?.targetType === 'paper-node'
     );
@@ -604,7 +607,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     const textContextQueued = contextEvents.some((event) => (
       event.target.targetType === 'text'
       && event.clipboardText.includes('Highlight this sentence')
-      && event.clipboardText.includes('Component representation:')
+      && event.clipboardText.includes('Selected component:')
+      && event.clipboardText.includes('A screenshot of this component is attached')
     ));
     const paperContext = contextEvents.find((event) => (
       event.target.targetKey === 'paper:fixture-file:paper-card-1'
@@ -613,6 +617,8 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       paperContext
       && paperContext.reaction.key === 'standard:question'
       && paperContext.clipboardText.includes('Reaction: ❓ (Question mark)')
+      && paperContext.clipboardText.includes('Selected component: Paper canvas card')
+      && paperContext.clipboardText.includes('A screenshot of this component is attached')
       && paperContext.clipboardText.includes('Paper canvas card')
       && paperContext.clipboardText.includes('"nodeId": "paper-card-1"')
     );
@@ -713,7 +719,13 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     textContextQueued: true,
     paperContextQueued: true,
   });
-  const drainedContexts = await drainContextEvents(port);
+  const screenshotDirectory = await mkdtemp(`${tmpdir()}/highlight-context-test-`);
+  context.after(() => rm(screenshotDirectory, { recursive: true, force: true }));
+  const drainedContexts = await drainContextEvents(port, { screenshotDirectory });
   assert.equal(drainedContexts.length, 5);
-  assert.equal((await drainContextEvents(port)).length, 0);
+  for (const event of drainedContexts) {
+    assert.equal(event.screenshot?.mimeType, 'image/png');
+    assert.equal((await readFile(event.screenshot.path)).subarray(1, 4).toString(), 'PNG');
+  }
+  assert.equal((await drainContextEvents(port, { screenshotDirectory })).length, 0);
 });
