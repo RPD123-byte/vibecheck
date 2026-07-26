@@ -34,6 +34,7 @@ target/
 # Experimental and vendored research work must not become core dependencies
 /experimentation/
 /emotiefflib_repo/
+/research/
 goals/
 
 # Local biometric/model data and captured test images
@@ -56,3 +57,5 @@ goals/
 
 # Local forward-looking product goals
 /goals/
+
+demos/
