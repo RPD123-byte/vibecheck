@@ -7,10 +7,12 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import {
+  drainContextEvents,
   inject,
   loadSystemTapbackAssets,
   splitWorkspaceSource,
 } from '../scripts/devtools_injector.mjs';
+import { deliverContextEvent } from '../scripts/context_delivery.mjs';
 
 const projectDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const sourcePath = resolve(projectDirectory, 'renderer/highlight_and_react.css');
@@ -190,6 +192,48 @@ test('machine-wide launcher previews safely and delegates every app to the share
   );
 });
 
+test('host context delivery copies before conservatively invoking the Codex bridge', async () => {
+  const calls = [];
+  const event = {
+    id: 'context-1',
+    clipboardText: 'clipboard component context',
+    agentMessage: 'agent component context',
+  };
+  const result = await deliverContextEvent(event, {
+    mode: 'codex',
+    bridgePath: '/fixture/context-bridge',
+    copy: async (text) => {
+      calls.push(['copy', text]);
+      return { status: 'copied' };
+    },
+    bridge: async (text, bridgePath) => {
+      calls.push(['bridge', text, bridgePath]);
+      return { status: 'no_active_turn', activeTurnCount: 0 };
+    },
+  });
+  assert.deepEqual(calls, [
+    ['copy', 'clipboard component context'],
+    ['bridge', 'agent component context', '/fixture/context-bridge'],
+  ]);
+  assert.deepEqual(result, {
+    eventId: 'context-1',
+    clipboard: { status: 'copied' },
+    codex: { status: 'no_active_turn', activeTurnCount: 0 },
+  });
+
+  let bridgeCalled = false;
+  const clipboardOnly = await deliverContextEvent(event, {
+    mode: 'clipboard',
+    copy: async () => ({ status: 'copied' }),
+    bridge: async () => {
+      bridgeCalled = true;
+      return { status: 'sent' };
+    },
+  });
+  assert.equal(bridgeCalled, false);
+  assert.equal(clipboardOnly.codex.status, 'skipped');
+});
+
 test('installed Messages Tapback vectors are available to the injector', async () => {
   const assets = await loadSystemTapbackAssets();
   assert.deepEqual(Object.keys(assets).sort(), [
@@ -223,6 +267,7 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
   await inject(port, source);
 
   const result = await evaluate(page.webSocketDebuggerUrl, `(async () => {
+    window.__highlightAndReactContextOutbox = [];
     const text = document.getElementById('fixture-text').firstChild;
     const range = document.createRange();
     range.setStart(text, 0);
@@ -555,6 +600,22 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       && ![...document.querySelectorAll('.highlight-and-react-reaction-badge')]
         .some((badge) => badge.dataset.highlightAndReactTargetKey
           === 'paper:fixture-file:paper-card-1');
+    const contextEvents = window.__highlightAndReactContextOutbox;
+    const textContextQueued = contextEvents.some((event) => (
+      event.target.targetType === 'text'
+      && event.clipboardText.includes('Highlight this sentence')
+      && event.clipboardText.includes('Component representation:')
+    ));
+    const paperContext = contextEvents.find((event) => (
+      event.target.targetKey === 'paper:fixture-file:paper-card-1'
+    ));
+    const paperContextQueued = Boolean(
+      paperContext
+      && paperContext.reaction.key === 'standard:question'
+      && paperContext.clipboardText.includes('Reaction: ❓ (Question mark)')
+      && paperContext.clipboardText.includes('Paper canvas card')
+      && paperContext.clipboardText.includes('"nodeId": "paper-card-1"')
+    );
 
     return {
       openedByShortcutInitially,
@@ -599,6 +660,9 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
       paperCanvasActivations: window.__paperCanvasActivations,
       paperQuestionSelected,
       paperReactionRemoved,
+      contextEventCount: contextEvents.length,
+      textContextQueued,
+      paperContextQueued,
     };
   })()`);
 
@@ -645,5 +709,11 @@ test('injected renderer matches compact and expanded Tapback behavior', async (c
     paperCanvasActivations: 0,
     paperQuestionSelected: 'true',
     paperReactionRemoved: true,
+    contextEventCount: 5,
+    textContextQueued: true,
+    paperContextQueued: true,
   });
+  const drainedContexts = await drainContextEvents(port);
+  assert.equal(drainedContexts.length, 5);
+  assert.equal((await drainContextEvents(port)).length, 0);
 });

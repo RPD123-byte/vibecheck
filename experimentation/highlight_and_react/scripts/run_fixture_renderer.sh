@@ -70,6 +70,7 @@ print "Press Control-C to close the fixture and injector."
 node "$script_dir/devtools_injector.mjs" \
   --port "$debug_port" \
   --source "$project_dir/renderer/highlight_and_react.css" \
+  --context-mode clipboard \
   --quiet &
 injector_pid=$!
 

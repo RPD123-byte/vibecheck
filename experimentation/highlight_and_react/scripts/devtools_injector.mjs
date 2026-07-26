@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { deliverContextEvent } from './context_delivery.mjs';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectDirectory = resolve(scriptDirectory, '..');
@@ -23,6 +24,8 @@ Options:
   --once          Inject once and exit instead of watching
   --debug         Print target and injection details
   --quiet         Suppress transient renderer-waiting messages
+  --context-mode MODE  Context delivery: off, clipboard, or codex (default: off)
+  --context-bridge FILE  Experiment-local Codex bridge executable
   --help          Show this help`);
 }
 
@@ -33,6 +36,8 @@ function parseOptions(arguments_) {
     once: false,
     debug: false,
     quiet: false,
+    contextMode: 'off',
+    contextBridge: '',
   };
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
@@ -41,6 +46,10 @@ function parseOptions(arguments_) {
     else if (argument === '--once') options.once = true;
     else if (argument === '--debug') options.debug = true;
     else if (argument === '--quiet') options.quiet = true;
+    else if (argument === '--context-mode') options.contextMode = arguments_[++index];
+    else if (argument === '--context-bridge') {
+      options.contextBridge = resolve(arguments_[++index]);
+    }
     else if (argument === '--help' || argument === '-h') {
       usage();
       process.exit(0);
@@ -50,6 +59,12 @@ function parseOptions(arguments_) {
   }
   if (!Number.isInteger(options.port) || options.port < 1 || options.port > 65535) {
     throw new Error('--port must be an integer between 1 and 65535');
+  }
+  if (!['off', 'clipboard', 'codex'].includes(options.contextMode)) {
+    throw new Error('--context-mode must be off, clipboard, or codex');
+  }
+  if (options.contextMode === 'codex' && !options.contextBridge) {
+    throw new Error('--context-bridge is required when --context-mode is codex');
   }
   return options;
 }
@@ -172,6 +187,42 @@ export async function inject(port, source, debug = false) {
   return results;
 }
 
+export async function drainContextEvents(port) {
+  const targets = (await debugTargets(port))
+    .filter((target) => target.type === 'page' && target.webSocketDebuggerUrl);
+  const expression = `(() => {
+    const key = '__highlightAndReactContextOutbox';
+    const outbox = globalThis[key];
+    if (!Array.isArray(outbox) || !outbox.length) return [];
+    return outbox.splice(0, outbox.length);
+  })()`;
+  const batches = await Promise.all(targets.map(async (target) => ({
+    title: target.title,
+    url: target.url,
+    events: await evaluate(target.webSocketDebuggerUrl, expression),
+  })));
+  return batches.flatMap((batch) => (
+    Array.isArray(batch.events)
+      ? batch.events.map((event) => ({
+        ...event,
+        renderer: { title: batch.title, url: batch.url },
+      }))
+      : []
+  ));
+}
+
+function printDeliveryResult(result) {
+  const clipboard = result.clipboard?.status || 'unknown';
+  const codex = result.codex?.status || 'unknown';
+  console.log(`[highlight-and-react] context clipboard=${clipboard} codex=${codex}`);
+  if (result.clipboard?.error) {
+    console.error(`[highlight-and-react] clipboard error: ${result.clipboard.error}`);
+  }
+  if (result.codex?.error) {
+    console.error(`[highlight-and-react] Codex bridge error: ${result.codex.error}`);
+  }
+}
+
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   let lastError = '';
@@ -185,6 +236,16 @@ async function main() {
       }
       attached = true;
       lastError = '';
+      if (options.contextMode !== 'off') {
+        const events = await drainContextEvents(options.port);
+        for (const event of events) {
+          const delivery = await deliverContextEvent(event, {
+            mode: options.contextMode,
+            bridgePath: options.contextBridge,
+          });
+          printDeliveryResult(delivery);
+        }
+      }
       if (options.once) {
         console.log(`Injected Highlight & React into ${results.length} renderer target(s).`);
         return;

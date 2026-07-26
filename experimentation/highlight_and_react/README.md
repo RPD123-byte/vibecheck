@@ -42,6 +42,29 @@ layout. This is important for Paper because its full-window canvas is fixed and
 would be displaced if a generic badge implementation changed its positioning
 mode.
 
+Adding or replacing a reaction also creates structured agent context. The
+context contains the emoji and reaction label, application and URL, target
+label and bounds, selected/component text, and a bounded component
+representation. DOM targets use a cloned `outerHTML` snapshot without the
+experiment's reaction attributes; Paper targets use the logical file/node IDs,
+label, component type, and canvas bounds. Removing the active reaction does not
+send context.
+
+The host injector always copies that context to the macOS clipboard first. It
+then asks an experiment-local bridge to inspect Codex:
+
+- with exactly one actively running Codex turn, the bridge interrupts that
+  turn, confirms that it stopped, and starts a replacement turn in the same
+  task with the reaction context;
+- with zero active turns, the context remains on the clipboard and Codex is not
+  changed;
+- with multiple active turns, the context remains on the clipboard and the
+  bridge refuses to guess which task should receive it.
+
+The bridge connects to the existing Codex control socket and never launches,
+quits, or restarts the Codex GUI. Clipboard copying and Codex delivery are
+independent, so an unavailable Codex control socket does not lose the context.
+
 The Tapback UI is a clean-room recreation from the observable Messages UI;
 Messages itself is proprietary compiled software, so its literal source is not
 available. The recreation preserves the behavior that matters to the
@@ -83,7 +106,9 @@ The test verifies the complete interaction:
 - open the expanded picker and choose a custom emoji;
 - enter element mode with no selection, hover a component, lock it, and react.
 - resolve a logical node inside a childless Paper-style canvas, add and remove a
-  reaction, and preserve the canvas's fixed layout.
+  reaction, and preserve the canvas's fixed layout;
+- queue exact-range, DOM-component, and Paper-node context exactly once; and
+- copy context before invoking a mock conservative Codex bridge.
 
 For a visible, interactive fixture instead of the automated test, run:
 
@@ -93,7 +118,9 @@ For a visible, interactive fixture instead of the automated test, run:
 
 This opens a temporary Electron window. Select sample text and press `⌃⌥R` to
 test exact-range mode. Clear the selection and press `⌃⌥R` to test element
-mode, then hover and click a component. Press Control-C when finished.
+mode, then hover and click a component. Added/replaced reactions are copied to
+the clipboard, but this fixture deliberately does not interrupt Codex. Press
+Control-C when finished.
 
 ## Run it in another Electron app
 
@@ -132,7 +159,16 @@ without launching it:
 
 Selecting text and pressing `⌃⌥R` uses exact browser Range geometry in any
 document structure. With no selection, the same shortcut enables the generic
-DOM element hover-and-click picker.
+DOM element hover-and-click picker. The attachment script builds the local
+Codex bridge automatically. To exercise reactions without interrupting an
+active Codex task, use clipboard-only mode:
+
+```bash
+HIGHLIGHT_CONTEXT_MODE=clipboard ./scripts/attach_electron_renderer.sh 9224
+```
+
+Set `HIGHLIGHT_CONTEXT_MODE=off` to disable both clipboard and Codex context
+delivery while retaining the reaction UI.
 
 In Paper, the same no-selection shortcut switches automatically to logical
 canvas hit testing when the pointer is over the editor canvas. Hovering a Paper
@@ -267,4 +303,6 @@ Use `--demo-seconds 10` to make the demo exit automatically.
 swift test
 ./scripts/build_app.sh
 node --test Tests/renderer_injection.test.mjs
+cargo test --manifest-path CodexBridge/Cargo.toml
+cargo clippy --manifest-path CodexBridge/Cargo.toml --all-targets -- -D warnings
 ```

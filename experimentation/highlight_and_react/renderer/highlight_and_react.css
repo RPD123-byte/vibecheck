@@ -578,6 +578,7 @@ html[data-highlight-and-react-picking="true"] * {
   const ELEMENT_OVERLAY_ID = 'highlight-and-react-element-overlay';
   const ELEMENT_HINT_ID = 'highlight-and-react-element-hint';
   const REACTION_BADGE_CLASS = 'highlight-and-react-reaction-badge';
+  const CONTEXT_OUTBOX_KEY = '__highlightAndReactContextOutbox';
   const HIGHLIGHT_NAME = 'highlight-and-react-selection';
   const RECENTS_KEY = 'highlight-and-react-recent-emoji';
   const MESSAGE_SELECTOR = [
@@ -941,6 +942,118 @@ html[data-highlight-and-react-picking="true"] * {
       || '';
   };
 
+  const boundedText = (value, limit) => {
+    const text = String(value || '').trim();
+    return text.length <= limit ? text : `${text.slice(0, limit)}\n…[truncated]`;
+  };
+
+  const componentContext = (target) => {
+    const rect = unionRects(targetRects(target));
+    const bounds = rect ? {
+      x: Math.round(rect.left),
+      y: Math.round(rect.top),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    } : null;
+    if (target.kind === 'paper-node') {
+      return {
+        targetType: 'paper-node',
+        targetKey: target.key,
+        label: target.label,
+        component: target.component,
+        nodeId: target.nodeId,
+        bounds,
+        representation: JSON.stringify({
+          application: 'Paper',
+          fileId: target.editorState.fileDataId || null,
+          nodeId: target.nodeId,
+          label: target.label,
+          component: target.component,
+          bounds,
+        }, null, 2),
+      };
+    }
+    const clone = target.element.cloneNode(true);
+    delete clone.dataset.highlightAndReactReaction;
+    delete clone.dataset.highlightAndReactReactionKey;
+    delete clone.dataset.highlightAndReactReactionAsset;
+    return {
+      targetType: targetMode,
+      targetKey: null,
+      label: elementLabel(target.element),
+      component: target.element.tagName.toLowerCase(),
+      nodeId: null,
+      bounds,
+      representation: boundedText(clone.outerHTML, 12_000),
+    };
+  };
+
+  const contextMessage = (target, reaction) => {
+    const component = componentContext(target);
+    const selectedText = activeRange?.toString().trim() || '';
+    const text = boundedText(targetText(target), 4_000);
+    const lines = [
+      '[Highlight & React context]',
+      `Reaction: ${reaction.value} (${reaction.label})`,
+      `Application: ${document.title || 'Untitled application'}`,
+      `URL: ${location.href}`,
+      `Target type: ${component.targetType}`,
+      `Target: ${component.label}`,
+    ];
+    if (component.targetKey) lines.push(`Target key: ${component.targetKey}`);
+    if (selectedText) lines.push(`Selected text: ${boundedText(selectedText, 4_000)}`);
+    if (text && text !== selectedText) lines.push(`Component text: ${text}`);
+    if (component.bounds) {
+      lines.push(
+        `Viewport bounds: x=${component.bounds.x}, y=${component.bounds.y}, `
+        + `width=${component.bounds.width}, height=${component.bounds.height}`,
+      );
+    }
+    lines.push(
+      '',
+      'Component representation:',
+      component.representation,
+      '',
+      'Use this reaction as feedback and context for the work currently in progress.',
+    );
+    return {
+      component,
+      text: lines.join('\n'),
+    };
+  };
+
+  const enqueueContext = (target, reaction, action) => {
+    const context = contextMessage(target, reaction);
+    const outbox = Array.isArray(globalThis[CONTEXT_OUTBOX_KEY])
+      ? globalThis[CONTEXT_OUTBOX_KEY]
+      : [];
+    globalThis[CONTEXT_OUTBOX_KEY] = outbox;
+    const event = {
+      version: 1,
+      id: globalThis.crypto?.randomUUID?.()
+        || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      createdAt: new Date().toISOString(),
+      action,
+      reaction: {
+        key: reaction.key,
+        value: reaction.value,
+        label: reaction.label,
+      },
+      source: {
+        title: document.title,
+        url: location.href,
+      },
+      target: context.component,
+      clipboardText: context.text,
+      agentMessage: context.text,
+    };
+    outbox.push(event);
+    if (outbox.length > 20) outbox.splice(0, outbox.length - 20);
+    document.dispatchEvent(new CustomEvent('highlight-and-react-context', {
+      detail: event,
+    }));
+  };
+
   const targetContainsPoint = (target, x, y, eventTarget) => {
     if (target?.kind === 'dom') return target.element.contains(eventTarget);
     return targetRects(target).some((rect) => (
@@ -1240,6 +1353,7 @@ html[data-highlight-and-react-picking="true"] * {
         ? '[data-user-message-bubble]'
         : elementLabel(target.element),
     };
+    if (!removing) enqueueContext(target, reaction, action);
     target.element.dispatchEvent(new CustomEvent('highlight-and-react', {
       bubbles: true,
       detail,
