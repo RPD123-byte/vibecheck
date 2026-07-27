@@ -1,4 +1,4 @@
-"""First application-level owner for expression worker processes."""
+"""Application-level owner and dynamic reconciler for expression workers."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import os
 import shutil
 import signal
 import stat
+import sys
 import tempfile
 import time
 import uuid
@@ -15,9 +16,18 @@ from collections import deque
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from vibecheck.runtime.config import RuntimeConfig
+from vibecheck.runtime.control import ControlServer
+from vibecheck.runtime.feature_state import FeatureState, initial_features_for_mode
 from vibecheck.runtime.health import WorkerHealth
+from vibecheck.runtime.topology import (
+    ALL_ROLES,
+    required_roles,
+    start_order,
+    stop_order,
+)
 
 
 @dataclass(slots=True)
@@ -28,9 +38,17 @@ class WorkerSpec:
     process: asyncio.subprocess.Process | None = None
     health: WorkerHealth = field(init=False)
     restarts: deque[float] = field(default_factory=deque)
+    desired: bool = False
+    generation: int = 0
+    intentional_stop_generation: int | None = None
+    restart_task: asyncio.Task[None] | None = None
 
     def __post_init__(self) -> None:
         self.health = WorkerHealth(self.role)
+
+    @property
+    def running(self) -> bool:
+        return self.process is not None and self.process.returncode is None
 
 
 class RuntimeOwner:
@@ -43,6 +61,9 @@ class RuntimeOwner:
         headless_notch: bool = False,
         image_paths: list[Path] | None = None,
         interruption_binary: Path | None = None,
+        controller_mode: bool = False,
+        initial_features: FeatureState | None = None,
+        controller_grace_seconds: float = 5.0,
     ) -> None:
         self.config = config
         self.python = python
@@ -50,11 +71,19 @@ class RuntimeOwner:
         self.headless_notch = headless_notch
         self.image_paths = image_paths or []
         self.interruption_binary = interruption_binary
+        self.controller_mode = controller_mode
+        self.controller_grace_seconds = controller_grace_seconds
         self.runtime_id = str(uuid.uuid4())
         self.runtime_dir: Path | None = None
         self.workers: dict[str, WorkerSpec] = {}
+        self.features = initial_features or initial_features_for_mode(config.mode)
         self.stop = asyncio.Event()
-        self._monitor_tasks: list[asyncio.Task[None]] = []
+        self._monitor_tasks: set[asyncio.Task[None]] = set()
+        self._reconcile_lock = asyncio.Lock()
+        self._control: ControlServer | None = None
+        self._controller_seen = False
+        self._disconnect_task: asyncio.Task[None] | None = None
+        self._shutting_down = False
 
     def create_runtime_dir(self) -> Path:
         base = Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
@@ -67,100 +96,110 @@ class RuntimeOwner:
         return path
 
     def configure_workers(self) -> dict[str, WorkerSpec]:
+        """Build every allowed role once; topology decides which ones run."""
+        self.workers = {
+            role: self._build_worker(role)
+            for role in ALL_ROLES
+            if role != "interruption"
+            or self.config.mode != "display-only"
+            or self.controller_mode
+        }
+        return self.workers
+
+    def _build_worker(self, role: str) -> WorkerSpec:
         runtime_dir = self.runtime_dir or self.create_runtime_dir()
         emotion_socket = runtime_dir / "emotion.sock"
         status_socket = runtime_dir / "interruption-status.sock"
-        inference = [
-            self.python,
-            "-m",
-            "vibecheck.inference.process",
-            "--socket",
-            str(emotion_socket),
-            "--runtime-id",
-            self.runtime_id,
-            "--adapter",
-            self.config.adapter,
-            "--model",
-            self.config.model,
-            "--camera",
-            str(self.config.camera),
-            "--interval",
-            str(self.config.interval_seconds),
-            "--freshness",
-            str(self.config.freshness_seconds),
-            "--face-threshold",
-            str(self.config.face_threshold),
-            "--minimum-face-size",
-            str(self.config.minimum_face_size),
-            "--no-face-timeout",
-            str(self.config.no_face_timeout_seconds),
-        ]
-        if self.config.mode == "demo":
-            inference.append("--demo")
-        for path in self.image_paths:
-            inference.extend(["--image", str(path)])
-
-        notch = [
-            self.python,
-            "-m",
-            "vibecheck.notch.process",
-            "--emotion-socket",
-            str(emotion_socket),
-            "--freshness",
-            str(self.config.freshness_seconds),
-            "--entry-threshold",
-            str(self.config.display_entry_threshold),
-            "--exit-threshold",
-            str(self.config.display_exit_threshold),
-            "--surprise-entry-threshold",
-            str(self.config.surprise_display_entry_threshold),
-            "--surprise-exit-threshold",
-            str(self.config.surprise_display_exit_threshold),
-            "--confirmations",
-            str(self.config.display_confirmations),
-            "--camera-overlap",
-            str(self.config.camera_overlap),
-        ]
-        if self.config.mode != "display-only":
-            notch.extend(["--status-socket", str(status_socket)])
-        if self.headless_notch:
-            notch.append("--headless")
-
-        self.workers = {
-            "notch": WorkerSpec("notch", notch),
-            "inference": WorkerSpec("inference", inference),
-        }
-        if self.config.mode != "display-only":
-            rust_manifest = (
-                self.project_root
-                / "src"
-                / "native"
-                / "expression_interruption"
-                / "Cargo.toml"
-            )
-            interruption = self._interruption_prefix(rust_manifest) + [
+        if role == "inference":
+            command = self._python_worker_prefix(
+                "inference", "vibecheck.inference.process"
+            ) + [
+                "--socket",
+                str(emotion_socket),
+                "--runtime-id",
+                self.runtime_id,
+                "--adapter",
+                self.config.adapter,
+                "--model",
+                self.config.model,
+                "--camera",
+                str(self.config.camera),
+                "--interval",
+                str(self.config.interval_seconds),
+                "--freshness",
+                str(self.config.freshness_seconds),
+                "--face-threshold",
+                str(self.config.face_threshold),
+                "--minimum-face-size",
+                str(self.config.minimum_face_size),
+                "--no-face-timeout",
+                str(self.config.no_face_timeout_seconds),
+            ]
+            if self.config.mode == "demo":
+                command.append("--demo")
+            for path in self.image_paths:
+                command.extend(["--image", str(path)])
+            return WorkerSpec(role, command)
+        if role == "notch":
+            command = self._python_worker_prefix("notch", "vibecheck.notch.process") + [
                 "--emotion-socket",
                 str(emotion_socket),
                 "--status-socket",
                 str(status_socket),
-                "--runtime-id",
-                self.runtime_id,
-                "--threshold",
-                str(self.config.interruption_threshold),
-                "--hold-ms",
-                str(round(self.config.interruption_hold_seconds * 1000)),
-                "--cooldown-ms",
-                str(round(self.config.interruption_cooldown_seconds * 1000)),
-                "--freshness-ms",
-                str(round(self.config.freshness_seconds * 1000)),
-                "--manage-gui" if self.config.manage_codex_gui else "--no-manage-gui",
+                "--freshness",
+                str(self.config.freshness_seconds),
+                "--entry-threshold",
+                str(self.config.display_entry_threshold),
+                "--exit-threshold",
+                str(self.config.display_exit_threshold),
+                "--surprise-entry-threshold",
+                str(self.config.surprise_display_entry_threshold),
+                "--surprise-exit-threshold",
+                str(self.config.surprise_display_exit_threshold),
+                "--confirmations",
+                str(self.config.display_confirmations),
+                "--camera-overlap",
+                str(self.config.camera_overlap),
             ]
-            if self.config.mode in {"demo", "dry-run"}:
-                interruption.append("--dry-run")
-            if self.config.thread_id:
-                interruption.extend(["--thread-id", self.config.thread_id])
-            self.workers["interruption"] = WorkerSpec("interruption", interruption)
-        return self.workers
+            if self.headless_notch:
+                command.append("--headless")
+            return WorkerSpec(role, command)
+        if role != "interruption":
+            raise ValueError(f"unsupported worker role {role!r}")
+        rust_manifest = (
+            self.project_root
+            / "src"
+            / "native"
+            / "expression_interruption"
+            / "Cargo.toml"
+        )
+        command = self._interruption_prefix(rust_manifest) + [
+            "--emotion-socket",
+            str(emotion_socket),
+            "--status-socket",
+            str(status_socket),
+            "--runtime-id",
+            self.runtime_id,
+            "--threshold",
+            str(self.config.interruption_threshold),
+            "--hold-ms",
+            str(round(self.config.interruption_hold_seconds * 1000)),
+            "--cooldown-ms",
+            str(round(self.config.interruption_cooldown_seconds * 1000)),
+            "--freshness-ms",
+            str(round(self.config.freshness_seconds * 1000)),
+            "--manage-gui" if self.config.manage_codex_gui else "--no-manage-gui",
+        ]
+        if self.config.mode in {"demo", "dry-run"}:
+            command.append("--dry-run")
+        if self.config.thread_id:
+            command.extend(["--thread-id", self.config.thread_id])
+        return WorkerSpec(role, command)
+
+    def _python_worker_prefix(self, role: str, module: str) -> list[str]:
+        if getattr(sys, "frozen", False):
+            return [self.python, "--frozen-worker", role]
+        return [self.python, "-m", module]
 
     def _interruption_prefix(self, manifest: Path) -> list[str]:
         configured = self.interruption_binary
@@ -197,22 +236,104 @@ class RuntimeOwner:
         )
 
     async def run(self) -> None:
+        self.create_runtime_dir()
         self.configure_workers()
+        if self.controller_mode:
+            assert self.runtime_dir is not None
+            self._control = ControlServer(
+                self.runtime_dir / "control.sock",
+                runtime_id=self.runtime_id,
+                snapshot=self.snapshot,
+                mutate=self.set_features,
+                recover=self.restart_failed_roles,
+                shutdown=self.stop.set,
+                connection_changed=self._controller_connection_changed,
+            )
+            await self._control.start()
+            print(json.dumps(self._control.bootstrap()), flush=True)
         loop = asyncio.get_running_loop()
         for signum in (signal.SIGINT, signal.SIGTERM):
             with suppress(NotImplementedError):
                 loop.add_signal_handler(signum, self.stop.set)
         try:
-            for role in ("notch", "interruption", "inference"):
-                if role in self.workers:
-                    await self._start(self.workers[role])
+            await self.reconcile()
             self._emit_health()
             await self.stop.wait()
         finally:
             await self.shutdown()
 
+    async def set_features(
+        self,
+        value: dict[str, Any],
+        expected_revision: int,
+    ) -> dict[str, Any]:
+        async with self._reconcile_lock:
+            if expected_revision != self.features.revision:
+                current = self.features.revision
+                raise ValueError(
+                    f"stale revision {expected_revision}; current is {current}"
+                )
+            next_state = FeatureState.from_features(
+                value,
+                revision=self.features.revision + 1,
+            )
+            if (
+                next_state.notch_enabled == self.features.notch_enabled
+                and next_state.integrations == self.features.integrations
+                and next_state.paused == self.features.paused
+            ):
+                next_state = next_state.with_revision(self.features.revision)
+            self.features = next_state
+            await self._reconcile_locked()
+            snapshot = self.snapshot()
+        await self._publish_state()
+        return snapshot
+
+    async def reconcile(self) -> None:
+        async with self._reconcile_lock:
+            await self._reconcile_locked()
+        await self._publish_state()
+
+    async def _reconcile_locked(self) -> None:
+        required = required_roles(self.features)
+        removed = {
+            role
+            for role, worker in self.workers.items()
+            if worker.running and role not in required
+        }
+        for role in stop_order(removed):
+            await self._stop_worker(self.workers[role])
+        added = {
+            role
+            for role, worker in self.workers.items()
+            if role in required and not worker.running
+        }
+        for role in start_order(added):
+            await self._start(self.workers[role])
+        for role, worker in self.workers.items():
+            worker.desired = role in required
+            if not worker.desired and not worker.running:
+                worker.health.lifecycle = "disabled"
+                worker.health.ready = False
+                worker.health.pid = None
+                worker.health.stream = "disconnected"
+                worker.health.last_error = None
+
     async def _start(self, worker: WorkerSpec) -> None:
+        if worker.running:
+            return
+        if (
+            worker.restart_task is not None
+            and worker.restart_task is not asyncio.current_task()
+        ):
+            worker.restart_task.cancel()
+            worker.restart_task = None
+        worker.desired = True
+        worker.generation += 1
+        generation = worker.generation
+        worker.intentional_stop_generation = None
         worker.health.lifecycle = "starting"
+        worker.health.last_error = None
         process = await asyncio.create_subprocess_exec(
             *worker.command,
             cwd=self.project_root,
@@ -225,14 +346,51 @@ class RuntimeOwner:
         worker.health.lifecycle = "running"
         worker.health.ready = False
         worker.health.stream = "connecting"
-        self._monitor_tasks.append(asyncio.create_task(self._pipe(worker, False)))
-        self._monitor_tasks.append(asyncio.create_task(self._pipe(worker, True)))
-        self._monitor_tasks.append(asyncio.create_task(self._monitor(worker)))
+        for coroutine in (
+            self._pipe(worker, process, False),
+            self._pipe(worker, process, True),
+            self._monitor(worker, process, generation),
+        ):
+            task = asyncio.create_task(coroutine)
+            self._monitor_tasks.add(task)
+            task.add_done_callback(self._monitor_tasks.discard)
 
-    async def _pipe(self, worker: WorkerSpec, stderr: bool) -> None:
+    async def _stop_worker(self, worker: WorkerSpec) -> None:
+        worker.desired = False
+        if worker.restart_task is not None:
+            worker.restart_task.cancel()
+            worker.restart_task = None
         process = worker.process
-        if process is None:
+        if process is None or process.returncode is not None:
+            worker.health.lifecycle = "disabled"
+            worker.health.pid = None
             return
+        worker.intentional_stop_generation = worker.generation
+        worker.health.lifecycle = "stopping"
+        self._emit_health()
+        await self._publish_state()
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGTERM)
+        try:
+            await asyncio.wait_for(process.wait(), timeout=5.0)
+        except TimeoutError:
+            with suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
+            await process.wait()
+        if worker.process is process:
+            worker.process = None
+        worker.health.lifecycle = "disabled"
+        worker.health.ready = False
+        worker.health.pid = None
+        worker.health.stream = "disconnected"
+        worker.health.last_error = None
+
+    async def _pipe(
+        self,
+        worker: WorkerSpec,
+        process: asyncio.subprocess.Process,
+        stderr: bool,
+    ) -> None:
         stream = process.stderr if stderr else process.stdout
         if stream is None:
             return
@@ -244,12 +402,14 @@ class RuntimeOwner:
                     if (
                         event.get("type") == "worker_health"
                         and event.get("role") == worker.role
+                        and worker.process is process
                     ):
                         worker.health.ready = bool(event.get("ready"))
                         worker.health.stream = str(event.get("stream", "unknown"))
                         error = event.get("error")
                         worker.health.last_error = str(error) if error else None
                         self._emit_health()
+                        await self._publish_state()
                         continue
             print(
                 json.dumps(
@@ -264,12 +424,23 @@ class RuntimeOwner:
                 flush=True,
             )
 
-    async def _monitor(self, worker: WorkerSpec) -> None:
-        process = worker.process
-        if process is None:
-            return
+    async def _monitor(
+        self,
+        worker: WorkerSpec,
+        process: asyncio.subprocess.Process,
+        generation: int,
+    ) -> None:
         code = await process.wait()
-        if self.stop.is_set():
+        if worker.process is process:
+            worker.process = None
+        intentional = (
+            self._shutting_down
+            or self.stop.is_set()
+            or not worker.desired
+            or worker.intentional_stop_generation == generation
+            or generation != worker.generation
+        )
+        if intentional:
             return
         worker.health.ready = False
         worker.health.lifecycle = "exited"
@@ -282,47 +453,147 @@ class RuntimeOwner:
         if not worker.recoverable or len(worker.restarts) >= self.config.restart_limit:
             worker.health.lifecycle = "failed"
             self._emit_health()
-            self.stop.set()
+            await self._publish_state()
             return
         worker.restarts.append(now)
         worker.health.restart_count += 1
-        await asyncio.sleep(min(0.25 * (2 ** (worker.health.restart_count - 1)), 5.0))
-        if not self.stop.is_set():
-            if worker.role == "inference":
-                new_runtime_id = str(uuid.uuid4())
-                runtime_flag = worker.command.index("--runtime-id")
-                worker.command[runtime_flag + 1] = new_runtime_id
-            await self._start(worker)
+        self._emit_health()
+        await self._publish_state()
+        delay = min(0.25 * (2 ** (worker.health.restart_count - 1)), 5.0)
+        worker.restart_task = asyncio.create_task(
+            self._restart_after(worker, generation, delay)
+        )
+
+    async def _restart_after(
+        self,
+        worker: WorkerSpec,
+        generation: int,
+        delay: float,
+    ) -> None:
+        try:
+            await asyncio.sleep(delay)
+            async with self._reconcile_lock:
+                if (
+                    not self._shutting_down
+                    and worker.desired
+                    and worker.generation == generation
+                    and worker.role in required_roles(self.features)
+                ):
+                    if worker.role == "inference":
+                        runtime_flag = worker.command.index("--runtime-id")
+                        worker.command[runtime_flag + 1] = str(uuid.uuid4())
+                    await self._start(worker)
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if worker.restart_task is asyncio.current_task():
+                worker.restart_task = None
+
+    async def restart_failed_roles(self, roles: tuple[str, ...]) -> dict[str, Any]:
+        async with self._reconcile_lock:
+            required = required_roles(self.features)
+            for role in roles:
+                worker = self.workers.get(role)
+                if worker is None or role not in required:
+                    continue
+                if worker.health.lifecycle not in {"failed", "exited"}:
+                    continue
+                worker.restarts.clear()
+                worker.health.restart_count = 0
+                await self._start(worker)
+            snapshot = self.snapshot()
+        await self._publish_state()
+        return snapshot
 
     async def shutdown(self) -> None:
+        if self._shutting_down:
+            return
+        self._shutting_down = True
         self.stop.set()
-        processes = [
-            worker.process for worker in self.workers.values() if worker.process
-        ]
-        for process in processes:
-            if process and process.returncode is None:
-                os.killpg(process.pid, signal.SIGTERM)
-        if processes:
-            try:
-                await asyncio.wait_for(
-                    asyncio.gather(
-                        *(process.wait() for process in processes if process)
-                    ),
-                    timeout=5.0,
-                )
-            except TimeoutError:
-                for process in processes:
-                    if process and process.returncode is None:
-                        os.killpg(process.pid, signal.SIGKILL)
-                await asyncio.gather(
-                    *(process.wait() for process in processes if process),
-                    return_exceptions=True,
-                )
-        for task in self._monitor_tasks:
+        if self._disconnect_task is not None:
+            self._disconnect_task.cancel()
+        async with self._reconcile_lock:
+            running = {role for role, worker in self.workers.items() if worker.running}
+            for role in stop_order(running):
+                await self._stop_worker(self.workers[role])
+        if self._control is not None:
+            await self._control.close()
+        for worker in self.workers.values():
+            if worker.restart_task is not None:
+                worker.restart_task.cancel()
+        for task in tuple(self._monitor_tasks):
             task.cancel()
         await asyncio.gather(*self._monitor_tasks, return_exceptions=True)
         if self.runtime_dir is not None and self.runtime_dir.exists():
             shutil.rmtree(self.runtime_dir)
+
+    def snapshot(self) -> dict[str, Any]:
+        desired = required_roles(self.features)
+        effective = sorted(
+            role for role, worker in self.workers.items() if worker.running
+        )
+        required_workers = [
+            self.workers[role] for role in desired if role in self.workers
+        ]
+        errors = [
+            {"role": worker.role, "message": worker.health.last_error}
+            for worker in required_workers
+            if worker.health.last_error
+        ]
+        if self.features.paused:
+            aggregate = "paused"
+        elif not desired:
+            aggregate = "off"
+        elif any(worker.health.lifecycle == "failed" for worker in required_workers):
+            aggregate = "failed"
+        elif any(
+            worker.health.last_error
+            and (
+                "permission" in worker.health.last_error.lower()
+                or "camera" in worker.health.last_error.lower()
+            )
+            for worker in required_workers
+        ):
+            aggregate = "needs_permission"
+        elif any(
+            not worker.running or not worker.health.ready for worker in required_workers
+        ):
+            aggregate = "starting"
+        elif errors:
+            aggregate = "degraded"
+        else:
+            aggregate = "active"
+        return {
+            "features": self.features.to_dict(),
+            "desired_roles": sorted(desired),
+            "effective_roles": effective,
+            "aggregate": aggregate,
+            "workers": {
+                role: worker.health.to_dict() for role, worker in self.workers.items()
+            },
+            "errors": errors,
+        }
+
+    def _controller_connection_changed(self, connected: bool) -> None:
+        if connected:
+            self._controller_seen = True
+            if self._disconnect_task is not None:
+                self._disconnect_task.cancel()
+                self._disconnect_task = None
+            return
+        if self._controller_seen and not self.stop.is_set():
+            self._disconnect_task = asyncio.create_task(self._disconnect_grace())
+
+    async def _disconnect_grace(self) -> None:
+        try:
+            await asyncio.sleep(self.controller_grace_seconds)
+            self.stop.set()
+        except asyncio.CancelledError:
+            pass
+
+    async def _publish_state(self) -> None:
+        if self._control is not None:
+            await self._control.publish()
 
     def _emit_health(self) -> None:
         print(
@@ -330,10 +601,7 @@ class RuntimeOwner:
                 {
                     "type": "runtime_health",
                     "runtime_id": self.runtime_id,
-                    "workers": {
-                        role: worker.health.to_dict()
-                        for role, worker in self.workers.items()
-                    },
+                    **self.snapshot(),
                 }
             ),
             flush=True,

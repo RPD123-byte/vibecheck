@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "type": "state_update",
+  "runtime_id": "fixture-runtime",
+  "state": {
+    "features": {
+      "revision": 1,
+      "notch_enabled": true,
+      "integrations": {
+        "codex_enabled": false
+      },
+      "paused": false
+    },
+    "desired_roles": [
+      "inference",
+      "notch"
+    ],
+    "effective_roles": [
+      "inference",
+      "notch"
+    ],
+    "aggregate": "starting",
+    "workers": {},
+    "errors": []
+  }
+}

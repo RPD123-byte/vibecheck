@@ -67,10 +67,7 @@ class DisplayPolicy:
         if not 0.0 <= self.exit_threshold <= self.entry_threshold <= 1.0:
             raise ValueError("display thresholds are invalid")
         if not (
-            0.0
-            <= self.surprise_exit_threshold
-            <= self.surprise_entry_threshold
-            <= 1.0
+            0.0 <= self.surprise_exit_threshold <= self.surprise_entry_threshold <= 1.0
         ):
             raise ValueError("surprise display thresholds are invalid")
 

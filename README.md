@@ -15,9 +15,9 @@ same task with a short note such as:
 The goal is to help Codex notice reactions that are normally lost in a text-only
 conversation without recording or uploading camera footage.
 
-> [!IMPORTANT]
-> Vibecheck currently runs from source. It is not yet packaged as a signed macOS
-> app or installer.
+> [!NOTE]
+> Vibecheck currently ships for Apple-silicon Macs. The downloadable app is
+> signed with Developer ID and notarized by Apple.
 
 ## Current behavior
 
@@ -34,79 +34,69 @@ conversation without recording or uploading camera footage.
 Expression detection is probabilistic and may be wrong. The message sent to
 Codex explicitly describes the result as an imperfect inference.
 
-## Requirements
+## Download and install
 
-Before installing Vibecheck, you need:
+1. Download
+   [Vibecheck v0.2.2 for Apple silicon](https://github.com/RPD123-byte/vibecheck/releases/download/v0.2.2/Vibecheck-darwin-arm64-0.2.2.zip).
+2. Double-click the ZIP to extract `Vibecheck.app`.
+3. Move `Vibecheck.app` to your **Applications** folder.
+4. Open Vibecheck from Applications.
+5. Click the Vibecheck icon in the macOS menu bar and enable **Show notch**,
+   **Codex interruption**, or both.
+6. Approve camera access when macOS asks.
+
+Requirements:
 
 - macOS
+- An Apple-silicon Mac
 - A Mac with a built-in display notch for the visual overlay
-- Python 3.11 or newer
-- Rust 1.91 or newer
-- Git
-- Xcode Command Line Tools
 - The Codex desktop app for live interruption
-- Internet access during installation and the first model load
 
-## Installation
+Vibecheck is a menu-bar utility. It does not open a normal app window or show a
+Dock icon.
 
-### 1. Install the Xcode Command Line Tools
+## Run from source
 
-```bash
-xcode-select --install
-```
-
-If they are already installed, macOS will tell you.
-
-### 2. Check Python
-
-```bash
-python3 --version
-```
-
-Install Python 3.11 or newer if the command is missing or reports an older
-version.
-
-### 3. Install Rust
-
-Install Rust using [rustup](https://rustup.rs/), then run:
-
-```bash
-rustup toolchain install 1.91.1 --profile minimal --component clippy,rustfmt
-rustup default 1.91.1
-rustc --version
-```
-
-### 4. Clone Vibecheck
+Source development additionally requires Python 3.11, Rust 1.91 or newer,
+Node.js 24, Git, Xcode Command Line Tools, and internet access during setup.
 
 ```bash
 git clone https://github.com/RPD123-byte/vibecheck.git
 cd vibecheck
+./setup.sh
 ```
 
-### 5. Create a Python environment
+The script creates `.venv`, installs the Python dependencies, and builds the
+Rust interruption component. Inference dependencies are large, so initial setup
+may take several minutes. Then install the menu-bar dependencies:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[inference,macos]'
+npm ci
 ```
-
-The inference dependencies are fairly large and may take several minutes to
-install.
-
-### 6. Build the interruption component
-
-```bash
-cargo build \
-  --locked \
-  --release \
-  --manifest-path src/native/expression_interruption/Cargo.toml
-```
-
-You only need to repeat this after the Rust code changes.
 
 ## First run
+
+If you installed the downloadable app, open it from Applications and use its
+menu-bar icon.
+
+To start the app from source:
+
+```bash
+npm run app:dev
+```
+
+Vibecheck appears only in the macOS menu bar; it does not open a Dock icon or
+ordinary app window. Click its icon to open the controls. Both **Show notch**
+and **Codex interruption** are off on first launch. Enabling either feature
+starts camera inference, and disabling the final active feature releases the
+camera while leaving the small controller process ready.
+
+Use **Pause** to stop all feature workers without changing the two toggles.
+Pause is not restored after the app restarts. Quit from the native menu to stop
+every Vibecheck-owned process without quitting Codex.
+
+The command-line modes below remain supported for diagnostics and as a rollback
+path.
 
 ### Test the installation without using the camera or changing Codex
 
@@ -153,8 +143,8 @@ If camera access is denied or the prompt does not appear, open:
 
 **System Settings → Privacy & Security → Camera**
 
-Enable access for the terminal or Python host used to launch Vibecheck, then
-restart the command.
+Enable access for **Vibecheck**. If you are running from source, enable access
+for the terminal or Python host instead. Then restart Vibecheck.
 
 Do not run the historical experiment and the production app at the same time.
 Two processes competing for the camera can cause failures or delayed frames.
@@ -356,16 +346,14 @@ The terminal output may report `no_active_turn`, `multiple_active_turns`,
 
 ## Updating
 
-From the repository:
+Download the newest build from the
+[releases page](https://github.com/RPD123-byte/vibecheck/releases).
+
+When running from source:
 
 ```bash
 git pull --ff-only
-source .venv/bin/activate
-python -m pip install -e '.[inference,macos]'
-cargo build \
-  --locked \
-  --release \
-  --manifest-path src/native/expression_interruption/Cargo.toml
+./setup.sh
 ```
 
 ## Development checks
@@ -399,6 +387,25 @@ cargo clippy \
 cargo test \
   --manifest-path src/native/expression_interruption/Cargo.toml
 ```
+
+Run the Electron checks:
+
+```bash
+npm run js:format:check
+npm run js:typecheck
+npm run js:test
+npm run js:audit
+```
+
+Create an unsigned arm64 local app bundle:
+
+```bash
+scripts/build_runtime.sh
+npm run app:package
+```
+
+See [docs/macos-release.md](docs/macos-release.md) for the protected Developer
+ID, permission, notarization, DMG, and clean-install release process.
 
 The supported app lives under `src/`. The ignored `experimentation/` directory
 contains historical prototypes and is not used by the production runtime.
