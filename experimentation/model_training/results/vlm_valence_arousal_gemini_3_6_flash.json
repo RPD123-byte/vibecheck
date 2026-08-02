@@ -1,0 +1,76 @@
+{
+  "created_at": "2026-07-31T01:44:12.247211+00:00",
+  "protocol": {
+    "kind": "single-pass zero-shot",
+    "one_image_per_request": true,
+    "prompt": "Inspect only the visible facial expression in this image. Estimate the affect the person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression category intensity. Use facial evidence such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+  },
+  "runs": [
+    {
+      "backend": "gemini",
+      "model": "gemini-3.6-flash",
+      "samples": [
+        {
+          "sample_id": "image_01",
+          "image": "20260730T220411_268532Z_happiness.jpg",
+          "human_expression_label": "happiness",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": 0.4,
+            "arousal": 0.3,
+            "confidence": 0.85,
+            "apparent_expression": "amused smirk",
+            "rationale": "Slightly squinteed eyes combined with a closed-lip smile and raised cheeks indicate a playful or amused expression."
+          },
+          "raw_response": "{\"valence\": 0.4, \"arousal\": 0.3, \"confidence\": 0.85, \"apparent_expression\": \"amused smirk\", \"rationale\": \"Slightly squinteed eyes combined with a closed-lip smile and raised cheeks indicate a playful or amused expression.\"}"
+        },
+        {
+          "sample_id": "image_02",
+          "image": "20260730T220529_938750Z_surprise.jpg",
+          "human_expression_label": "surprise",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": -0.2,
+            "arousal": 0.5,
+            "confidence": 0.85,
+            "apparent_expression": "surprised disbelief",
+            "rationale": "Raised eyebrows, wide open eyes, and closed pursed lips communicate a look of wide-eyed surprise or skepticism."
+          },
+          "raw_response": "{\"valence\": -0.2, \"arousal\": 0.5, \"confidence\": 0.85, \"apparent_expression\": \"surprised disbelief\", \"rationale\": \"Raised eyebrows, wide open eyes, and closed pursed lips communicate a look of wide-eyed surprise or skepticism.\"}"
+        },
+        {
+          "sample_id": "image_03",
+          "image": "20260730T220650_123657Z_sadness.jpg",
+          "human_expression_label": "sadness",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": -0.3,
+            "arousal": -0.3,
+            "confidence": 0.85,
+            "apparent_expression": "unimpressed or bored",
+            "rationale": "The closed, slightly downturned mouth and relaxed, heavy-lidded eyes suggest a subdued and somewhat displeased expression."
+          },
+          "raw_response": "{\"valence\": -0.3, \"arousal\": -0.3, \"confidence\": 0.85, \"apparent_expression\": \"unimpressed or bored\", \"rationale\": \"The closed, slightly downturned mouth and relaxed, heavy-lidded eyes suggest a subdued and somewhat displeased expression.\"}"
+        },
+        {
+          "sample_id": "image_04",
+          "image": "20260730T220809_517706Z_anger.jpg",
+          "human_expression_label": "anger",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": -0.5,
+            "arousal": 0.4,
+            "confidence": 0.85,
+            "apparent_expression": "stern scowl",
+            "rationale": "The lowered furrowed eyebrows, intense direct gaze, and tight, downturned mouth display a tense and displeased expression."
+          },
+          "raw_response": "{\"valence\": -0.5, \"arousal\": 0.4, \"confidence\": 0.85, \"apparent_expression\": \"stern scowl\", \"rationale\": \"The lowered furrowed eyebrows, intense direct gaze, and tight, downturned mouth display a tense and displeased expression.\"}"
+        }
+      ]
+    }
+  ]
+}

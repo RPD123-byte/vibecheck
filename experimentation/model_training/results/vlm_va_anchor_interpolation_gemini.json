@@ -1,0 +1,2916 @@
+{
+  "created_at": "2026-07-31T20:02:07.728843+00:00",
+  "model": "gemini-3.6-flash",
+  "protocol": {
+    "targets_per_expression": 3,
+    "v2_training_anchors_only": true,
+    "target_labels_hidden_from_gemini": true,
+    "paired_prompt_conditions": [
+      "direct",
+      "choices"
+    ]
+  },
+  "samples": [
+    {
+      "emotion": "anger",
+      "anchors": [
+        {
+          "image": "20260731T050511_293989Z_anger.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -1.0,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T050543_514668Z_anger.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T050621_286205Z_anger.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -1.0,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T050716_169635Z_anger.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220754_856766Z_anger.jpg",
+        "human_expression": "anger",
+        "human_valence": -0.7,
+        "human_arousal": 0.6
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -1.0
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 1.0
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.6
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.8,
+            "arousal": 0.7
+          },
+          "raw_response": "{\"valence\": -0.8, \"arousal\": 0.7}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be anger; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -1.0,
+            "arousal_option": "A_HIGH_SLIGHTLY_LOWER",
+            "arousal": 0.6
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_NEG_HIGH_SAME\",\n  \"arousal_option\": \"A_HIGH_SLIGHTLY_LOWER\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be anger; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "anger",
+      "anchors": [
+        {
+          "image": "20260731T050511_293989Z_anger.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -1.0,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T050543_514668Z_anger.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T050621_286205Z_anger.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -1.0,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T050716_169635Z_anger.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220758_916273Z_anger.jpg",
+        "human_expression": "anger",
+        "human_valence": -0.7,
+        "human_arousal": 0.5
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -1.0
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 1.0
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.6
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.9,
+            "arousal": 0.9
+          },
+          "raw_response": "{\"valence\": -0.9, \"arousal\": 0.9}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be anger; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -1.0,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 1.0
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_HIGH_SAME\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be anger; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "anger",
+      "anchors": [
+        {
+          "image": "20260731T050511_293989Z_anger.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -1.0,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T050543_514668Z_anger.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T050621_286205Z_anger.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -1.0,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T050716_169635Z_anger.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220817_844915Z_anger.jpg",
+        "human_expression": "anger",
+        "human_valence": -0.5,
+        "human_arousal": -0.3
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -1.0
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 1.0
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.6
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": -0.2
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": -0.2}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be anger; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "valence": -0.8,
+            "arousal_option": "A_MIDDLE",
+            "arousal": 0.1
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_NEG_HIGH_SLIGHTLY_LESS\",\n  \"arousal_option\": \"A_MIDDLE\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be anger; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "contempt",
+      "anchors": [
+        {
+          "image": "20260731T184118_148720Z_contempt.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.8,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184141_161467Z_contempt.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184253_201890Z_contempt.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T184307_920018Z_contempt.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220231_755842Z_contempt.jpg",
+        "human_expression": "contempt",
+        "human_valence": -0.7,
+        "human_arousal": -0.5
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": 0.4
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": 0.4}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be contempt; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -0.8,
+            "arousal_option": "A_MIDDLE",
+            "arousal": 0.0
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_NEG_HIGH_SAME\",\n  \"arousal_option\": \"A_MIDDLE\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be contempt; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "contempt",
+      "anchors": [
+        {
+          "image": "20260731T184118_148720Z_contempt.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.8,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184141_161467Z_contempt.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184253_201890Z_contempt.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T184307_920018Z_contempt.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220235_558492Z_contempt.jpg",
+        "human_expression": "contempt",
+        "human_valence": -0.5,
+        "human_arousal": -0.7
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.6,
+            "arousal": 0.3
+          },
+          "raw_response": "{\"valence\": -0.6, \"arousal\": 0.3}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be contempt; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "valence": -0.6,
+            "arousal_option": "A_MIDDLE",
+            "arousal": 0.0
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_HIGH_SLIGHTLY_LESS\", \"arousal_option\": \"A_MIDDLE\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be contempt; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "contempt",
+      "anchors": [
+        {
+          "image": "20260731T184118_148720Z_contempt.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.8,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184141_161467Z_contempt.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184253_201890Z_contempt.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T184307_920018Z_contempt.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220340_337254Z_contempt.jpg",
+        "human_expression": "contempt",
+        "human_valence": -0.5,
+        "human_arousal": -0.7
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.6,
+            "arousal": -0.7
+          },
+          "raw_response": "{\"valence\": -0.6, \"arousal\": -0.7}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be contempt; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -0.8,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.8
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_NEG_HIGH_SAME\",\n  \"arousal_option\": \"A_LOW_SAME\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be contempt; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "disgust",
+      "anchors": [
+        {
+          "image": "20260731T184403_968548Z_disgust.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184510_397523Z_disgust.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184626_358436Z_disgust.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.7,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T184638_085876Z_disgust.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.5
+        }
+      ],
+      "target": {
+        "image": "20260730T220932_085362Z_disgust.jpg",
+        "human_expression": "disgust",
+        "human_valence": -0.7,
+        "human_arousal": 0.6
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.9
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.6
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.2
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.1
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.5
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.8,
+            "arousal": 0.3
+          },
+          "raw_response": "{\"valence\": -0.8, \"arousal\": 0.3}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be disgust; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -0.8,
+            "arousal_option": "A_MIDDLE",
+            "arousal": 0.2
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_HIGH_SAME\", \"arousal_option\": \"A_MIDDLE\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be disgust; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "disgust",
+      "anchors": [
+        {
+          "image": "20260731T184403_968548Z_disgust.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184510_397523Z_disgust.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184626_358436Z_disgust.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.7,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T184638_085876Z_disgust.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.5
+        }
+      ],
+      "target": {
+        "image": "20260730T220933_741354Z_disgust.jpg",
+        "human_expression": "disgust",
+        "human_valence": -0.7,
+        "human_arousal": 0.8
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.9
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.6
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.2
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.1
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.5
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.8,
+            "arousal": 0.1
+          },
+          "raw_response": "{\"valence\": -0.8, \"arousal\": 0.1}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be disgust; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -0.8,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.5
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_HIGH_SAME\", \"arousal_option\": \"A_LOW_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be disgust; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "disgust",
+      "anchors": [
+        {
+          "image": "20260731T184403_968548Z_disgust.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184510_397523Z_disgust.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184626_358436Z_disgust.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.7,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T184638_085876Z_disgust.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.5
+        }
+      ],
+      "target": {
+        "image": "20260730T221030_537466Z_disgust.jpg",
+        "human_expression": "disgust",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.9
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.6
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.2
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.1
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.5
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": 0.2
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": 0.2}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be disgust; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -0.8,
+            "arousal_option": "A_LOW_SLIGHTLY_HIGHER",
+            "arousal": -0.1
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_HIGH_SAME\", \"arousal_option\": \"A_LOW_SLIGHTLY_HIGHER\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be disgust; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "fear",
+      "anchors": [
+        {
+          "image": "20260731T184846_071624Z_fear.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184904_082846Z_fear.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184916_372457Z_fear.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T185029_721165Z_fear.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T221116_008542Z_fear.jpg",
+        "human_expression": "fear",
+        "human_valence": -0.7,
+        "human_arousal": -0.5
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.9
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.7
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.8,
+            "arousal": -0.6
+          },
+          "raw_response": "{\"valence\": -0.8, \"arousal\": -0.6}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be fear; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_HIGH_SAME",
+            "valence": -0.9,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_HIGH_SAME\", \"arousal_option\": \"A_LOW_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be fear; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "fear",
+      "anchors": [
+        {
+          "image": "20260731T184846_071624Z_fear.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184904_082846Z_fear.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184916_372457Z_fear.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T185029_721165Z_fear.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T221422_184540Z_fear.jpg",
+        "human_expression": "fear",
+        "human_valence": -0.7,
+        "human_arousal": 0.6
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.9
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.7
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.1,
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence\": -0.1, \"arousal\": 0.8}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be fear; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_LOW_SAME",
+            "valence": -0.1,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_LOW_SAME\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be fear; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "fear",
+      "anchors": [
+        {
+          "image": "20260731T184846_071624Z_fear.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184904_082846Z_fear.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.8
+        },
+        {
+          "image": "20260731T184916_372457Z_fear.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T185029_721165Z_fear.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T221451_740933Z_fear.jpg",
+        "human_expression": "fear",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.9
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.7
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.4,
+            "arousal": 0.7
+          },
+          "raw_response": "{\"valence\": -0.4, \"arousal\": 0.7}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be fear; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_MIDDLE",
+            "valence": -0.5,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_MIDDLE\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be fear; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "happiness",
+      "anchors": [
+        {
+          "image": "20260731T051630_763811Z_happiness.jpg",
+          "anchor": "valence_positive_high_arousal_high",
+          "human_valence": 1.0,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T051657_055496Z_happiness.jpg",
+          "anchor": "valence_positive_low_arousal_high",
+          "human_valence": 0.1,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T051737_825304Z_happiness.jpg",
+          "anchor": "valence_positive_high_arousal_low",
+          "human_valence": 1.0,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T051759_305378Z_happiness.jpg",
+          "anchor": "valence_positive_low_arousal_low",
+          "human_valence": 0.1,
+          "human_arousal": -0.2
+        }
+      ],
+      "target": {
+        "image": "20260730T220414_802358Z_happiness.jpg",
+        "human_expression": "happiness",
+        "human_valence": 0.6,
+        "human_arousal": 0.6
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          },
+          {
+            "id": "V_POS_LOW_SAME",
+            "description": "same mildly positive valence as the less-positive anchor group",
+            "value": 0.1
+          },
+          {
+            "id": "V_POS_LOW_SLIGHTLY_MORE",
+            "description": "slightly more positive than the less-positive anchors",
+            "value": 0.3
+          },
+          {
+            "id": "V_POS_MIDDLE",
+            "description": "midway between the less-positive and more-positive anchors",
+            "value": 0.6
+          },
+          {
+            "id": "V_POS_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less positive than the more-positive anchors",
+            "value": 0.8
+          },
+          {
+            "id": "V_POS_HIGH_SAME",
+            "description": "same strongly positive valence as the more-positive anchor group",
+            "value": 1.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 1.0
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.7
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.3
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.3
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": 0.9,
+            "arousal": 0.7
+          },
+          "raw_response": "{\"valence\": 0.9, \"arousal\": 0.7}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be happiness; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_POS_HIGH_SAME",
+            "valence": 1.0,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 1.0
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_POS_HIGH_SAME\",\n  \"arousal_option\": \"A_HIGH_SAME\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be happiness; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEUTRAL: neutral valence\n- V_POS_LOW_SAME: same mildly positive valence as the less-positive anchor group\n- V_POS_LOW_SLIGHTLY_MORE: slightly more positive than the less-positive anchors\n- V_POS_MIDDLE: midway between the less-positive and more-positive anchors\n- V_POS_HIGH_SLIGHTLY_LESS: slightly less positive than the more-positive anchors\n- V_POS_HIGH_SAME: same strongly positive valence as the more-positive anchor group\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "happiness",
+      "anchors": [
+        {
+          "image": "20260731T051630_763811Z_happiness.jpg",
+          "anchor": "valence_positive_high_arousal_high",
+          "human_valence": 1.0,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T051657_055496Z_happiness.jpg",
+          "anchor": "valence_positive_low_arousal_high",
+          "human_valence": 0.1,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T051737_825304Z_happiness.jpg",
+          "anchor": "valence_positive_high_arousal_low",
+          "human_valence": 1.0,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T051759_305378Z_happiness.jpg",
+          "anchor": "valence_positive_low_arousal_low",
+          "human_valence": 0.1,
+          "human_arousal": -0.2
+        }
+      ],
+      "target": {
+        "image": "20260730T220421_936293Z_happiness.jpg",
+        "human_expression": "happiness",
+        "human_valence": 0.6,
+        "human_arousal": 0.7
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          },
+          {
+            "id": "V_POS_LOW_SAME",
+            "description": "same mildly positive valence as the less-positive anchor group",
+            "value": 0.1
+          },
+          {
+            "id": "V_POS_LOW_SLIGHTLY_MORE",
+            "description": "slightly more positive than the less-positive anchors",
+            "value": 0.3
+          },
+          {
+            "id": "V_POS_MIDDLE",
+            "description": "midway between the less-positive and more-positive anchors",
+            "value": 0.6
+          },
+          {
+            "id": "V_POS_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less positive than the more-positive anchors",
+            "value": 0.8
+          },
+          {
+            "id": "V_POS_HIGH_SAME",
+            "description": "same strongly positive valence as the more-positive anchor group",
+            "value": 1.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 1.0
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.7
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.3
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.3
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": 0.9,
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence\": 0.9, \"arousal\": 0.8}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be happiness; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_POS_HIGH_SAME",
+            "valence": 1.0,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 1.0
+          },
+          "raw_response": "{\"valence_option\": \"V_POS_HIGH_SAME\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be happiness; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEUTRAL: neutral valence\n- V_POS_LOW_SAME: same mildly positive valence as the less-positive anchor group\n- V_POS_LOW_SLIGHTLY_MORE: slightly more positive than the less-positive anchors\n- V_POS_MIDDLE: midway between the less-positive and more-positive anchors\n- V_POS_HIGH_SLIGHTLY_LESS: slightly less positive than the more-positive anchors\n- V_POS_HIGH_SAME: same strongly positive valence as the more-positive anchor group\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "happiness",
+      "anchors": [
+        {
+          "image": "20260731T051630_763811Z_happiness.jpg",
+          "anchor": "valence_positive_high_arousal_high",
+          "human_valence": 1.0,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T051657_055496Z_happiness.jpg",
+          "anchor": "valence_positive_low_arousal_high",
+          "human_valence": 0.1,
+          "human_arousal": 1.0
+        },
+        {
+          "image": "20260731T051737_825304Z_happiness.jpg",
+          "anchor": "valence_positive_high_arousal_low",
+          "human_valence": 1.0,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T051759_305378Z_happiness.jpg",
+          "anchor": "valence_positive_low_arousal_low",
+          "human_valence": 0.1,
+          "human_arousal": -0.2
+        }
+      ],
+      "target": {
+        "image": "20260730T220418_432465Z_happiness.jpg",
+        "human_expression": "happiness",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          },
+          {
+            "id": "V_POS_LOW_SAME",
+            "description": "same mildly positive valence as the less-positive anchor group",
+            "value": 0.1
+          },
+          {
+            "id": "V_POS_LOW_SLIGHTLY_MORE",
+            "description": "slightly more positive than the less-positive anchors",
+            "value": 0.3
+          },
+          {
+            "id": "V_POS_MIDDLE",
+            "description": "midway between the less-positive and more-positive anchors",
+            "value": 0.6
+          },
+          {
+            "id": "V_POS_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less positive than the more-positive anchors",
+            "value": 0.8
+          },
+          {
+            "id": "V_POS_HIGH_SAME",
+            "description": "same strongly positive valence as the more-positive anchor group",
+            "value": 1.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 1.0
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.7
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.3
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.3
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": 0.9,
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence\": 0.9, \"arousal\": 0.8}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be happiness; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_POS_HIGH_SAME",
+            "valence": 1.0,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 1.0
+          },
+          "raw_response": "{\"valence_option\": \"V_POS_HIGH_SAME\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be happiness; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEUTRAL: neutral valence\n- V_POS_LOW_SAME: same mildly positive valence as the less-positive anchor group\n- V_POS_LOW_SLIGHTLY_MORE: slightly more positive than the less-positive anchors\n- V_POS_MIDDLE: midway between the less-positive and more-positive anchors\n- V_POS_HIGH_SLIGHTLY_LESS: slightly less positive than the more-positive anchors\n- V_POS_HIGH_SAME: same strongly positive valence as the more-positive anchor group\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "neutral",
+      "anchors": [
+        {
+          "image": "20260731T184328_503142Z_neutral.jpg",
+          "anchor": "valence_neutral_arousal_high",
+          "human_valence": 0.0,
+          "human_arousal": 0.5
+        },
+        {
+          "image": "20260731T184344_104599Z_neutral.jpg",
+          "anchor": "valence_neutral_arousal_low",
+          "human_valence": 0.0,
+          "human_arousal": -0.7
+        }
+      ],
+      "target": {
+        "image": "20260730T215931_727586Z_neutral.jpg",
+        "human_expression": "neutral",
+        "human_valence": 0.0,
+        "human_arousal": 0.0
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence like the neutral anchors",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.5
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.2
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": -0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.7
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": 0.0,
+            "arousal": -0.6
+          },
+          "raw_response": "{\"valence\": 0.0, \"arousal\": -0.6}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated neutral expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be neutral; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEUTRAL",
+            "valence": 0.0,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.7
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_NEUTRAL\",\n  \"arousal_option\": \"A_LOW_SAME\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated neutral expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be neutral; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEUTRAL: neutral valence like the neutral anchors\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "neutral",
+      "anchors": [
+        {
+          "image": "20260731T184328_503142Z_neutral.jpg",
+          "anchor": "valence_neutral_arousal_high",
+          "human_valence": 0.0,
+          "human_arousal": 0.5
+        },
+        {
+          "image": "20260731T184344_104599Z_neutral.jpg",
+          "anchor": "valence_neutral_arousal_low",
+          "human_valence": 0.0,
+          "human_arousal": -0.7
+        }
+      ],
+      "target": {
+        "image": "20260731T010417_597456Z_neutral.jpg",
+        "human_expression": "neutral",
+        "human_valence": 0.0,
+        "human_arousal": 0.0
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence like the neutral anchors",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.5
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.2
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": -0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.7
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": 0.0,
+            "arousal": -0.6
+          },
+          "raw_response": "{\"valence\": 0.0, \"arousal\": -0.6}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated neutral expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be neutral; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEUTRAL",
+            "valence": 0.0,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.7
+          },
+          "raw_response": "{\n  \"valence_option\": \"V_NEUTRAL\",\n  \"arousal_option\": \"A_LOW_SAME\"\n}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated neutral expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be neutral; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEUTRAL: neutral valence like the neutral anchors\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "neutral",
+      "anchors": [
+        {
+          "image": "20260731T184328_503142Z_neutral.jpg",
+          "anchor": "valence_neutral_arousal_high",
+          "human_valence": 0.0,
+          "human_arousal": 0.5
+        },
+        {
+          "image": "20260731T184344_104599Z_neutral.jpg",
+          "anchor": "valence_neutral_arousal_low",
+          "human_valence": 0.0,
+          "human_arousal": -0.7
+        }
+      ],
+      "target": {
+        "image": "20260730T220149_958208Z_neutral.jpg",
+        "human_expression": "neutral",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence like the neutral anchors",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.5
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.2
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": -0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.7
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": 0.0,
+            "arousal": -0.6
+          },
+          "raw_response": "{\"valence\": 0.0, \"arousal\": -0.6}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated neutral expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be neutral; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEUTRAL",
+            "valence": 0.0,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.7
+          },
+          "raw_response": "{\"valence_option\": \"V_NEUTRAL\", \"arousal_option\": \"A_LOW_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated neutral expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be neutral; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEUTRAL: neutral valence like the neutral anchors\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "sadness",
+      "anchors": [
+        {
+          "image": "20260731T184702_950504Z_sadness.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184715_863824Z_sadness.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184750_490365Z_sadness.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.7
+        },
+        {
+          "image": "20260731T184806_809192Z_sadness.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220632_314443Z_sadness.jpg",
+        "human_expression": "sadness",
+        "human_valence": -0.5,
+        "human_arousal": -0.3
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.9
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.7
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.9
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.5
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.2,
+            "arousal": -0.7
+          },
+          "raw_response": "{\"valence\": -0.2, \"arousal\": -0.7}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be sadness; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_LOW_SAME",
+            "valence": -0.1,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_LOW_SAME\", \"arousal_option\": \"A_LOW_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be sadness; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "sadness",
+      "anchors": [
+        {
+          "image": "20260731T184702_950504Z_sadness.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184715_863824Z_sadness.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184750_490365Z_sadness.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.7
+        },
+        {
+          "image": "20260731T184806_809192Z_sadness.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220729_313799Z_sadness.jpg",
+        "human_expression": "sadness",
+        "human_valence": -0.5,
+        "human_arousal": 0.5
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.9
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.7
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.9
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.5
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.2,
+            "arousal": 0.4
+          },
+          "raw_response": "{\"valence\": -0.2, \"arousal\": 0.4}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be sadness; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_LOW_SAME",
+            "valence": -0.1,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 0.9
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_LOW_SAME\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be sadness; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "sadness",
+      "anchors": [
+        {
+          "image": "20260731T184702_950504Z_sadness.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184715_863824Z_sadness.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T184750_490365Z_sadness.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.7
+        },
+        {
+          "image": "20260731T184806_809192Z_sadness.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220701_309650Z_sadness.jpg",
+        "human_expression": "sadness",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.9
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.7
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral valence",
+            "value": 0.0
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.9
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.5
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.4
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.8
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.5,
+            "arousal": -0.7
+          },
+          "raw_response": "{\"valence\": -0.5, \"arousal\": -0.7}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be sadness; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_MIDDLE",
+            "valence": -0.5,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_MIDDLE\", \"arousal_option\": \"A_LOW_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be sadness; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral valence\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "surprise",
+      "anchors": [
+        {
+          "image": "20260731T185202_077105Z_surprise.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.8,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185211_371258Z_surprise.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185222_407843Z_surprise.jpg",
+          "anchor": "valence_positive_high_arousal_high",
+          "human_valence": 0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185237_054346Z_surprise.jpg",
+          "anchor": "valence_positive_low_arousal_high",
+          "human_valence": 0.1,
+          "human_arousal": 0.5
+        },
+        {
+          "image": "20260731T185502_542844Z_surprise.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T185520_323296Z_surprise.jpg",
+          "anchor": "valence_positive_high_arousal_low",
+          "human_valence": 0.6,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T185538_380263Z_surprise.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T185546_913375Z_surprise.jpg",
+          "anchor": "valence_positive_low_arousal_low",
+          "human_valence": 0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220523_920275Z_surprise.jpg",
+        "human_expression": "surprise",
+        "human_valence": -0.3,
+        "human_arousal": 0.8
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral or evenly mixed valence",
+            "value": 0.0
+          },
+          {
+            "id": "V_POS_LOW_SAME",
+            "description": "same mildly positive valence as the less-positive anchor group",
+            "value": 0.1
+          },
+          {
+            "id": "V_POS_LOW_SLIGHTLY_MORE",
+            "description": "slightly more positive than the less-positive anchors",
+            "value": 0.3
+          },
+          {
+            "id": "V_POS_MIDDLE",
+            "description": "midway between the less-positive and more-positive anchors",
+            "value": 0.5
+          },
+          {
+            "id": "V_POS_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less positive than the more-positive anchors",
+            "value": 0.6
+          },
+          {
+            "id": "V_POS_HIGH_SAME",
+            "description": "same strongly positive valence as the more-positive anchor group",
+            "value": 0.8
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.3
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.7
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": 0.9
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": 0.9}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be surprise; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_MIDDLE",
+            "valence": -0.5,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_MIDDLE\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be surprise; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral or evenly mixed valence\n- V_POS_LOW_SAME: same mildly positive valence as the less-positive anchor group\n- V_POS_LOW_SLIGHTLY_MORE: slightly more positive than the less-positive anchors\n- V_POS_MIDDLE: midway between the less-positive and more-positive anchors\n- V_POS_HIGH_SLIGHTLY_LESS: slightly less positive than the more-positive anchors\n- V_POS_HIGH_SAME: same strongly positive valence as the more-positive anchor group\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "surprise",
+      "anchors": [
+        {
+          "image": "20260731T185202_077105Z_surprise.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.8,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185211_371258Z_surprise.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185222_407843Z_surprise.jpg",
+          "anchor": "valence_positive_high_arousal_high",
+          "human_valence": 0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185237_054346Z_surprise.jpg",
+          "anchor": "valence_positive_low_arousal_high",
+          "human_valence": 0.1,
+          "human_arousal": 0.5
+        },
+        {
+          "image": "20260731T185502_542844Z_surprise.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T185520_323296Z_surprise.jpg",
+          "anchor": "valence_positive_high_arousal_low",
+          "human_valence": 0.6,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T185538_380263Z_surprise.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T185546_913375Z_surprise.jpg",
+          "anchor": "valence_positive_low_arousal_low",
+          "human_valence": 0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220524_525751Z_surprise.jpg",
+        "human_expression": "surprise",
+        "human_valence": -0.3,
+        "human_arousal": 0.7
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral or evenly mixed valence",
+            "value": 0.0
+          },
+          {
+            "id": "V_POS_LOW_SAME",
+            "description": "same mildly positive valence as the less-positive anchor group",
+            "value": 0.1
+          },
+          {
+            "id": "V_POS_LOW_SLIGHTLY_MORE",
+            "description": "slightly more positive than the less-positive anchors",
+            "value": 0.3
+          },
+          {
+            "id": "V_POS_MIDDLE",
+            "description": "midway between the less-positive and more-positive anchors",
+            "value": 0.5
+          },
+          {
+            "id": "V_POS_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less positive than the more-positive anchors",
+            "value": 0.6
+          },
+          {
+            "id": "V_POS_HIGH_SAME",
+            "description": "same strongly positive valence as the more-positive anchor group",
+            "value": 0.8
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.3
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.7
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.2,
+            "arousal": 0.9
+          },
+          "raw_response": "{\"valence\": -0.2, \"arousal\": 0.9}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be surprise; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_LOW_SAME",
+            "valence": -0.1,
+            "arousal_option": "A_HIGH_SAME",
+            "arousal": 0.8
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_LOW_SAME\", \"arousal_option\": \"A_HIGH_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be surprise; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral or evenly mixed valence\n- V_POS_LOW_SAME: same mildly positive valence as the less-positive anchor group\n- V_POS_LOW_SLIGHTLY_MORE: slightly more positive than the less-positive anchors\n- V_POS_MIDDLE: midway between the less-positive and more-positive anchors\n- V_POS_HIGH_SLIGHTLY_LESS: slightly less positive than the more-positive anchors\n- V_POS_HIGH_SAME: same strongly positive valence as the more-positive anchor group\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    },
+    {
+      "emotion": "surprise",
+      "anchors": [
+        {
+          "image": "20260731T185202_077105Z_surprise.jpg",
+          "anchor": "valence_negative_high_arousal_high",
+          "human_valence": -0.8,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185211_371258Z_surprise.jpg",
+          "anchor": "valence_negative_low_arousal_high",
+          "human_valence": -0.1,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185222_407843Z_surprise.jpg",
+          "anchor": "valence_positive_high_arousal_high",
+          "human_valence": 0.9,
+          "human_arousal": 0.9
+        },
+        {
+          "image": "20260731T185237_054346Z_surprise.jpg",
+          "anchor": "valence_positive_low_arousal_high",
+          "human_valence": 0.1,
+          "human_arousal": 0.5
+        },
+        {
+          "image": "20260731T185502_542844Z_surprise.jpg",
+          "anchor": "valence_negative_high_arousal_low",
+          "human_valence": -0.8,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T185520_323296Z_surprise.jpg",
+          "anchor": "valence_positive_high_arousal_low",
+          "human_valence": 0.6,
+          "human_arousal": -0.5
+        },
+        {
+          "image": "20260731T185538_380263Z_surprise.jpg",
+          "anchor": "valence_negative_low_arousal_low",
+          "human_valence": -0.1,
+          "human_arousal": -0.8
+        },
+        {
+          "image": "20260731T185546_913375Z_surprise.jpg",
+          "anchor": "valence_positive_low_arousal_low",
+          "human_valence": 0.1,
+          "human_arousal": -0.8
+        }
+      ],
+      "target": {
+        "image": "20260730T220606_449758Z_surprise.jpg",
+        "human_expression": "surprise",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "choice_options": {
+        "valence": [
+          {
+            "id": "V_NEG_HIGH_SAME",
+            "description": "same strongly negative valence as the more-negative anchor group",
+            "value": -0.8
+          },
+          {
+            "id": "V_NEG_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less negative than the more-negative anchors",
+            "value": -0.6
+          },
+          {
+            "id": "V_NEG_MIDDLE",
+            "description": "midway between the more-negative and less-negative anchors",
+            "value": -0.5
+          },
+          {
+            "id": "V_NEG_LOW_SLIGHTLY_MORE",
+            "description": "slightly more negative than the less-negative anchors",
+            "value": -0.3
+          },
+          {
+            "id": "V_NEG_LOW_SAME",
+            "description": "same mildly negative valence as the less-negative anchor group",
+            "value": -0.1
+          },
+          {
+            "id": "V_NEUTRAL",
+            "description": "neutral or evenly mixed valence",
+            "value": 0.0
+          },
+          {
+            "id": "V_POS_LOW_SAME",
+            "description": "same mildly positive valence as the less-positive anchor group",
+            "value": 0.1
+          },
+          {
+            "id": "V_POS_LOW_SLIGHTLY_MORE",
+            "description": "slightly more positive than the less-positive anchors",
+            "value": 0.3
+          },
+          {
+            "id": "V_POS_MIDDLE",
+            "description": "midway between the less-positive and more-positive anchors",
+            "value": 0.5
+          },
+          {
+            "id": "V_POS_HIGH_SLIGHTLY_LESS",
+            "description": "slightly less positive than the more-positive anchors",
+            "value": 0.6
+          },
+          {
+            "id": "V_POS_HIGH_SAME",
+            "description": "same strongly positive valence as the more-positive anchor group",
+            "value": 0.8
+          }
+        ],
+        "arousal": [
+          {
+            "id": "A_HIGH_SAME",
+            "description": "same activation as the high-arousal anchor group",
+            "value": 0.8
+          },
+          {
+            "id": "A_HIGH_SLIGHTLY_LOWER",
+            "description": "slightly less activated than the high-arousal anchors",
+            "value": 0.4
+          },
+          {
+            "id": "A_MIDDLE",
+            "description": "approximately midway between the high- and low-arousal anchors",
+            "value": 0.1
+          },
+          {
+            "id": "A_BASELINE",
+            "description": "ordinary zero-arousal baseline",
+            "value": 0.0
+          },
+          {
+            "id": "A_LOW_SLIGHTLY_HIGHER",
+            "description": "slightly more activated than the low-arousal anchors",
+            "value": -0.3
+          },
+          {
+            "id": "A_LOW_SAME",
+            "description": "same activation as the low-arousal anchor group",
+            "value": -0.7
+          }
+        ]
+      },
+      "conditions": {
+        "direct": {
+          "prediction": {
+            "valence": -0.6,
+            "arousal": -0.6
+          },
+          "raw_response": "{\"valence\": -0.6, \"arousal\": -0.6}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be surprise; do not reclassify it.\n\nInterpolate the target independently along the personal valence and arousal scales demonstrated by the anchors. Different facial muscle configurations can express the same intensity, so compare total visible activation and pleasantness instead of matching one stereotyped geometry. Treat the human labels as authoritative even if they differ from population-average expectations.\n\nFor valence, numerically lower means more negative and higher means more positive. For arousal, numerically lower means calmer or deactivated and higher means more activated. Use increments of 0.1 in [-1.0, 1.0].\n\nReturn only this JSON with no markdown or explanation: {\"valence\": number, \"arousal\": number}"
+        },
+        "choices": {
+          "prediction": {
+            "valence_option": "V_NEG_LOW_SAME",
+            "valence": -0.1,
+            "arousal_option": "A_LOW_SAME",
+            "arousal": -0.7
+          },
+          "raw_response": "{\"valence_option\": \"V_NEG_LOW_SAME\", \"arousal_option\": \"A_LOW_SAME\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe attached anchor images are human-labeled ground truth for this person. Each anchor's exact expression, valence, and arousal appears immediately before its image. The final image is the target. The target is known to be surprise; do not reclassify it.\n\nCompare the target against the anchor groups and choose exactly one qualitative position for each dimension. Different muscle configurations can express the same intensity. Judge total pleasantness and activation rather than demanding a stereotyped visual match. For valence, more negative is numerically lower; for arousal, more activated is numerically higher.\n\nVALENCE OPTIONS:\n- V_NEG_HIGH_SAME: same strongly negative valence as the more-negative anchor group\n- V_NEG_HIGH_SLIGHTLY_LESS: slightly less negative than the more-negative anchors\n- V_NEG_MIDDLE: midway between the more-negative and less-negative anchors\n- V_NEG_LOW_SLIGHTLY_MORE: slightly more negative than the less-negative anchors\n- V_NEG_LOW_SAME: same mildly negative valence as the less-negative anchor group\n- V_NEUTRAL: neutral or evenly mixed valence\n- V_POS_LOW_SAME: same mildly positive valence as the less-positive anchor group\n- V_POS_LOW_SLIGHTLY_MORE: slightly more positive than the less-positive anchors\n- V_POS_MIDDLE: midway between the less-positive and more-positive anchors\n- V_POS_HIGH_SLIGHTLY_LESS: slightly less positive than the more-positive anchors\n- V_POS_HIGH_SAME: same strongly positive valence as the more-positive anchor group\n\nAROUSAL OPTIONS:\n- A_HIGH_SAME: same activation as the high-arousal anchor group\n- A_HIGH_SLIGHTLY_LOWER: slightly less activated than the high-arousal anchors\n- A_MIDDLE: approximately midway between the high- and low-arousal anchors\n- A_BASELINE: ordinary zero-arousal baseline\n- A_LOW_SLIGHTLY_HIGHER: slightly more activated than the low-arousal anchors\n- A_LOW_SAME: same activation as the low-arousal anchor group\n\nReturn only this JSON with no markdown, explanation, or numeric scores: {\"valence_option\": \"OPTION_ID\", \"arousal_option\": \"OPTION_ID\"}"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "direct": {
+      "scored_targets": 18,
+      "valence_mae": 0.18333333333333335,
+      "arousal_mae": 0.33333333333333326,
+      "valence_mean_signed_error": 0.027777777777777755,
+      "arousal_mean_signed_error": 0.02222222222222224,
+      "valence_within_0.2": 0.6666666666666666,
+      "arousal_within_0.2": 0.5555555555555556
+    },
+    "choices": {
+      "scored_targets": 18,
+      "valence_mae": 0.24444444444444446,
+      "arousal_mae": 0.4166666666666667,
+      "valence_mean_signed_error": 0.022222222222222216,
+      "arousal_mean_signed_error": -0.027777777777777783,
+      "valence_within_0.2": 0.5,
+      "arousal_within_0.2": 0.2777777777777778
+    }
+  },
+  "labels_refreshed_at": "2026-08-01T01:52:16.947274+00:00"
+}

@@ -1,0 +1,382 @@
+{
+  "created_at": "2026-07-31T02:48:52.510691+00:00",
+  "model": "gemini-3.6-flash",
+  "protocol": {
+    "one_human_reference_per_emotion": true,
+    "every_target_human_labeled": true,
+    "target_labels_hidden_from_model": true,
+    "neutral_excluded": true,
+    "reasoning_is_concise_decision_justification": true
+  },
+  "samples": [
+    {
+      "emotion": "happiness",
+      "reference": {
+        "image": "20260730T220414_802358Z_happiness.jpg",
+        "human_valence": 0.6,
+        "human_arousal": 0.6
+      },
+      "target": {
+        "image": "20260730T220421_936293Z_happiness.jpg",
+        "human_valence": 0.6,
+        "human_arousal": 0.7
+      },
+      "gemini": {
+        "valence": 0.5,
+        "arousal": 0.5,
+        "confidence": 0.7,
+        "apparent_expression": "wide-eyed joyful smile",
+        "reference_comparison": {
+          "valence": "Slightly less positive than reference due to less eye crinkling.",
+          "arousal": "Similar activation to reference, showing wider eyes but similar cheek elevation."
+        },
+        "valence_analysis": {
+          "why_this_side": "Visible upturned lips and exposed teeth indicate pleasant valence.",
+          "why_this_magnitude": "Broad open smile shows strong positive emotion, slightly below reference intensity.",
+          "why_not_higher": "Reduced orbicularis oculi contraction near the eyes limits a higher rating.",
+          "why_not_lower": "Clear open-mouthed smiling precludes a neutral or lower score."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Wide eye aperture and raised eyebrows confirm elevated arousal.",
+          "why_this_magnitude": "Expanded eye opening matches moderate excitement, balanced near reference levels.",
+          "why_not_higher": "Absence of extreme vocalization or heavy muscular tension bounds higher scores.",
+          "why_not_lower": "Engaged facial muscle expression prevents a lower baseline score."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Wide eye opening could signal mild surprise alongside happiness.",
+          "valence_plausible_range": [
+            0.3,
+            0.6
+          ],
+          "arousal_plausible_range": [
+            0.4,
+            0.6
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": -0.1,
+        "arousal": -0.2
+      },
+      "raw_response": "{\n  \"valence\": 0.5,\n  \"arousal\": 0.5,\n  \"confidence\": 0.7,\n  \"apparent_expression\": \"wide-eyed joyful smile\",\n  \"reference_comparison\": {\n    \"valence\": \"Slightly less positive than reference due to less eye crinkling.\",\n    \"arousal\": \"Similar activation to reference, showing wider eyes but similar cheek elevation.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Visible upturned lips and exposed teeth indicate pleasant valence.\",\n    \"why_this_magnitude\": \"Broad open smile shows strong positive emotion, slightly below reference intensity.\",\n    \"why_not_higher\": \"Reduced orbicularis oculi contraction near the eyes limits a higher rating.\",\n    \"why_not_lower\": \"Clear open-mouthed smiling precludes a neutral or lower score.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Wide eye aperture and raised eyebrows confirm elevated arousal.\",\n    \"why_this_magnitude\": \"Expanded eye opening matches moderate excitement, balanced near reference levels.\",\n    \"why_not_higher\": \"Absence of extreme vocalization or heavy muscular tension bounds higher scores.\",\n    \"why_not_lower\": \"Engaged facial muscle expression prevents a lower baseline score.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Wide eye opening could signal mild surprise alongside happiness.\",\n    \"valence_plausible_range\": [0.3, 0.6],\n    \"arousal_plausible_range\": [0.4, 0.6]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated happiness expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence +0.6, arousal +0.6.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be happiness. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    },
+    {
+      "emotion": "surprise",
+      "reference": {
+        "image": "20260730T220523_920275Z_surprise.jpg",
+        "human_valence": -0.3,
+        "human_arousal": 0.8
+      },
+      "target": {
+        "image": "20260730T220524_525751Z_surprise.jpg",
+        "human_valence": -0.3,
+        "human_arousal": 0.7
+      },
+      "gemini": {
+        "valence": -0.2,
+        "arousal": 0.5,
+        "confidence": 0.7,
+        "apparent_expression": "startled surprise",
+        "reference_comparison": {
+          "valence": "Slightly less negative tone than reference due to marginally relaxed brow.",
+          "arousal": "Slightly lower activation than reference due to softer facial strain."
+        },
+        "valence_analysis": {
+          "why_this_side": "Un-smiling open mouth and alarmed gaze reflect negative threat processing.",
+          "why_this_magnitude": "Milder brow contraction than reference (-0.3) supports -0.2.",
+          "why_not_higher": "Absence of positive cheek elevation prevents neutral or positive rating.",
+          "why_not_lower": "Lack of severe brow furrowing prevents a lower negative score."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Wide eye aperture and fully open jaw indicate elevated physiological arousal.",
+          "why_this_magnitude": "High activation comparable to reference (+0.8), compressed toward center (+0.5).",
+          "why_not_higher": "Slightly less muscular tension around eyes precludes higher activation.",
+          "why_not_lower": "Wide open oral cavity prevents a lower arousal rating."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Subtle variance in eye wideness relative to reference capture.",
+          "valence_plausible_range": [
+            -0.3,
+            -0.1
+          ],
+          "arousal_plausible_range": [
+            0.4,
+            0.6
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": 0.1,
+        "arousal": -0.2
+      },
+      "raw_response": "{\n  \"valence\": -0.2,\n  \"arousal\": 0.5,\n  \"confidence\": 0.7,\n  \"apparent_expression\": \"startled surprise\",\n  \"reference_comparison\": {\n    \"valence\": \"Slightly less negative tone than reference due to marginally relaxed brow.\",\n    \"arousal\": \"Slightly lower activation than reference due to softer facial strain.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Un-smiling open mouth and alarmed gaze reflect negative threat processing.\",\n    \"why_this_magnitude\": \"Milder brow contraction than reference (-0.3) supports -0.2.\",\n    \"why_not_higher\": \"Absence of positive cheek elevation prevents neutral or positive rating.\",\n    \"why_not_lower\": \"Lack of severe brow furrowing prevents a lower negative score.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Wide eye aperture and fully open jaw indicate elevated physiological arousal.\",\n    \"why_this_magnitude\": \"High activation comparable to reference (+0.8), compressed toward center (+0.5).\",\n    \"why_not_higher\": \"Slightly less muscular tension around eyes precludes higher activation.\",\n    \"why_not_lower\": \"Wide open oral cavity prevents a lower arousal rating.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Subtle variance in eye wideness relative to reference capture.\",\n    \"valence_plausible_range\": [-0.3, -0.1],\n    \"arousal_plausible_range\": [0.4, 0.6]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated surprise expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence -0.3, arousal +0.8.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be surprise. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    },
+    {
+      "emotion": "sadness",
+      "reference": {
+        "image": "20260730T220632_314443Z_sadness.jpg",
+        "human_valence": -0.5,
+        "human_arousal": -0.3
+      },
+      "target": {
+        "image": "20260730T220729_313799Z_sadness.jpg",
+        "human_valence": -0.5,
+        "human_arousal": 0.5
+      },
+      "gemini": {
+        "valence": -0.4,
+        "arousal": -0.2,
+        "confidence": 0.7,
+        "apparent_expression": "pouting sadness",
+        "reference_comparison": {
+          "valence": "More pronounced lip downturn than reference.",
+          "arousal": "Slightly more muscular tension in the mouth than reference."
+        },
+        "valence_analysis": {
+          "why_this_side": "Prominent mouth downturn and raised lower lip indicate negative affect.",
+          "why_this_magnitude": "Lip configuration shows clearer sadness signaling compared to reference.",
+          "why_not_higher": "Strong downward lip curvature precludes a neutral or positive score.",
+          "why_not_lower": "Absence of intense distress or weeping keeps magnitude moderate."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Subdued facial engagement retains a generally calm, deactivated baseline.",
+          "why_this_magnitude": "Minor lip muscle tension slightly elevates activation relative to reference.",
+          "why_not_higher": "Lack of wide eyes or open-mouthed crying prevents higher activation.",
+          "why_not_lower": "Visible muscular effort in the lower lip prevents a fully passive score."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Pouting lip tension vs underlying passive distress level.",
+          "valence_plausible_range": [
+            -0.5,
+            -0.3
+          ],
+          "arousal_plausible_range": [
+            -0.3,
+            -0.1
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": 0.1,
+        "arousal": -0.7
+      },
+      "raw_response": "{\n  \"valence\": -0.4,\n  \"arousal\": -0.2,\n  \"confidence\": 0.7,\n  \"apparent_expression\": \"pouting sadness\",\n  \"reference_comparison\": {\n    \"valence\": \"More pronounced lip downturn than reference.\",\n    \"arousal\": \"Slightly more muscular tension in the mouth than reference.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Prominent mouth downturn and raised lower lip indicate negative affect.\",\n    \"why_this_magnitude\": \"Lip configuration shows clearer sadness signaling compared to reference.\",\n    \"why_not_higher\": \"Strong downward lip curvature precludes a neutral or positive score.\",\n    \"why_not_lower\": \"Absence of intense distress or weeping keeps magnitude moderate.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Subdued facial engagement retains a generally calm, deactivated baseline.\",\n    \"why_this_magnitude\": \"Minor lip muscle tension slightly elevates activation relative to reference.\",\n    \"why_not_higher\": \"Lack of wide eyes or open-mouthed crying prevents higher activation.\",\n    \"why_not_lower\": \"Visible muscular effort in the lower lip prevents a fully passive score.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Pouting lip tension vs underlying passive distress level.\",\n    \"valence_plausible_range\": [-0.5, -0.3],\n    \"arousal_plausible_range\": [-0.3, -0.1]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated sadness expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence -0.5, arousal -0.3.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be sadness. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    },
+    {
+      "emotion": "anger",
+      "reference": {
+        "image": "20260730T220754_856766Z_anger.jpg",
+        "human_valence": -0.7,
+        "human_arousal": 0.6
+      },
+      "target": {
+        "image": "20260730T220758_916273Z_anger.jpg",
+        "human_valence": -0.7,
+        "human_arousal": 0.5
+      },
+      "gemini": {
+        "valence": -0.5,
+        "arousal": 0.4,
+        "confidence": 0.7,
+        "apparent_expression": "intense angry glare",
+        "reference_comparison": {
+          "valence": "Similar severe grimace, moderated toward scale center.",
+          "arousal": "Wider eye aperture balanced by scale compression."
+        },
+        "valence_analysis": {
+          "why_this_side": "Furrowed brows and turned-down mouth show clear negative affect.",
+          "why_this_magnitude": "Nose wrinkling and lip tension reflect pronounced displeasure.",
+          "why_not_higher": "Persistent facial contraction precludes a higher rating.",
+          "why_not_lower": "Absence of overt crying or extreme grimacing prevents lower scores."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Wide glare and lowered brow demonstrate active engagement.",
+          "why_this_magnitude": "Direct ocular focus and facial strain show moderate activation.",
+          "why_not_higher": "Closed mouth and static posture limit peak arousal.",
+          "why_not_lower": "High muscle tension excludes a relaxed state."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Disentangling anger tightness from disgust-related facial wrinkling.",
+          "valence_plausible_range": [
+            -0.6,
+            -0.4
+          ],
+          "arousal_plausible_range": [
+            0.3,
+            0.5
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": 0.2,
+        "arousal": -0.1
+      },
+      "raw_response": "{\n  \"valence\": -0.5,\n  \"arousal\": 0.4,\n  \"confidence\": 0.7,\n  \"apparent_expression\": \"intense angry glare\",\n  \"reference_comparison\": {\n    \"valence\": \"Similar severe grimace, moderated toward scale center.\",\n    \"arousal\": \"Wider eye aperture balanced by scale compression.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Furrowed brows and turned-down mouth show clear negative affect.\",\n    \"why_this_magnitude\": \"Nose wrinkling and lip tension reflect pronounced displeasure.\",\n    \"why_not_higher\": \"Persistent facial contraction precludes a higher rating.\",\n    \"why_not_lower\": \"Absence of overt crying or extreme grimacing prevents lower scores.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Wide glare and lowered brow demonstrate active engagement.\",\n    \"why_this_magnitude\": \"Direct ocular focus and facial strain show moderate activation.\",\n    \"why_not_higher\": \"Closed mouth and static posture limit peak arousal.\",\n    \"why_not_lower\": \"High muscle tension excludes a relaxed state.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Disentangling anger tightness from disgust-related facial wrinkling.\",\n    \"valence_plausible_range\": [-0.6, -0.4],\n    \"arousal_plausible_range\": [0.3, 0.5]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated anger expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence -0.7, arousal +0.6.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be anger. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    },
+    {
+      "emotion": "contempt",
+      "reference": {
+        "image": "20260730T220231_755842Z_contempt.jpg",
+        "human_valence": -0.7,
+        "human_arousal": -0.5
+      },
+      "target": {
+        "image": "20260730T220232_957074Z_contempt.jpg",
+        "human_valence": -0.7,
+        "human_arousal": -0.5
+      },
+      "gemini": {
+        "valence": -0.4,
+        "arousal": -0.3,
+        "confidence": 0.7,
+        "apparent_expression": "subtle contempt sneer",
+        "reference_comparison": {
+          "valence": "Slightly less negative facial tension than reference.",
+          "arousal": "Slightly less tense overall posture than reference."
+        },
+        "valence_analysis": {
+          "why_this_side": "Asymmetrical mouth tightening and lowered brow indicate negative affect.",
+          "why_this_magnitude": "Mouth curl is present but moderate relative to reference.",
+          "why_not_higher": "Persistent lip press and frown prevent a higher rating.",
+          "why_not_lower": "Expression lacks severe facial contortion needed for lower valence."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Controlled, still facial expression reflects deactivated state.",
+          "why_this_magnitude": "Mild muscular engagement aligns near baseline calm.",
+          "why_not_higher": "Absence of open mouth or widened eye aperture limits higher arousal.",
+          "why_not_lower": "Active brow furrow prevents a completely passive score."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Minor lighting difference affecting depth of brow furrow.",
+          "valence_plausible_range": [
+            -0.5,
+            -0.3
+          ],
+          "arousal_plausible_range": [
+            -0.4,
+            -0.2
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": 0.3,
+        "arousal": 0.2
+      },
+      "raw_response": "{\n  \"valence\": -0.4,\n  \"arousal\": -0.3,\n  \"confidence\": 0.7,\n  \"apparent_expression\": \"subtle contempt sneer\",\n  \"reference_comparison\": {\n    \"valence\": \"Slightly less negative facial tension than reference.\",\n    \"arousal\": \"Slightly less tense overall posture than reference.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Asymmetrical mouth tightening and lowered brow indicate negative affect.\",\n    \"why_this_magnitude\": \"Mouth curl is present but moderate relative to reference.\",\n    \"why_not_higher\": \"Persistent lip press and frown prevent a higher rating.\",\n    \"why_not_lower\": \"Expression lacks severe facial contortion needed for lower valence.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Controlled, still facial expression reflects deactivated state.\",\n    \"why_this_magnitude\": \"Mild muscular engagement aligns near baseline calm.\",\n    \"why_not_higher\": \"Absence of open mouth or widened eye aperture limits higher arousal.\",\n    \"why_not_lower\": \"Active brow furrow prevents a completely passive score.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Minor lighting difference affecting depth of brow furrow.\",\n    \"valence_plausible_range\": [\n      -0.5,\n      -0.3\n    ],\n    \"arousal_plausible_range\": [\n      -0.4,\n      -0.2\n    ]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated contempt expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence -0.7, arousal -0.5.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be contempt. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    },
+    {
+      "emotion": "disgust",
+      "reference": {
+        "image": "20260730T220932_085362Z_disgust.jpg",
+        "human_valence": -0.7,
+        "human_arousal": 0.6
+      },
+      "target": {
+        "image": "20260730T220933_741354Z_disgust.jpg",
+        "human_valence": -0.7,
+        "human_arousal": 0.8
+      },
+      "gemini": {
+        "valence": -0.5,
+        "arousal": 0.5,
+        "confidence": 0.6,
+        "apparent_expression": "moderate disgust grimace",
+        "reference_comparison": {
+          "valence": "Slightly less intensely negative due to centered, symmetric posture.",
+          "arousal": "Comparable tension with similar nose wrinkle and lip curl."
+        },
+        "valence_analysis": {
+          "why_this_side": "Visible nose wrinkle, lowered brow, and downturned mouth.",
+          "why_this_magnitude": "Strong facial contortion anchored near reference level.",
+          "why_not_higher": "Absence of neutral or positive facial features.",
+          "why_not_lower": "Expression lacks extreme grimacing or overt distress."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Active muscular contraction across brow, eyes, and mouth.",
+          "why_this_magnitude": "Squinting and upper lip elevation show clear activation.",
+          "why_not_higher": "Lacks wide mouth opening or intense screaming tension.",
+          "why_not_lower": "Facial muscles are noticeably contracted, not relaxed."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Distinguishing posed muscular effort from felt emotional intensity.",
+          "valence_plausible_range": [
+            -0.6,
+            -0.4
+          ],
+          "arousal_plausible_range": [
+            0.4,
+            0.6
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": 0.2,
+        "arousal": -0.3
+      },
+      "raw_response": "{\n  \"valence\": -0.5,\n  \"arousal\": 0.5,\n  \"confidence\": 0.6,\n  \"apparent_expression\": \"moderate disgust grimace\",\n  \"reference_comparison\": {\n    \"valence\": \"Slightly less intensely negative due to centered, symmetric posture.\",\n    \"arousal\": \"Comparable tension with similar nose wrinkle and lip curl.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Visible nose wrinkle, lowered brow, and downturned mouth.\",\n    \"why_this_magnitude\": \"Strong facial contortion anchored near reference level.\",\n    \"why_not_higher\": \"Absence of neutral or positive facial features.\",\n    \"why_not_lower\": \"Expression lacks extreme grimacing or overt distress.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Active muscular contraction across brow, eyes, and mouth.\",\n    \"why_this_magnitude\": \"Squinting and upper lip elevation show clear activation.\",\n    \"why_not_higher\": \"Lacks wide mouth opening or intense screaming tension.\",\n    \"why_not_lower\": \"Facial muscles are noticeably contracted, not relaxed.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Distinguishing posed muscular effort from felt emotional intensity.\",\n    \"valence_plausible_range\": [-0.6, -0.4],\n    \"arousal_plausible_range\": [0.4, 0.6]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated disgust expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence -0.7, arousal +0.6.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be disgust. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    },
+    {
+      "emotion": "fear",
+      "reference": {
+        "image": "20260730T221116_008542Z_fear.jpg",
+        "human_valence": -0.7,
+        "human_arousal": -0.5
+      },
+      "target": {
+        "image": "20260730T221422_184540Z_fear.jpg",
+        "human_valence": -0.7,
+        "human_arousal": 0.6
+      },
+      "gemini": {
+        "valence": -0.3,
+        "arousal": 0.2,
+        "confidence": 0.6,
+        "apparent_expression": "fearful grimace smile",
+        "reference_comparison": {
+          "valence": "Less negative than reference due to smiling mouth shape.",
+          "arousal": "Significantly higher arousal than reference due to open mouth and wide eyes."
+        },
+        "valence_analysis": {
+          "why_this_side": "Fear intent and strained eyes maintain negative valence.",
+          "why_this_magnitude": "Score of -0.3 reflects negative affect softened by broad teeth exposure compared to reference (-0.7).",
+          "why_not_higher": "A score around -0.1 is not justified due to clear fear contraction around the eyes.",
+          "why_not_lower": "A score around -0.5 is not justified because wide grin reduces perceived unpleasantness."
+        },
+        "arousal_analysis": {
+          "why_this_side": "Wide eye aperture and open jaw place arousal on the activated side.",
+          "why_this_magnitude": "Score of 0.2 shows higher activation than reference (-0.5) based on facial muscle tension.",
+          "why_not_higher": "A score around 0.4 is not justified as facial posture lacks maximum tension or screaming.",
+          "why_not_lower": "A score around 0.0 is not justified given visible eye widening and open mouth posture."
+        },
+        "uncertainty": {
+          "main_ambiguity": "Distinguishing fearful grimace from nervous amusement.",
+          "valence_plausible_range": [
+            -0.5,
+            -0.1
+          ],
+          "arousal_plausible_range": [
+            0.0,
+            0.4
+          ]
+        }
+      },
+      "signed_error": {
+        "valence": 0.4,
+        "arousal": -0.4
+      },
+      "raw_response": "{\n  \"valence\": -0.3,\n  \"arousal\": 0.2,\n  \"confidence\": 0.6,\n  \"apparent_expression\": \"fearful grimace smile\",\n  \"reference_comparison\": {\n    \"valence\": \"Less negative than reference due to smiling mouth shape.\",\n    \"arousal\": \"Significantly higher arousal than reference due to open mouth and wide eyes.\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"Fear intent and strained eyes maintain negative valence.\",\n    \"why_this_magnitude\": \"Score of -0.3 reflects negative affect softened by broad teeth exposure compared to reference (-0.7).\",\n    \"why_not_higher\": \"A score around -0.1 is not justified due to clear fear contraction around the eyes.\",\n    \"why_not_lower\": \"A score around -0.5 is not justified because wide grin reduces perceived unpleasantness.\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"Wide eye aperture and open jaw place arousal on the activated side.\",\n    \"why_this_magnitude\": \"Score of +0.2 shows higher activation than reference (-0.5) based on facial muscle tension.\",\n    \"why_not_higher\": \"A score around +0.4 is not justified as facial posture lacks maximum tension or screaming.\",\n    \"why_not_lower\": \"A score around 0.0 is not justified given visible eye widening and open mouth posture.\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"Distinguishing fearful grimace from nervous amusement.\",\n    \"valence_plausible_range\": [-0.5, -0.1],\n    \"arousal_plausible_range\": [0.0, 0.4]\n  }\n}",
+      "prompt": "You are calibrating valence and arousal for one specific person's intentionally communicated fear expressions.\n\nThe two attached images are ordered as follows:\n1. Human-labeled reference image: valence -0.7, arousal -0.5.\n2. Unlabeled target image that you must score.\n\nBoth images are known to be fear. Do not reclassify the target. The target may express the same emotion through different facial muscle configurations, so do not confuse a different manifestation with a different intensity. Use the reference as a personal anchor, but do not automatically copy it.\n\nScore the target from -1.0 to +1.0 in increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant, 0.0 neutral or mixed, +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/deactivated, 0.0 ordinary baseline, +1.0 intensely activated/agitated/excited.\n\nBase the decision only on visible facial evidence: brows, eyelids, eye aperture, mouth shape, jaw opening, cheeks, and muscle tension. Ignore identity, clothing, background, and the person's true private emotional state.\n\nFor each dimension, provide a concise decision justification\u2014not hidden chain-of-thought\u2014that:\n1. explains why the score is on its chosen positive/negative or activated/calm side;\n2. explains the chosen magnitude relative to the reference;\n3. explains why a meaningfully higher score (approximately +0.2) is not justified;\n4. explains why a meaningfully lower score (approximately -0.2) is not justified.\n\nFor valence, numerically higher means more positive and lower means more negative.\nFor arousal, numerically higher means more activated and lower means calmer.\n\nReturn exactly one JSON object with no markdown:\n{\n  \"valence\": number,\n  \"arousal\": number,\n  \"confidence\": number from 0 to 1,\n  \"apparent_expression\": \"short phrase\",\n  \"reference_comparison\": {\n    \"valence\": \"concise comparison\",\n    \"arousal\": \"concise comparison\"\n  },\n  \"valence_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"arousal_analysis\": {\n    \"why_this_side\": \"visible evidence\",\n    \"why_this_magnitude\": \"visible evidence and reference comparison\",\n    \"why_not_higher\": \"why roughly +0.2 is not justified\",\n    \"why_not_lower\": \"why roughly -0.2 is not justified\"\n  },\n  \"uncertainty\": {\n    \"main_ambiguity\": \"most important ambiguity\",\n    \"valence_plausible_range\": [number, number],\n    \"arousal_plausible_range\": [number, number]\n  }\n}"
+    }
+  ],
+  "summary": {
+    "sample_count": 7,
+    "valence_mae": 0.19999999999999998,
+    "arousal_mae": 0.3
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "created_at": "2026-07-31T01:43:30.535619+00:00",
+  "protocol": {
+    "kind": "single-pass zero-shot",
+    "one_image_per_request": true,
+    "prompt": "Inspect only the visible facial expression in this image. Estimate the affect the person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression category intensity. Use facial evidence such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+  },
+  "runs": [
+    {
+      "backend": "minicpm",
+      "model": "minicpm-v:latest",
+      "samples": [
+        {
+          "sample_id": "image_01",
+          "image": "20260730T220411_268532Z_happiness.jpg",
+          "human_expression_label": "happiness",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": 0.5,
+            "arousal": -0.2,
+            "confidence": 1.0,
+            "apparent_expression": "Contentment",
+            "rationale": "The individual has a slight smile with relaxed facial muscles indicating contentment or mild positivity."
+          },
+          "raw_response": "Based on the visual information provided by the person's face and expression in this image:\n\n{\"valence\": +0.5, \"arousal\": -0.2, \"confidence\": 1.0, \"apparent_expression\": \"Contentment\", \"rationale\": \"The individual has a slight smile with relaxed facial muscles indicating contentment or mild positivity.\"}"
+        },
+        {
+          "sample_id": "image_02",
+          "image": "20260730T220529_938750Z_surprise.jpg",
+          "human_expression_label": "surprise",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": 0.5,
+            "arousal": 0.3,
+            "confidence": 1.0,
+            "apparent_expression": "curious",
+            "rationale": "The person's eyes are wide open and eyebrows slightly raised which suggests mild curiosity."
+          },
+          "raw_response": "Based on the provided image and without any bias towards the individual's identity or circumstances, here is my analysis:\n\nThe person appears to be communicating a neutral-to-positive valence with an expression that could suggest mild curiosity. The eyes are wide open which can indicate interest or surprise, but not necessarily negative emotions like fear or anger.\n\nFor arousal, there seems to be some activation as the eyebrows and mouth corners appear slightly raised, suggesting attentiveness rather than relaxation or deep thought.\n\nConsidering these observations:\n\n{\"valence\": 0.5, \"arousal\": 0.3, \"confidence\": 1, \"apparent_expression\": \"curious\", \"rationale\": \"The person's eyes are wide open and eyebrows slightly raised which suggests mild curiosity.\"}"
+        },
+        {
+          "sample_id": "image_03",
+          "image": "20260730T220650_123657Z_sadness.jpg",
+          "human_expression_label": "sadness",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": -0.5,
+            "arousal": 0.3,
+            "confidence": 1.0,
+            "apparent_expression": "Neutral with a hint of mild engagement",
+            "rationale": "The person's facial expression is neutral but slightly engaged, indicating neither extreme positivity nor negativity."
+          },
+          "raw_response": "Based on the visual information provided and considering the dimensions of valence and arousal:\n\n{\"valence\": -0.5, \"arousal\": +0.3, \"confidence\": 1.0, \"apparent_expression\": \"Neutral with a hint of mild engagement\", \"rationale\": \"The person's facial expression is neutral but slightly engaged, indicating neither extreme positivity nor negativity.\"}"
+        },
+        {
+          "sample_id": "image_04",
+          "image": "20260730T220809_517706Z_anger.jpg",
+          "human_expression_label": "anger",
+          "human_valence": null,
+          "human_arousal": null,
+          "prediction": {
+            "valence": -0.5,
+            "arousal": 0.3,
+            "confidence": 1.0,
+            "apparent_expression": "Determined",
+            "rationale": "The person has a furrowed brow which often indicates determination or focus."
+          },
+          "raw_response": "Based on the provided image and without making assumptions beyond what is observable, here's my analysis:\n\n{\"valence\": -0.5, \"arousal\": +0.3, \"confidence\": 1.0, \"apparent_expression\": \"Determined\", \"rationale\": \"The person has a furrowed brow which often indicates determination or focus.\"}"
+        }
+      ]
+    }
+  ]
+}

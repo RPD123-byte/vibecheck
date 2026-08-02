@@ -1,0 +1,353 @@
+{
+  "created_at": "2026-07-31T02:14:17.774106+00:00",
+  "protocol": {
+    "kind": "paired category-conditioned zero-shot vs personal one-shot",
+    "one_reference_per_emotion": true,
+    "neutral_excluded": true,
+    "surprise_excluded_from_error_metrics": true
+  },
+  "backend": "gemini",
+  "model": "gemini-3.6-flash",
+  "samples": [
+    {
+      "emotion": "happiness",
+      "reference": {
+        "image": "20260730T220414_802358Z_happiness.jpg",
+        "human_valence_exact": 0.603,
+        "human_arousal_exact": 0.603,
+        "prompt_valence": 0.6,
+        "prompt_arousal": 0.6
+      },
+      "target": {
+        "image": "20260730T220421_936293Z_happiness.jpg",
+        "human_valence": 0.603,
+        "human_arousal": 0.699
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": 0.7,
+            "arousal": 0.4,
+            "confidence": 0.9,
+            "apparent_expression": "happy smile",
+            "rationale": "A wide smile showing teeth paired with raised cheeks and engaged eyes indicates a clearly positive expression."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.09699999999999998,
+            "arousal_absolute_error": 0.29899999999999993
+          },
+          "raw_response": "{\"valence\": 0.7, \"arousal\": 0.4, \"confidence\": 0.9, \"apparent_expression\": \"happy smile\", \"rationale\": \"A wide smile showing teeth paired with raised cheeks and engaged eyes indicates a clearly positive expression.\"}",
+          "prompt": "The categorical expression is known to be happiness. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": 0.7,
+            "arousal": 0.7,
+            "confidence": 0.85,
+            "apparent_expression": "enthusiastic happy smile",
+            "rationale": "The eyes are wider open and eyebrows slightly raised compared to the reference, showing slightly higher visual activation and positive warmth."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.09699999999999998,
+            "arousal_absolute_error": 0.0010000000000000009
+          },
+          "raw_response": "{\"valence\": 0.7, \"arousal\": 0.7, \"confidence\": 0.85, \"apparent_expression\": \"enthusiastic happy smile\", \"rationale\": \"The eyes are wider open and eyebrows slightly raised compared to the reference, showing slightly higher visual activation and positive warmth.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended happiness expressions. The categorical expression of both images is known to be happiness; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: +0.6\n- reference arousal: +0.6\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    },
+    {
+      "emotion": "surprise",
+      "reference": {
+        "image": "20260730T220524_525751Z_surprise.jpg",
+        "human_valence_exact": 0.496,
+        "human_arousal_exact": -0.203,
+        "prompt_valence": 0.5,
+        "prompt_arousal": -0.2
+      },
+      "target": {
+        "image": "20260730T220529_938750Z_surprise.jpg",
+        "human_valence": null,
+        "human_arousal": null
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": -0.1,
+            "arousal": 0.5,
+            "confidence": 0.85,
+            "apparent_expression": "mild surprise",
+            "rationale": "Widened eyes and raised eyebrows convey surprise, while the closed lips maintain a neutral to slightly hesitant valence."
+          },
+          "absolute_error": null,
+          "raw_response": "{\"valence\": -0.1, \"arousal\": 0.5, \"confidence\": 0.85, \"apparent_expression\": \"mild surprise\", \"rationale\": \"Widened eyes and raised eyebrows convey surprise, while the closed lips maintain a neutral to slightly hesitant valence.\"}",
+          "prompt": "The categorical expression is known to be surprise. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": 0.0,
+            "arousal": -0.4,
+            "confidence": 0.85,
+            "apparent_expression": "muted mild surprise",
+            "rationale": "Compared to the reference, the mouth is closed with a neutral lip position, indicating lower facial activation and a less overtly positive affect."
+          },
+          "absolute_error": null,
+          "raw_response": "{\"valence\": 0.0, \"arousal\": -0.4, \"confidence\": 0.85, \"apparent_expression\": \"muted mild surprise\", \"rationale\": \"Compared to the reference, the mouth is closed with a neutral lip position, indicating lower facial activation and a less overtly positive affect.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended surprise expressions. The categorical expression of both images is known to be surprise; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: +0.5\n- reference arousal: -0.2\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    },
+    {
+      "emotion": "sadness",
+      "reference": {
+        "image": "20260730T220632_314443Z_sadness.jpg",
+        "human_valence_exact": -0.501,
+        "human_arousal_exact": -0.301,
+        "prompt_valence": -0.5,
+        "prompt_arousal": -0.3
+      },
+      "target": {
+        "image": "20260730T220729_313799Z_sadness.jpg",
+        "human_valence": -0.504,
+        "human_arousal": 0.501
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": -0.6,
+            "arousal": -0.3,
+            "confidence": 0.9,
+            "apparent_expression": "sad pout",
+            "rationale": "A prominent lower-lip pout paired with downturned mouth corners and heavy eyes communicates a sad expression."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.09599999999999997,
+            "arousal_absolute_error": 0.8009999999999999
+          },
+          "raw_response": "{\"valence\": -0.6, \"arousal\": -0.3, \"confidence\": 0.9, \"apparent_expression\": \"sad pout\", \"rationale\": \"A prominent lower-lip pout paired with downturned mouth corners and heavy eyes communicates a sad expression.\"}",
+          "prompt": "The categorical expression is known to be sadness. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": -0.6,
+            "arousal": -0.2,
+            "confidence": 0.85,
+            "apparent_expression": "pouting sadness",
+            "rationale": "The pronounced lower lip pout and downturned mouth corners show a more overtly negative and slightly more active sad expression than the reference."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.09599999999999997,
+            "arousal_absolute_error": 0.7010000000000001
+          },
+          "raw_response": "{\"valence\": -0.6, \"arousal\": -0.2, \"confidence\": 0.85, \"apparent_expression\": \"pouting sadness\", \"rationale\": \"The pronounced lower lip pout and downturned mouth corners show a more overtly negative and slightly more active sad expression than the reference.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended sadness expressions. The categorical expression of both images is known to be sadness; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: -0.5\n- reference arousal: -0.3\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    },
+    {
+      "emotion": "anger",
+      "reference": {
+        "image": "20260730T220754_856766Z_anger.jpg",
+        "human_valence_exact": -0.704,
+        "human_arousal_exact": 0.6,
+        "prompt_valence": -0.7,
+        "prompt_arousal": 0.6
+      },
+      "target": {
+        "image": "20260730T220758_916273Z_anger.jpg",
+        "human_valence": -0.696,
+        "human_arousal": 0.496
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": 0.6,
+            "confidence": 0.9,
+            "apparent_expression": "angry scowl",
+            "rationale": "Furrowed eyebrows, glaring eyes, a wrinkled nose, and a tightly pressed downturned mouth indicate a strong angry expression."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.0040000000000000036,
+            "arousal_absolute_error": 0.10399999999999998
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": 0.6, \"confidence\": 0.9, \"apparent_expression\": \"angry scowl\", \"rationale\": \"Furrowed eyebrows, glaring eyes, a wrinkled nose, and a tightly pressed downturned mouth indicate a strong angry expression.\"}",
+          "prompt": "The categorical expression is known to be anger. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": 0.7,
+            "confidence": 0.9,
+            "apparent_expression": "intense angry glare",
+            "rationale": "Compared to the reference, the eyes are opened wider with increased tension around the nose and brows, reflecting higher arousal."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.0040000000000000036,
+            "arousal_absolute_error": 0.20399999999999996
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": 0.7, \"confidence\": 0.9, \"apparent_expression\": \"intense angry glare\", \"rationale\": \"Compared to the reference, the eyes are opened wider with increased tension around the nose and brows, reflecting higher arousal.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended anger expressions. The categorical expression of both images is known to be anger; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: -0.7\n- reference arousal: +0.6\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    },
+    {
+      "emotion": "contempt",
+      "reference": {
+        "image": "20260730T220231_755842Z_contempt.jpg",
+        "human_valence_exact": -0.696,
+        "human_arousal_exact": -0.496,
+        "prompt_valence": -0.7,
+        "prompt_arousal": -0.5
+      },
+      "target": {
+        "image": "20260730T220232_957074Z_contempt.jpg",
+        "human_valence": -0.704,
+        "human_arousal": -0.501
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": -0.5,
+            "arousal": 0.2,
+            "confidence": 0.9,
+            "apparent_expression": "contempt",
+            "rationale": "Slightly lowered brows combined with an asymmetric tightening of the mouth convey a contemptuous expression."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.20399999999999996,
+            "arousal_absolute_error": 0.7010000000000001
+          },
+          "raw_response": "{\"valence\": -0.5, \"arousal\": 0.2, \"confidence\": 0.9, \"apparent_expression\": \"contempt\", \"rationale\": \"Slightly lowered brows combined with an asymmetric tightening of the mouth convey a contemptuous expression.\"}",
+          "prompt": "The categorical expression is known to be contempt. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": -0.5,
+            "confidence": 0.95,
+            "apparent_expression": "subdued contempt",
+            "rationale": "The facial cues, including the furrowed brows, narrowed gaze, and tight, downward-turned lip position, are identical to those in the reference image."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.0040000000000000036,
+            "arousal_absolute_error": 0.0010000000000000009
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": -0.5, \"confidence\": 0.95, \"apparent_expression\": \"subdued contempt\", \"rationale\": \"The facial cues, including the furrowed brows, narrowed gaze, and tight, downward-turned lip position, are identical to those in the reference image.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended contempt expressions. The categorical expression of both images is known to be contempt; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: -0.7\n- reference arousal: -0.5\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    },
+    {
+      "emotion": "disgust",
+      "reference": {
+        "image": "20260730T220932_085362Z_disgust.jpg",
+        "human_valence_exact": -0.704,
+        "human_arousal_exact": 0.603,
+        "prompt_valence": -0.7,
+        "prompt_arousal": 0.6
+      },
+      "target": {
+        "image": "20260730T220933_741354Z_disgust.jpg",
+        "human_valence": -0.701,
+        "human_arousal": 0.8
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": -0.6,
+            "arousal": 0.3,
+            "confidence": 0.9,
+            "apparent_expression": "disgust",
+            "rationale": "The wrinkled nose, narrowed eyes, and downturned, tense lips communicate strong aversion and disgust."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.10099999999999998,
+            "arousal_absolute_error": 0.5
+          },
+          "raw_response": "{\"valence\": -0.6, \"arousal\": 0.3, \"confidence\": 0.9, \"apparent_expression\": \"disgust\", \"rationale\": \"The wrinkled nose, narrowed eyes, and downturned, tense lips communicate strong aversion and disgust.\"}",
+          "prompt": "The categorical expression is known to be disgust. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": -0.7,
+            "arousal": 0.6,
+            "confidence": 0.9,
+            "apparent_expression": "intense disgust",
+            "rationale": "The face exhibits a strongly downturned mouth, wrinkled nose, and narrowed eyes facing forward, maintaining a level of negative valence and activation similar to the reference."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.0010000000000000009,
+            "arousal_absolute_error": 0.20000000000000007
+          },
+          "raw_response": "{\"valence\": -0.7, \"arousal\": 0.6, \"confidence\": 0.9, \"apparent_expression\": \"intense disgust\", \"rationale\": \"The face exhibits a strongly downturned mouth, wrinkled nose, and narrowed eyes facing forward, maintaining a level of negative valence and activation similar to the reference.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended disgust expressions. The categorical expression of both images is known to be disgust; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: -0.7\n- reference arousal: +0.6\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    },
+    {
+      "emotion": "fear",
+      "reference": {
+        "image": "20260730T221116_008542Z_fear.jpg",
+        "human_valence_exact": -0.696,
+        "human_arousal_exact": -0.51,
+        "prompt_valence": -0.7,
+        "prompt_arousal": -0.5
+      },
+      "target": {
+        "image": "20260730T221422_184540Z_fear.jpg",
+        "human_valence": -0.699,
+        "human_arousal": 0.597
+      },
+      "conditions": {
+        "zero_shot": {
+          "prediction": {
+            "valence": -0.5,
+            "arousal": 0.7,
+            "confidence": 0.85,
+            "apparent_expression": "fearful shock",
+            "rationale": "Widened eyes exposing whites and a tense open mouth display a high-arousal fearful expression."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.19899999999999995,
+            "arousal_absolute_error": 0.10299999999999998
+          },
+          "raw_response": "{\"valence\": -0.5, \"arousal\": 0.7, \"confidence\": 0.85, \"apparent_expression\": \"fearful shock\", \"rationale\": \"Widened eyes exposing whites and a tense open mouth display a high-arousal fearful expression.\"}",
+          "prompt": "The categorical expression is known to be fear. Do not reclassify it.\n\nInspect the single target image. Estimate the affect this specific person appears to be intentionally communicating through their face. Do not infer their true private emotional state, identity, personality, or circumstances. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        },
+        "one_shot": {
+          "prediction": {
+            "valence": -0.3,
+            "arousal": 0.5,
+            "confidence": 0.85,
+            "apparent_expression": "fearful grimace",
+            "rationale": "The subject shows wider eyes and an open, smiling grimace exposing teeth, indicating higher facial activation and slightly less negative valence than the reference."
+          },
+          "absolute_error": {
+            "valence_absolute_error": 0.39899999999999997,
+            "arousal_absolute_error": 0.09699999999999998
+          },
+          "raw_response": "{\"valence\": -0.3, \"arousal\": 0.5, \"confidence\": 0.85, \"apparent_expression\": \"fearful grimace\", \"rationale\": \"The subject shows wider eyes and an open, smiling grimace exposing teeth, indicating higher facial activation and slightly less negative valence than the reference.\"}",
+          "prompt": "You are calibrating valence and arousal for one specific person's intended fear expressions. The categorical expression of both images is known to be fear; do not reclassify it.\n\nImage 1 is a human-labeled reference for this person:\n- reference valence: -0.7\n- reference arousal: -0.5\n\nImage 2 is the target to label. Estimate the target relative to the reference. If its visible cues appear more or less pleasant or activated than the reference, adjust the corresponding score. Do not automatically copy the reference values. Judge the affect intentionally communicated through the face, not the person's true private emotional state. Ignore clothing and background.\n\nScore two independent dimensions from -1.0 to +1.0, using increments of 0.1:\n- Valence: -1.0 extremely negative/unpleasant; -0.5 clearly negative; 0.0 neutral or mixed; +0.5 clearly positive; +1.0 extremely positive/pleasant.\n- Arousal: -1.0 extremely calm/drowsy/deactivated; -0.5 subdued/calm; 0.0 ordinary baseline; +0.5 clearly activated; +1.0 intensely activated/agitated/excited.\nArousal is activation, not positivity and not merely expression-category intensity. Judge only visible facial cues such as brows, eyes, mouth, and muscle tension. Treat fine distinctions as uncertain.\n\nReturn exactly one JSON object, with no markdown: {\"valence\": number, \"arousal\": number, \"confidence\": number from 0 to 1, \"apparent_expression\": \"short phrase\", \"rationale\": \"one concise sentence about visible facial cues\"}"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "zero_shot": {
+      "scored_targets": 6,
+      "valence_mae": 0.1168333333333333,
+      "arousal_mae": 0.418
+    },
+    "one_shot": {
+      "scored_targets": 6,
+      "valence_mae": 0.10016666666666667,
+      "arousal_mae": 0.2006666666666667
+    },
+    "one_shot_change": {
+      "valence_mae": -0.016666666666666635,
+      "arousal_mae": -0.2173333333333333,
+      "interpretation": "negative means one-shot improved"
+    }
+  }
+}

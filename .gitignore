@@ -59,3 +59,19 @@ goals/
 /goals/
 
 demos/
+
+# Keep the expression-model research synthesis reproducible without committing
+# the large downloaded evidence cache or other experimental programs.
+!/experimentation/
+/experimentation/*
+!/experimentation/research/
+!/experimentation/research/*
+/experimentation/research/raw/
+
+# Keep the small personalization programs versioned; captured faces remain local.
+!/experimentation/model_training/
+!/experimentation/model_training/**/
+/experimentation/model_training/human_data/
+/experimentation/model_training/artifacts/
+/experimentation/model_training/synthetic_data/
+/experimentation/model_training/results/vlm_va_anchor_interpolation_visuals/
