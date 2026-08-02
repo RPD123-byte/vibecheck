@@ -29,6 +29,8 @@ class MemoryPreferences {
   value: FeaturePreferences = {
     notch_enabled: false,
     codex_enabled: false,
+    component_reactions_enabled: false,
+    emoji_recents: [],
   };
 
   read(): FeaturePreferences {
@@ -53,6 +55,8 @@ describe("RuntimeClient", () => {
     preferences.value = {
       notch_enabled: true,
       codex_enabled: false,
+      component_reactions_enabled: false,
+      emoji_recents: [],
     };
     const preflight = vi.fn(async () => false);
     const client = new RuntimeClient(
@@ -142,6 +146,7 @@ let state = {
   features: {
     revision: 0,
     notch_enabled: false,
+    component_reactions_enabled: false,
     integrations: { codex_enabled: false },
     paused: false
   },
@@ -184,6 +189,7 @@ const server = net.createServer((stream) => {
           },
           aggregate:
             message.features.notch_enabled ||
+            message.features.component_reactions_enabled ||
             message.features.integrations.codex_enabled
               ? "active"
               : "off"

@@ -17,6 +17,7 @@ async def test_control_socket_permissions_auth_and_idempotency() -> None:
         "features": {
             "revision": 0,
             "notch_enabled": False,
+            "component_reactions_enabled": False,
             "integrations": {"codex_enabled": False},
             "paused": False,
         }
@@ -60,6 +61,7 @@ async def test_control_socket_permissions_auth_and_idempotency() -> None:
         "expected_revision": 0,
         "features": {
             "notch_enabled": True,
+            "component_reactions_enabled": False,
             "integrations": {"codex_enabled": False},
             "paused": False,
         },
@@ -170,6 +172,7 @@ async def test_control_serializes_concurrent_revisions_and_rejects_second_owner(
         "expected_revision": 0,
         "features": {
             "notch_enabled": True,
+            "component_reactions_enabled": False,
             "integrations": {"codex_enabled": False},
             "paused": False,
         },

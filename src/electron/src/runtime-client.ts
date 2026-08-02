@@ -91,13 +91,17 @@ export class RuntimeClient extends EventEmitter {
   }
 
   async setFeature(
-    name: "notch" | "codex",
+    name: "notch" | "codex" | "component_reactions",
     enabled: boolean,
   ): Promise<RuntimeSnapshot> {
     const current = this.requireState();
     const features: Omit<Features, "revision"> = {
       notch_enabled:
         name === "notch" ? enabled : current.features.notch_enabled,
+      component_reactions_enabled:
+        name === "component_reactions"
+          ? enabled
+          : current.features.component_reactions_enabled,
       integrations: {
         codex_enabled:
           name === "codex"
@@ -110,6 +114,8 @@ export class RuntimeClient extends EventEmitter {
     this.preferences.write({
       notch_enabled: state.features.notch_enabled,
       codex_enabled: state.features.integrations.codex_enabled,
+      component_reactions_enabled: state.features.component_reactions_enabled,
+      emoji_recents: this.preferences.read().emoji_recents,
     });
     return state;
   }
@@ -118,6 +124,7 @@ export class RuntimeClient extends EventEmitter {
     const current = this.requireState();
     return this.setFeatures({
       notch_enabled: current.features.notch_enabled,
+      component_reactions_enabled: current.features.component_reactions_enabled,
       integrations: {
         codex_enabled: current.features.integrations.codex_enabled,
       },
@@ -341,12 +348,18 @@ export class RuntimeClient extends EventEmitter {
   private async reapplyPreferences(): Promise<void> {
     await this.request("get_state", {});
     const preferred = this.preferences.read();
-    if (!preferred.notch_enabled && !preferred.codex_enabled) return;
+    if (
+      !preferred.notch_enabled &&
+      !preferred.codex_enabled &&
+      !preferred.component_reactions_enabled
+    )
+      return;
     if (this.featurePreflight && !(await this.featurePreflight(preferred))) {
       return;
     }
     await this.setFeatures({
       notch_enabled: preferred.notch_enabled,
+      component_reactions_enabled: preferred.component_reactions_enabled,
       integrations: { codex_enabled: preferred.codex_enabled },
       paused: false,
     });
@@ -457,5 +470,7 @@ export function preferencesFromState(
   return {
     notch_enabled: state.features.notch_enabled,
     codex_enabled: state.features.integrations.codex_enabled,
+    component_reactions_enabled: state.features.component_reactions_enabled,
+    emoji_recents: [],
   };
 }

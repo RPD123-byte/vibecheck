@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'none'; style-src 'self'"
+    />
+    <title>Vibecheck browser reaction fixture</title>
+    <style>
+      body {
+        margin: 40px;
+        font: 16px/1.4 system-ui, sans-serif;
+      }
+      #target {
+        width: 240px;
+        min-height: 72px;
+        border: 1px solid #aaa;
+        border-radius: 12px;
+        background: #f7f5ff;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="target" type="button">Selectable browser component</button>
+    <p id="exact">This exact sentence can be selected.</p>
+  </body>
+</html>

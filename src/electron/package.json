@@ -1,22 +1,27 @@
 {
   "name": "@vibecheck/menubar",
   "productName": "Vibecheck",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Private on-device expression controls for Vibecheck",
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package --arch=arm64",
-    "make": "electron-forge make --arch=arm64",
+    "browser:build": "node scripts/build-browser-extension.mjs",
+    "safari:build": "bash scripts/build-safari-extension.sh",
+    "package": "npm run browser:build && npm run safari:build && bash ../../scripts/verify_browser_extension.sh && electron-forge package --arch=arm64",
+    "package:local-signed": "npm run browser:build && npm run safari:build && bash ../../scripts/verify_browser_extension.sh && VIBECHECK_LOCAL_SIGNING=1 electron-forge package --arch=arm64",
+    "make": "npm run browser:build && npm run safari:build && bash ../../scripts/verify_browser_extension.sh && electron-forge make --arch=arm64",
     "format": "prettier --write \"src/**/*.ts\" \"e2e/**/*.ts\" \"*.ts\" \"*.json\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"e2e/**/*.ts\" \"*.ts\" \"*.json\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "electron-forge package --arch=arm64 && playwright test --config playwright.config.ts"
+    "test:e2e": "npm run browser:build && npm run safari:build && bash ../../scripts/verify_browser_extension.sh && electron-forge package --arch=arm64 && playwright test --config playwright.config.ts"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ws": "8.18.3"
+  },
   "devDependencies": {
     "@electron-forge/cli": "7.11.2",
     "@electron-forge/maker-dmg": "7.11.2",
@@ -25,6 +30,7 @@
     "@electron/notarize": "3.1.1",
     "@playwright/test": "1.61.1",
     "@types/node": "24.10.1",
+    "@types/ws": "8.18.1",
     "electron": "43.2.0",
     "prettier": "3.9.6",
     "typescript": "7.0.2",

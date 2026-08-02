@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "id": "fixture-replace",
+  "type": "replace_bundle",
+  "text": "Save changes",
+  "png_path": "/private/tmp/vibecheck-runtime/fixture-event.png"
+}

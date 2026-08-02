@@ -53,15 +53,15 @@ send context.
 The host captures a padded PNG crop of the selected component from the live
 Chromium renderer after the picker closes. Viewport bounds are translated to
 page coordinates and clipped to the visible viewport, so the same path works
-for Paper canvas nodes and scrolled DOM elements. The clipboard contains both a
-plain-language text summary and the PNG. They are exposed as separate pasteboard
-items for Electron (`text/plain` plus an `image/png` file), while an RTFD
-representation embeds both for native rich-text editors. Text-only tools such
-as `pbpaste` deliberately show only the text flavor; they cannot render the
-image item. The Codex turn receives the same text plus the screenshot directly
-as a `localImage` input.
+for Paper canvas nodes and scrolled DOM elements. Every reaction is appended to
+a versioned bundle on one pasteboard item until that bundle is pasted. The
+bundle preserves each plain-language summary with its own raw PNG in reaction
+order. The native paste adapter emits a text-only paste followed by an
+image-only paste for every entry, so the destination receives the complete
+sequence without renderer injection. The Codex turn receives the current
+reaction's text plus screenshot directly as a `localImage` input.
 
-The host injector always copies that context to the macOS clipboard first. It
+The host injector always appends that context to the macOS clipboard first. It
 then asks an experiment-local bridge to inspect Codex:
 
 - with exactly one actively running Codex turn, the bridge interrupts that
@@ -135,6 +135,45 @@ mode, then hover and click a component. Added/replaced reactions are copied to
 the clipboard as a readable summary plus a component screenshot, but this
 fixture deliberately does not interrupt Codex. Press Control-C when finished.
 
+## Paste text and image into any app
+
+Run the native adapter once and leave it open:
+
+```bash
+./scripts/run_paste_adapter.sh
+```
+
+The launcher discovers DevTools ports already enabled on running Electron apps,
+starts or reuses their context hosts, and then starts the native shortcut
+listener. To limit it to one source app, pass its port, for example
+`--port 9225` for Paper. Keep this terminal open; otherwise the reaction UI can
+remain visible while its context outbox has no host to copy events.
+
+React to one or more components before returning to the destination. Each
+reaction is appended to the same marked clipboard bundle. Focus any destination
+editor and use the normal `⌘V`. Highlight & React intercepts only marked
+context, then emits a text-only `⌘V` and image-only `⌘V` for each bundled
+component in order, restoring focus between events. The destination receives
+ordinary paste events; no renderer script is injected into that app.
+
+After the sequence succeeds, the adapter restores the bundle with a consumed
+flag. Repeating `⌘V` can paste it again, but the next new reaction sees that flag
+and starts a fresh bundle rather than appending to already-pasted feedback.
+Replacing the clipboard yourself also starts a fresh bundle. `⌃⌥V` remains
+available as an explicit fallback.
+
+The combined launcher uses conservative Codex delivery by default: exactly one
+active task is interrupted and receives the current reaction, while zero or
+multiple active tasks leave everything on the accumulated clipboard only. To
+disable automatic Codex interruption while keeping clipboard delivery, run:
+
+```bash
+HIGHLIGHT_CONTEXT_MODE=clipboard ./scripts/run_paste_adapter.sh
+```
+
+The adapter uses the existing Highlight & React app identity and requires the
+same macOS Accessibility permission as the native selection experiment.
+
 ## Run it in another Electron app
 
 Quit the target app yourself first, then give the shared launcher its `.app`
@@ -201,7 +240,9 @@ cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/high
 
 The preview discovers currently running Electron/CEF apps and shows the
 unique localhost port that would be assigned to each. It does not launch every
-installed app, and it ignores native AppKit apps and standalone browsers.
+installed app, and it ignores native AppKit apps and standalone browsers. The
+separate browser experiment below exercises Chrome without changing this
+launcher or the Vibecheck application.
 
 When the preview is correct, run the explicit restart form from an external
 terminal:
@@ -229,11 +270,153 @@ later requires a trusted local host component (for example, the Vibecheck menu
 bar app) that owns discovery and relaunch, while the existing renderer payload
 continues to own the in-page UI.
 
-Standalone browsers are deliberately excluded. Current Chrome releases require
-remote debugging to use a separate non-default browser profile, which would not
-contain the user's normal signed-in site state. A browser extension is the
-correct packaging for using the same interaction on ordinary websites; it is a
-separate delivery mechanism from Electron app injection.
+## Browser process-ownership experiment
+
+The Chrome experiment proves that the same process ownership and DevTools
+mechanism can select components in ordinary browser pages. It is deliberately
+contained in this experiment directory and does not add browser behavior to
+Vibecheck's `src`.
+
+Run the isolated test:
+
+```bash
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
+node scripts/browser_cdp_experiment.mjs --headless
+```
+
+Or run its integration test:
+
+```bash
+node --test Tests/browser_cdp_experiment.test.mjs
+```
+
+The harness starts the installed Chrome executable with a temporary profile and
+a loopback-only, randomly assigned DevTools port. It serves local main-frame,
+same-origin-frame, cross-origin-frame, open-shadow-root, closed-shadow-root, and
+strict-content-security-policy fixtures. It injects the existing renderer
+source without copying browser-specific logic into the renderer.
+
+The measured access in Chrome 150 is:
+
+| Capability | Result |
+| --- | --- |
+| Read normal page text and computed CSS | Yes |
+| Mutate page CSS and observe the computed result | Yes |
+| Route `⌃⌥R` through Chrome's CDP input pipeline | Yes |
+| Route a literal macOS `⌃⌥R` keystroke into the page | Yes |
+| Select an exact browser text range | Yes |
+| Hover, lock, and react to a DOM component | Yes |
+| Suppress the selected component's underlying click | Yes |
+| Capture a cropped PNG and structured component context | Yes |
+| Inject and select inside a same-origin iframe | Yes |
+| Inject and select inside a cross-origin, out-of-process iframe | Yes, by attaching to its separate CDP target |
+| Read an open shadow root from page JavaScript | Yes |
+| Inspect a closed shadow root | Yes through CDP piercing; no from ordinary page JavaScript |
+| Preserve the browser's same-origin restriction for page JavaScript | Yes |
+| Operate on a page whose CSP rejects inline styles | Yes, when the host installs the CSS through the CDP CSS domain |
+| Auto-attach to a newly opened tab | Yes |
+| Reinject after a full same-tab navigation | Yes |
+| Auto-attach to a new cross-origin renderer process | Yes |
+
+The automated test uses CDP `Input.dispatchKeyEvent` and
+`Input.dispatchMouseEvent`, not synthetic `KeyboardEvent` or `MouseEvent`
+objects. A separate visible run was performed with Chrome as the only running
+Chrome instance. A literal macOS `Control-Option-R`, followed by moving and
+clicking on the component, entered selection mode and displayed the reaction
+bar. The component's underlying control remained disabled by the picker.
+
+Cross-origin frames are separate renderer targets under Chrome site isolation.
+A long-running browser owner therefore needs target auto-attach, per-target
+injection, navigation/reload reinjection, and target cleanup. Strict CSP pages
+also need CSS installed through the CDP CSS domain because the page correctly
+rejects an injected inline `<style>` element. Both behaviors are demonstrated
+by the experiment. The owner prototype auto-attaches to new page and iframe
+targets, registers the source for future documents, and was verified across a
+new tab and a complete navigation.
+
+The installed Chrome 150 was also tested against its real default user profile.
+Chrome started with the loopback debugging flags visible in its process command
+line but deliberately exposed no debugging endpoint. Restarting the browser
+therefore does not make the existing signed-in default profile attachable. A
+CDP owner can manage a separate Vibecheck-owned profile, but normal-profile
+support requires another delivery route instead of silently enabling CDP.
+
+Chrome's tab strip, address bar, extension buttons, bookmarks, menus, and tabs
+were all visible through macOS Accessibility with actionable roles. They are
+not webpage DOM, so they require a native Accessibility target adapter rather
+than the renderer selector. The experiment confirmed visibility; it did not
+combine those controls with the component screenshot and reaction pipeline.
+Restricted internal pages may also require separate handling.
+
+The normal Chrome instance was gracefully quit for this explicit lifecycle
+test. Its original profile and previously open 20-tab window were restored
+afterward, and Chrome was returned to its ordinary launch without a debugging
+listener. The repeatable automated test remains isolated and never touches the
+normal profile.
+
+## Safari WebDriver experiment
+
+Safari 26.5.2 exposes its webpage DOM through WebDriver/Web Inspector rather
+than Chrome's DevTools protocol. The experiment-only harness is:
+
+```bash
+cd /Users/computer/vibe-check-worktrees/highlight_and_react/experimentation/highlight_and_react
+node scripts/safari_webdriver_experiment.mjs
+```
+
+Its integration test is:
+
+```bash
+node --test Tests/safari_webdriver_experiment.test.mjs
+```
+
+The measured access in Safari 26.5.2 is:
+
+| Capability | Result |
+| --- | --- |
+| Read DOM text and computed CSS | Yes |
+| Mutate CSS and observe the computed result | Yes |
+| Inject the shared Highlight & React renderer | Yes |
+| Route `⌃⌥R` through WebDriver keyboard actions | Yes |
+| Route a literal macOS `⌃⌥R` into the page | Yes |
+| Select an exact text range | Yes |
+| Hover and lock a DOM component through WebDriver pointer actions | Yes |
+| Suppress the component's underlying click | Yes |
+| Create the structured reaction event | Yes |
+| Capture page and selected-element PNGs | Yes |
+| Inject into same-origin and cross-origin frames | Yes |
+| Read an open shadow root | Yes |
+| Read a closed shadow root from page JavaScript | No, as expected |
+| Retain injection after navigation | No |
+| Detect navigation and reinject from the host | Yes |
+
+The Safari integration test passed after the user enabled Safari's vendor
+automation service with `safaridriver --enable`. If that permission is absent,
+the test skips with the returned reason rather than changing Safari settings.
+
+SafariDriver accepts a `--bidi` argument and a `webSocketUrl` capability, but
+Safari 26.5.2 did not expose a listener on the requested BiDi port. The
+standards-based `script.addPreloadScript` route could therefore not be used.
+Unlike the Chrome owner, the demonstrated Safari host must detect a navigation
+and repair the injection afterward.
+
+Safari also isolates WebDriver sessions in special automation windows that are
+separate from ordinary Safari windows and browsing data. A physical
+`Control-Option-R` reached the injected automation page and entered selection
+mode. Safari then deliberately blocked the physical mouse click with its
+“remotely controlled by an automated test” safety dialog. The equivalent
+WebDriver pointer movement and click completed successfully. Stopping the
+automation session closes its isolated window.
+
+Consequently, SafariDriver proves that the shared selector works in WebKit, but
+it is not a production mechanism for silently owning the user's existing
+Safari windows. Normal-profile Safari support needs a different delivery route
+that is allowed to run in ordinary tabs.
+
+Safari's address field, back/forward buttons, new-tab button, tab overview,
+window controls, and application menus were independently confirmed through
+macOS Accessibility. As with Chrome, those controls need a native
+Accessibility adapter; WebDriver operates on webpage content.
 
 ## Run it in Codex
 
@@ -316,6 +499,8 @@ Use `--demo-seconds 10` to make the demo exit automatically.
 swift test
 ./scripts/build_app.sh
 node --test Tests/renderer_injection.test.mjs
+node --test Tests/browser_cdp_experiment.test.mjs
+node --test Tests/safari_webdriver_experiment.test.mjs
 cargo test --manifest-path CodexBridge/Cargo.toml
 cargo clippy --manifest-path CodexBridge/Cargo.toml --all-targets -- -D warnings
 ```

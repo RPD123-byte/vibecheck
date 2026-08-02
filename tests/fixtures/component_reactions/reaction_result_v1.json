@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "event_id": "fixture-event",
+  "outcome": "sent",
+  "thread_id": "fixture-thread"
+}

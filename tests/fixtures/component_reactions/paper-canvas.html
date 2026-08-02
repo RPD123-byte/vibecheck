@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Vibecheck Paper adapter fixture</title>
+    <style>
+      #canvas { width: 640px; height: 420px; background: #eee; }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="640" height="420"></canvas>
+    <script>
+      globalThis.__paperVibecheckAdapter = {
+        hitTest(x, y) {
+          const canvas = document.querySelector("#canvas");
+          const bounds = canvas.getBoundingClientRect();
+          if (x < bounds.left || y < bounds.top || x > bounds.right || y > bounds.bottom) return null;
+          return {
+            label: "Paper fixture frame",
+            bounds: {
+              x: bounds.left + 48,
+              y: bounds.top + 36,
+              width: bounds.width - 96,
+              height: bounds.height - 72
+            }
+          };
+        }
+      };
+    </script>
+  </body>
+</html>

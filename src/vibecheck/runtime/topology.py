@@ -16,7 +16,9 @@ def required_roles(state: FeatureState) -> frozenset[str]:
         roles.add("notch")
     if state.codex_enabled:
         roles.add("interruption")
-    if roles:
+    if state.component_reactions_enabled:
+        roles.add("interruption")
+    if state.notch_enabled or state.codex_enabled:
         roles.add("inference")
     return frozenset(roles)
 

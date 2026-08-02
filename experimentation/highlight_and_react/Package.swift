@@ -21,7 +21,10 @@ let package = Package(
             name: "HighlightAndReact",
             dependencies: ["HighlightCore"]
         ),
-        .executableTarget(name: "HighlightContextClipboard"),
+        .executableTarget(
+            name: "HighlightContextClipboard",
+            dependencies: ["HighlightCore"]
+        ),
         .testTarget(
             name: "HighlightCoreTests",
             dependencies: ["HighlightCore"]

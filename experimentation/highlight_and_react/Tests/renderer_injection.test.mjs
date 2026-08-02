@@ -247,6 +247,96 @@ test('host context delivery copies before conservatively invoking the Codex brid
   assert.equal(clipboardOnly.codex.status, 'skipped');
 });
 
+test('native paste adapter bundles reactions and emits every text/PNG pair', async () => {
+  const clipboardSource = await readFile(
+    resolve(
+      projectDirectory,
+      'Sources/HighlightContextClipboard/main.swift',
+    ),
+    'utf8',
+  );
+  const bundleSource = await readFile(
+    resolve(
+      projectDirectory,
+      'Sources/HighlightCore/ClipboardContextBundle.swift',
+    ),
+    'utf8',
+  );
+  assert.match(
+    clipboardSource,
+    /ClipboardContextPasteboard\.append\(newEntry\)/,
+  );
+  assert.match(
+    bundleSource,
+    /item\.setString\(bundle\.aggregateText, forType: \.string\)/,
+  );
+  assert.match(bundleSource, /item\.setData\(latestPNG, forType: \.png\)/);
+  assert.match(
+    bundleSource,
+    /item\.setString\(markerValue, forType: markerType\)/,
+  );
+  assert.match(
+    bundleSource,
+    /item\.setData\(try JSONEncoder\(\)\.encode\(bundle\), forType: bundleType\)/,
+  );
+  assert.doesNotMatch(clipboardSource, /makeReactionCard|NSAttributedString/);
+
+  const appSource = await readFile(
+    resolve(projectDirectory, 'Sources/HighlightAndReact/main.swift'),
+    'utf8',
+  );
+  const sequence = appSource.slice(
+    appSource.indexOf('private func deliver(_ payload: PasteSequencePayload)'),
+    appSource.indexOf('private func writeText(_ text: String)'),
+  );
+  assert.match(
+    sequence,
+    /payload\.bundle\.entries\.enumerated\(\)[\s\S]*writeText[\s\S]*postPasteShortcut[\s\S]*writePNG[\s\S]*postPasteShortcut[\s\S]*payload\.restore\(consumed: true\)/,
+  );
+  assert.match(appSource, /payload\.restore\(consumed: false\)/);
+  assert.match(appSource, /keyCode == 9[\s\S]*pasteShortcutEnabled/);
+  assert.match(
+    appSource,
+    /relevantModifiers == \.maskCommand[\s\S]*PasteSequencePayload\.isMarked/,
+  );
+  assert.match(appSource, /init\(delayMilliseconds: Int = 450\)/);
+
+  const launcher = await readFile(
+    resolve(projectDirectory, 'scripts/run_paste_adapter.sh'),
+    'utf8',
+  );
+  assert.match(launcher, /--paste-adapter/);
+  assert.doesNotMatch(launcher, /app_dir=\$\("\$script_dir\/build_app\.sh"\)/);
+  assert.match(launcher, /project_dir\/build\/HighlightAndReact\.app/);
+  assert.match(launcher, /attach_electron_renderer\.sh/);
+  assert.match(launcher, /discover_devtools_ports\.sh/);
+  assert.match(launcher, /HIGHLIGHT_CONTEXT_MODE/);
+  assert.match(launcher, /HIGHLIGHT_CONTEXT_MODE:-codex/);
+  assert.match(launcher, /reusing existing signed app build/);
+});
+
+test('paste adapter discovery ignores Chromium port zero', () => {
+  const discovery = resolve(
+    projectDirectory,
+    'scripts/discover_devtools_ports.sh',
+  );
+  const result = spawnSync(
+    discovery,
+    [],
+    {
+      encoding: 'utf8',
+      input: [
+        'Remotion --remote-debugging-port=0 --headless',
+        'Paper --remote-debugging-port=9225',
+        'Paper Helper --remote-debugging-port=9225',
+        'Slack --remote-debugging-port 9224',
+      ].join('\n'),
+    },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '9224\n9225\n');
+});
+
 test('installed Messages Tapback vectors are available to the injector', async () => {
   const assets = await loadSystemTapbackAssets();
   assert.deepEqual(Object.keys(assets).sort(), [

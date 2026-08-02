@@ -10,6 +10,8 @@ private struct Options {
     var debugAccessibility = false
     var fixture = false
     var legacyGlobal = false
+    var pasteAdapter = false
+    var pasteNow = false
     var requestPermission = false
 
     static func parse(_ arguments: [String]) -> Options {
@@ -28,6 +30,10 @@ private struct Options {
                 options.fixture = true
             case "--legacy-global":
                 options.legacyGlobal = true
+            case "--paste-adapter":
+                options.pasteAdapter = true
+            case "--paste-now":
+                options.pasteNow = true
             case "--demo-seconds":
                 if arguments.indices.contains(index + 1) {
                     options.demoSeconds = TimeInterval(arguments[index + 1])
@@ -43,6 +49,8 @@ private struct Options {
                       --debug-accessibility     Log selection Accessibility details
                       --fixture                 Open a selectable keyboard-shortcut test window
                       --legacy-global           Run the different legacy native shortcut path
+                      --paste-adapter           Expand marked Command-V context bundles
+                      --paste-now               Deliver clipboard context once and exit
                       --request-permission      Ask macOS for Accessibility permission
                       --help                    Show this help
                     """
@@ -639,6 +647,197 @@ private final class OverlayController: NSObject {
     }
 }
 
+private enum PasteSequenceError: LocalizedError {
+    case contextMissing
+    case eventCreationFailed
+    case pasteboardWriteFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .contextMissing:
+            "clipboard must contain both plain text and a PNG image"
+        case .eventCreationFailed:
+            "could not create a native Command-V keyboard event"
+        case .pasteboardWriteFailed:
+            "macOS rejected a temporary pasteboard payload"
+        }
+    }
+}
+
+private struct PasteSequencePayload {
+    let bundle: ClipboardContextBundle
+
+    static func read(from pasteboard: NSPasteboard = .general) throws
+        -> PasteSequencePayload
+    {
+        if let bundle = ClipboardContextPasteboard.read(from: pasteboard) {
+            return PasteSequencePayload(bundle: bundle)
+        }
+        throw PasteSequenceError.contextMissing
+    }
+
+    static func isMarked(in pasteboard: NSPasteboard = .general) -> Bool {
+        ClipboardContextPasteboard.isMarked(pasteboard)
+    }
+
+    func restore(
+        consumed: Bool,
+        to pasteboard: NSPasteboard = .general
+    ) throws {
+        let restoredBundle = consumed ? bundle.markingConsumed() : bundle
+        try ClipboardContextPasteboard.write(restoredBundle, to: pasteboard)
+    }
+}
+
+private final class PasteSequenceAdapter {
+    private let delay: TimeInterval
+    private let lock = NSLock()
+    private var deliveryInProgress = false
+
+    init(delayMilliseconds: Int = 450) {
+        delay = Double(delayMilliseconds) / 1_000
+    }
+
+    func deliverCurrentClipboard() {
+        lock.lock()
+        guard !deliveryInProgress else {
+            lock.unlock()
+            return
+        }
+        deliveryInProgress = true
+        lock.unlock()
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            defer {
+                self?.lock.lock()
+                self?.deliveryInProgress = false
+                self?.lock.unlock()
+            }
+            do {
+                try self?.deliverCurrentClipboardSynchronously()
+                print(
+                    "[highlight-paste-adapter] pasted clipboard bundle; " +
+                        "clipboard bundle marked consumed and restored"
+                )
+                fflush(stdout)
+            } catch {
+                fputs(
+                    "[highlight-paste-adapter] \(error.localizedDescription)\n",
+                    stderr
+                )
+                fflush(stderr)
+            }
+        }
+    }
+
+    func deliverCurrentClipboardSynchronously() throws {
+        try deliver(PasteSequencePayload.read())
+    }
+
+    private func deliver(_ payload: PasteSequencePayload) throws {
+        let focusedElement = currentFocusedElement()
+        let targetApplication =
+            NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            ?? "unknown"
+        print(
+            "[highlight-paste-adapter] target=\(targetApplication) " +
+                "contexts=\(payload.bundle.entries.count)"
+        )
+        fflush(stdout)
+        do {
+            for (index, entry) in payload.bundle.entries.enumerated() {
+                try writeText(entry.text)
+                try postPasteShortcut()
+                print(
+                    "[highlight-paste-adapter] context=\(index + 1) " +
+                        "emitted text Command-V"
+                )
+                fflush(stdout)
+                Thread.sleep(forTimeInterval: delay)
+
+                restoreFocus(focusedElement)
+                try writePNG(entry.png)
+                try postPasteShortcut()
+                print(
+                    "[highlight-paste-adapter] context=\(index + 1) " +
+                        "emitted image Command-V"
+                )
+                fflush(stdout)
+                Thread.sleep(forTimeInterval: delay)
+                restoreFocus(focusedElement)
+            }
+            try payload.restore(consumed: true)
+        } catch {
+            try? payload.restore(consumed: false)
+            throw error
+        }
+    }
+
+    private func restoreFocus(_ element: AXUIElement?) {
+        guard let element else {
+            return
+        }
+        AXUIElementSetAttributeValue(
+            element,
+            kAXFocusedAttribute as CFString,
+            kCFBooleanTrue
+        )
+    }
+
+    private func currentFocusedElement() -> AXUIElement? {
+        let systemWide = AXUIElementCreateSystemWide()
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            systemWide,
+            kAXFocusedUIElementAttribute as CFString,
+            &value
+        ) == .success, let value
+        else {
+            return nil
+        }
+        return unsafeBitCast(value, to: AXUIElement.self)
+    }
+
+    private func writeText(_ text: String) throws {
+        let item = NSPasteboardItem()
+        item.setString(text, forType: .string)
+        NSPasteboard.general.clearContents()
+        guard NSPasteboard.general.writeObjects([item]) else {
+            throw PasteSequenceError.pasteboardWriteFailed
+        }
+    }
+
+    private func writePNG(_ png: Data) throws {
+        let item = NSPasteboardItem()
+        item.setData(png, forType: .png)
+        NSPasteboard.general.clearContents()
+        guard NSPasteboard.general.writeObjects([item]) else {
+            throw PasteSequenceError.pasteboardWriteFailed
+        }
+    }
+
+    private func postPasteShortcut() throws {
+        guard let source = CGEventSource(stateID: .hidSystemState),
+              let keyDown = CGEvent(
+                  keyboardEventSource: source,
+                  virtualKey: 9,
+                  keyDown: true
+              ),
+              let keyUp = CGEvent(
+                  keyboardEventSource: source,
+                  virtualKey: 9,
+                  keyDown: false
+              )
+        else {
+            throw PasteSequenceError.eventCreationFailed
+        }
+        keyDown.flags = .maskCommand
+        keyUp.flags = .maskCommand
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
+    }
+}
+
 private final class InputMonitor {
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -646,17 +845,26 @@ private final class InputMonitor {
     private var localPointerMonitor: Any?
     private let onPointerDown: (CGPoint) -> Void
     private let onKeyboardShortcut: () -> Void
+    private let onPasteShortcut: () -> Void
+    private let highlightShortcutEnabled: Bool
+    private let pasteShortcutEnabled: Bool
     private let debugEvents: Bool
-    private var previousShortcutTime: TimeInterval = 0
+    private var previousShortcutTimes: [Int64: TimeInterval] = [:]
 
     init(
         debugEvents: Bool,
+        highlightShortcutEnabled: Bool,
+        pasteShortcutEnabled: Bool,
         onPointerDown: @escaping (CGPoint) -> Void,
-        onKeyboardShortcut: @escaping () -> Void
+        onKeyboardShortcut: @escaping () -> Void,
+        onPasteShortcut: @escaping () -> Void
     ) {
         self.debugEvents = debugEvents
+        self.highlightShortcutEnabled = highlightShortcutEnabled
+        self.pasteShortcutEnabled = pasteShortcutEnabled
         self.onPointerDown = onPointerDown
         self.onKeyboardShortcut = onKeyboardShortcut
+        self.onPasteShortcut = onPasteShortcut
     }
 
     func start() -> Bool {
@@ -682,10 +890,10 @@ private final class InputMonitor {
                 let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
                 let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
                 let flags = event.flags
-                let isShortcut = monitor.isKeyboardShortcut(
+                let isShortcut = monitor.shortcutKind(
                     keyCode: keyCode,
                     flags: flags
-                )
+                ) != nil
                 DispatchQueue.main.async {
                     monitor.receiveKeyDown(
                         keyCode: keyCode,
@@ -728,15 +936,41 @@ private final class InputMonitor {
                 .command,
                 .shift,
             ])
-            let isShortcut =
-                event.keyCode == 15 &&
-                relevantModifiers == [.control, .option]
-            guard isShortcut else {
-                return event
+            if event.keyCode == 9,
+               relevantModifiers == [.command],
+               self.pasteShortcutEnabled,
+               PasteSequencePayload.isMarked()
+            {
+                self.triggerKeyboardShortcut(
+                    keyCode: 9,
+                    source: "app-local-command-v",
+                    isRepeat: event.isARepeat
+                )
+                return nil
             }
-
-            self.triggerKeyboardShortcut(source: "app-local", isRepeat: event.isARepeat)
-            return nil
+            if event.keyCode == 15,
+               relevantModifiers == [.control, .option],
+               self.highlightShortcutEnabled
+            {
+                self.triggerKeyboardShortcut(
+                    keyCode: 15,
+                    source: "app-local",
+                    isRepeat: event.isARepeat
+                )
+                return nil
+            }
+            if event.keyCode == 9,
+               relevantModifiers == [.control, .option],
+               self.pasteShortcutEnabled
+            {
+                self.triggerKeyboardShortcut(
+                    keyCode: 9,
+                    source: "app-local",
+                    isRepeat: event.isARepeat
+                )
+                return nil
+            }
+            return event
         }
         localPointerMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) {
             [weak self] event in
@@ -766,21 +1000,28 @@ private final class InputMonitor {
         flags: CGEventFlags,
         isRepeat: Bool
     ) {
-        let isShortcut = isKeyboardShortcut(keyCode: keyCode, flags: flags)
+        let shortcut = shortcutKind(keyCode: keyCode, flags: flags)
 
-        if debugEvents, isShortcut {
-            fputs("keyboard-shortcut source=event-tap control-option-r\n", stderr)
+        if debugEvents, let shortcut {
+            fputs(
+                "keyboard-shortcut source=event-tap \(shortcut)\n",
+                stderr
+            )
         }
 
-        if isShortcut {
-            triggerKeyboardShortcut(source: "event-tap", isRepeat: isRepeat)
+        if shortcut != nil {
+            triggerKeyboardShortcut(
+                keyCode: keyCode,
+                source: "event-tap",
+                isRepeat: isRepeat
+            )
         }
     }
 
-    private func isKeyboardShortcut(
+    private func shortcutKind(
         keyCode: Int64,
         flags: CGEventFlags
-    ) -> Bool {
+    ) -> String? {
         let shortcutModifiers: CGEventFlags = [.maskControl, .maskAlternate]
         let relevantModifiers = flags.intersection([
             .maskControl,
@@ -788,25 +1029,55 @@ private final class InputMonitor {
             .maskCommand,
             .maskShift,
         ])
-        return keyCode == 15 && relevantModifiers == shortcutModifiers
+        if keyCode == 9,
+           relevantModifiers == .maskCommand,
+           pasteShortcutEnabled,
+           PasteSequencePayload.isMarked()
+        {
+            return "command-v-context"
+        }
+        guard relevantModifiers == shortcutModifiers else {
+            return nil
+        }
+        if keyCode == 15, highlightShortcutEnabled {
+            return "control-option-r"
+        }
+        if keyCode == 9, pasteShortcutEnabled {
+            return "control-option-v"
+        }
+        return nil
     }
 
-    private func triggerKeyboardShortcut(source: String, isRepeat: Bool) {
+    private func triggerKeyboardShortcut(
+        keyCode: Int64,
+        source: String,
+        isRepeat: Bool
+    ) {
         guard !isRepeat else {
             return
         }
 
         let now = ProcessInfo.processInfo.systemUptime
-        guard now - previousShortcutTime > 0.15 else {
+        let previousTime = previousShortcutTimes[keyCode] ?? 0
+        guard now - previousTime > 0.15 else {
             return
         }
-        previousShortcutTime = now
+        previousShortcutTimes[keyCode] = now
 
         if debugEvents {
-            fputs("keyboard-shortcut accepted source=\(source)\n", stderr)
+            fputs(
+                "keyboard-shortcut accepted source=\(source) key=\(keyCode)\n",
+                stderr
+            )
             fflush(stderr)
         }
-        onKeyboardShortcut()
+        if keyCode == 15 {
+            onKeyboardShortcut()
+        } else if keyCode == 9 {
+            print("[highlight-paste-adapter] intercepted context paste")
+            fflush(stdout)
+            onPasteShortcut()
+        }
     }
 
     deinit {
@@ -822,6 +1093,7 @@ private final class InputMonitor {
 private final class AppDelegate: NSObject, NSApplicationDelegate {
     private let options: Options
     private let resolver = TargetResolver()
+    private let pasteSequenceAdapter = PasteSequenceAdapter()
     private var overlay: OverlayController?
     private var monitor: InputMonitor?
     private var statusItem: NSStatusItem?
@@ -845,7 +1117,11 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         if options.fixture {
             showFixture()
         }
-        if !options.fixture, !options.legacyGlobal {
+        if !options.fixture,
+           !options.legacyGlobal,
+           !options.pasteAdapter,
+           !options.pasteNow
+        {
             fputs(
                 """
                 The native global overlay is legacy research and uses a different UI.
@@ -874,8 +1150,34 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        if options.pasteNow {
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                do {
+                    try self?.pasteSequenceAdapter
+                        .deliverCurrentClipboardSynchronously()
+                    print(
+                        "[highlight-paste-adapter] pasted text and image; " +
+                            "clipboard context restored"
+                    )
+                    fflush(stdout)
+                } catch {
+                    fputs(
+                        "[highlight-paste-adapter] \(error.localizedDescription)\n",
+                        stderr
+                    )
+                    fflush(stderr)
+                }
+                DispatchQueue.main.async {
+                    NSApp.terminate(nil)
+                }
+            }
+            return
+        }
+
         let monitor = InputMonitor(
             debugEvents: options.debugAccessibility,
+            highlightShortcutEnabled: options.fixture || options.legacyGlobal,
+            pasteShortcutEnabled: true,
             onPointerDown: { [weak self] point in
                 guard let self else {
                     return
@@ -887,6 +1189,9 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             onKeyboardShortcut: { [weak self] in
                 self?.showOverlayForSelection()
+            },
+            onPasteShortcut: { [weak self] in
+                self?.pasteSequenceAdapter.deliverCurrentClipboard()
             }
         )
         self.monitor = monitor
@@ -905,9 +1210,13 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        print(
-            "Highlight & React is listening. Select text and press Control-Option-R."
-        )
+        let shortcuts = options.pasteAdapter && !options.fixture && !options.legacyGlobal
+            ? "Command-V pastes marked context as text and image."
+            : """
+              Control-Option-R opens Highlight & React. \
+              Command-V pastes marked context as text and image.
+              """
+        print("Highlight & React is listening. \(shortcuts)")
         fflush(stdout)
     }
 

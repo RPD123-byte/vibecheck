@@ -6,13 +6,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-type Action = "notch" | "codex" | "pause" | "recover" | "quit";
+type Action =
+  "notch" | "codex" | "component_reactions" | "pause" | "recover" | "quit";
 
 interface TestHook {
   state(): {
     aggregate: string;
     features: {
       notch_enabled: boolean;
+      component_reactions_enabled: boolean;
       integrations: { codex_enabled: boolean };
       paused: boolean;
     };

@@ -110,6 +110,8 @@ class RuntimeOwner:
         runtime_dir = self.runtime_dir or self.create_runtime_dir()
         emotion_socket = runtime_dir / "emotion.sock"
         status_socket = runtime_dir / "interruption-status.sock"
+        reaction_socket = runtime_dir / "component-reactions.sock"
+        reaction_enabled_file = runtime_dir / "component-reactions.enabled"
         if role == "inference":
             command = self._python_worker_prefix(
                 "inference", "vibecheck.inference.process"
@@ -173,9 +175,14 @@ class RuntimeOwner:
             / "expression_interruption"
             / "Cargo.toml"
         )
+        desktop_owns_codex_gui = self.controller_mode and self.config.manage_codex_gui
         command = self._interruption_prefix(rust_manifest) + [
             "--emotion-socket",
             str(emotion_socket),
+            "--reaction-socket",
+            str(reaction_socket),
+            "--reaction-enabled-file",
+            str(reaction_enabled_file),
             "--status-socket",
             str(status_socket),
             "--runtime-id",
@@ -188,8 +195,18 @@ class RuntimeOwner:
             str(round(self.config.interruption_cooldown_seconds * 1000)),
             "--freshness-ms",
             str(round(self.config.freshness_seconds * 1000)),
-            "--manage-gui" if self.config.manage_codex_gui else "--no-manage-gui",
+            (
+                "--no-manage-gui"
+                if desktop_owns_codex_gui
+                else (
+                    "--manage-gui"
+                    if self.config.manage_codex_gui
+                    else "--no-manage-gui"
+                )
+            ),
         ]
+        if desktop_owns_codex_gui:
+            command.append("--ensure-daemon")
         if self.config.mode in {"demo", "dry-run"}:
             command.append("--dry-run")
         if self.config.thread_id:
@@ -279,6 +296,8 @@ class RuntimeOwner:
             )
             if (
                 next_state.notch_enabled == self.features.notch_enabled
+                and next_state.component_reactions_enabled
+                == self.features.component_reactions_enabled
                 and next_state.integrations == self.features.integrations
                 and next_state.paused == self.features.paused
             ):
@@ -295,6 +314,7 @@ class RuntimeOwner:
         await self._publish_state()
 
     async def _reconcile_locked(self) -> None:
+        self._sync_component_acceptance()
         required = required_roles(self.features)
         removed = {
             role
@@ -318,6 +338,26 @@ class RuntimeOwner:
                 worker.health.pid = None
                 worker.health.stream = "disconnected"
                 worker.health.last_error = None
+
+    def _sync_component_acceptance(self) -> None:
+        if self.runtime_dir is None:
+            return
+        marker = self.runtime_dir / "component-reactions.enabled"
+        enabled = self.features.component_reactions_enabled and not self.features.paused
+        if not enabled:
+            with suppress(FileNotFoundError):
+                marker.unlink()
+            return
+        descriptor = os.open(
+            marker,
+            os.O_CREAT | os.O_WRONLY | os.O_TRUNC | os.O_NOFOLLOW,
+            0o600,
+        )
+        try:
+            os.write(descriptor, f"{self.features.revision}\n".encode())
+        finally:
+            os.close(descriptor)
+        os.chmod(marker, 0o600)
 
     async def _start(self, worker: WorkerSpec) -> None:
         if worker.running:
@@ -399,6 +439,17 @@ class RuntimeOwner:
             if not stderr:
                 with suppress(json.JSONDecodeError):
                     event = json.loads(text)
+                    if (
+                        event.get("type") == "component_input"
+                        and worker.role == "interruption"
+                        and worker.process is process
+                    ):
+                        worker.health.ready = bool(event.get("ready"))
+                        worker.health.stream = "component"
+                        worker.health.last_error = None
+                        self._emit_health()
+                        await self._publish_state()
+                        continue
                     if (
                         event.get("type") == "worker_health"
                         and event.get("role") == worker.role
@@ -572,6 +623,41 @@ class RuntimeOwner:
                 role: worker.health.to_dict() for role, worker in self.workers.items()
             },
             "errors": errors,
+            "component_reactions": {
+                "desired": self.features.component_reactions_enabled,
+                "effective": (
+                    self.features.component_reactions_enabled
+                    and not self.features.paused
+                    and "interruption" in effective
+                    and self.workers["interruption"].health.ready
+                ),
+                "health": (
+                    "paused"
+                    if self.features.paused
+                    and self.features.component_reactions_enabled
+                    else "off"
+                    if not self.features.component_reactions_enabled
+                    else "failed"
+                    if self.workers["interruption"].health.lifecycle == "failed"
+                    else "active"
+                    if "interruption" in effective
+                    and self.workers["interruption"].health.ready
+                    else "starting"
+                ),
+                "reaction_socket": (
+                    str(self.runtime_dir / "component-reactions.sock")
+                    if self.runtime_dir is not None
+                    and self.features.component_reactions_enabled
+                    and not self.features.paused
+                    else None
+                ),
+                "attached_targets": 0,
+                "unavailable_targets": 0,
+                "permission": "unknown",
+                "companion_ready": False,
+                "clipboard_ready": False,
+                "last_error": None,
+            },
         }
 
     def _controller_connection_changed(self, connected: bool) -> None:

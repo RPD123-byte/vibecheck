@@ -51,6 +51,7 @@ include = [
 
 [tool.pytest.ini_options]
 addopts = "-ra"
+pythonpath = [".", "src"]
 testpaths = ["tests"]
 markers = [
   "model: exercises the real EmotiEffLib model",

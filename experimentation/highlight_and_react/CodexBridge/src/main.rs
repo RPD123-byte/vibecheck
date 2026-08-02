@@ -301,6 +301,45 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn multiple_active_turns_are_reported_without_a_codex_action() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let socket = directory.path().join("rpc.sock");
+        let server = MockAppServer::start(socket.clone())
+            .await
+            .expect("mock app server");
+        for (id, turn_id) in [("thread-a", "turn-a"), ("thread-b", "turn-b")] {
+            server
+                .add_thread(MockThread {
+                    id: id.into(),
+                    status: "active".into(),
+                    turn_id: Some(turn_id.into()),
+                    ephemeral: false,
+                    updated_at: 1,
+                })
+                .await;
+        }
+        let result = CodexControl::run(mock_config(socket), |handle| async move {
+            deliver(
+                &handle,
+                ReactionContext {
+                    message: "context".into(),
+                    screenshot_path: None,
+                },
+            )
+            .await
+        })
+        .await
+        .expect("Codex control run");
+        assert_eq!(result["status"], "multiple_active_turns");
+        assert_eq!(result["activeTurnCount"], 2);
+        assert!(server.received().await.iter().all(|request| !matches!(
+            request["method"].as_str(),
+            Some("turn/interrupt" | "turn/start")
+        )));
+        server.shutdown().await;
+    }
+
+    #[tokio::test]
     async fn exactly_one_active_turn_is_interrupted_and_restarted_with_context() {
         let directory = tempfile::tempdir().expect("temporary directory");
         let socket = directory.path().join("rpc.sock");

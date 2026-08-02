@@ -117,6 +117,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": revision,
             "features": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": False},
                 "paused": False,
             },
@@ -139,6 +140,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": notch_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": False,
             },
@@ -161,6 +163,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": both_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": False},
                 "paused": False,
             },
@@ -184,6 +187,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": codex_off_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": False,
             },
@@ -198,6 +202,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": codex_on_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": True,
             },
@@ -218,6 +223,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": pause_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": False,
             },
@@ -237,6 +243,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": resume_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": False,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": False,
             },
@@ -257,6 +264,7 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
             "expected_revision": interruption_ack["state"]["features"]["revision"],
             "features": {
                 "notch_enabled": False,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": False},
                 "paused": False,
             },
@@ -273,26 +281,31 @@ async def test_real_controller_reconciles_minimal_topology_and_cleans_up() -> No
         states = {
             "off": {
                 "notch_enabled": False,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": False},
                 "paused": False,
             },
             "notch": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": False},
                 "paused": False,
             },
             "interruption": {
                 "notch_enabled": False,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": False,
             },
             "combined": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": False,
             },
             "paused": {
                 "notch_enabled": True,
+                "component_reactions_enabled": False,
                 "integrations": {"codex_enabled": True},
                 "paused": True,
             },

@@ -29,6 +29,8 @@ describe("Preferences", () => {
     expect(preferences.read()).toEqual({
       notch_enabled: false,
       codex_enabled: false,
+      component_reactions_enabled: false,
+      emoji_recents: [],
     });
   });
 
@@ -39,15 +41,40 @@ describe("Preferences", () => {
     directories.push(directory);
     const file = path.join(directory, "preferences.json");
     const preferences = new Preferences(file);
-    preferences.write({ notch_enabled: true, codex_enabled: false });
+    preferences.write({
+      notch_enabled: true,
+      codex_enabled: false,
+      component_reactions_enabled: true,
+      emoji_recents: ["🧭", "🎯"],
+    });
     expect(JSON.parse(fs.readFileSync(file, "utf8"))).toEqual({
       notch_enabled: true,
       codex_enabled: false,
+      component_reactions_enabled: true,
+      emoji_recents: ["🧭", "🎯"],
     });
     const raw = fs.readFileSync(file, "utf8");
     expect(raw).not.toContain("paused");
     expect(raw).not.toContain("expression");
     expect(raw).not.toContain("thread");
     expect(raw).not.toContain("frame");
+  });
+
+  it("migrates existing two-toggle preferences without losing intent", () => {
+    const directory = fs.mkdtempSync(
+      path.join(os.tmpdir(), "vibecheck-prefs-"),
+    );
+    directories.push(directory);
+    const file = path.join(directory, "preferences.json");
+    fs.writeFileSync(
+      file,
+      JSON.stringify({ notch_enabled: true, codex_enabled: false }),
+    );
+    expect(new Preferences(file).read()).toEqual({
+      notch_enabled: true,
+      codex_enabled: false,
+      component_reactions_enabled: false,
+      emoji_recents: [],
+    });
   });
 });

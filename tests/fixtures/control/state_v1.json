@@ -6,6 +6,7 @@
     "features": {
       "revision": 1,
       "notch_enabled": true,
+      "component_reactions_enabled": false,
       "integrations": {
         "codex_enabled": false
       },

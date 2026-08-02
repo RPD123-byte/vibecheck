@@ -4,6 +4,9 @@ import type { PublicState } from "./protocol";
 export interface MenuActions {
   setNotch(enabled: boolean): Promise<void>;
   setCodex(enabled: boolean): Promise<void>;
+  setComponentReactions(enabled: boolean): Promise<void>;
+  openChromeSetup(): Promise<void>;
+  openSafariSetup(): Promise<void>;
   setPaused(paused: boolean): Promise<void>;
   recover(): Promise<void>;
   quit(): void;
@@ -38,7 +41,9 @@ export function buildMenuTemplate(
 ): MenuItemConstructorOptions[] {
   const pending = options.pending ?? false;
   const enabledFeature =
-    state.features.notch_enabled || state.features.integrations.codex_enabled;
+    state.features.notch_enabled ||
+    state.features.integrations.codex_enabled ||
+    state.features.component_reactions_enabled;
   const template: MenuItemConstructorOptions[] = [
     {
       id: "status",
@@ -75,6 +80,26 @@ export function buildMenuTemplate(
       checked: state.features.integrations.codex_enabled,
       enabled: !pending,
       click: (item) => void actions.setCodex(item.checked),
+    },
+    {
+      id: "component-reactions",
+      label: `Component reactions — ${componentLabel(state)}`,
+      type: "checkbox",
+      checked: state.features.component_reactions_enabled,
+      enabled: !pending,
+      click: (item) => void actions.setComponentReactions(item.checked),
+    },
+    {
+      id: "component-reactions-chrome-setup",
+      label: "Set up reactions in Chrome…",
+      enabled: !pending,
+      click: () => void actions.openChromeSetup(),
+    },
+    {
+      id: "component-reactions-safari-setup",
+      label: "Set up reactions in Safari…",
+      enabled: !pending,
+      click: () => void actions.openSafariSetup(),
     },
     { type: "separator" },
     {
@@ -129,4 +154,23 @@ function shorten(value: string, maximum: number): string {
   return compact.length <= maximum
     ? compact
     : `${compact.slice(0, maximum - 1)}…`;
+}
+
+function componentLabel(state: PublicState): string {
+  const component = state.componentReactions;
+  const attached =
+    component.attached_targets + (component.attached_browser_tabs ?? 0);
+  const permissionLabel = component.last_error?.includes("Input Monitoring")
+    ? "Needs Input Monitoring"
+    : "Needs Accessibility";
+  const labels: Record<typeof component.health, string> = {
+    off: "Off",
+    starting: "Starting",
+    active: attached > 0 ? `Active · ${attached} attached` : "Active",
+    paused: "Paused",
+    needs_permission: permissionLabel,
+    degraded: "Degraded",
+    failed: "Failed",
+  };
+  return labels[component.health];
 }

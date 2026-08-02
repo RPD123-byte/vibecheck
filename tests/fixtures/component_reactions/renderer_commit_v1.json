@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "type": "commit",
+  "event_id": "fixture-event",
+  "document_id": "fixture-document",
+  "clipboard_session_id": null,
+  "copy_text": "Save changes",
+  "reaction_emoji": "🎯",
+  "reaction_label": "Target",
+  "bounds": {
+    "x": 12,
+    "y": 20,
+    "width": 180,
+    "height": 42,
+    "device_scale_factor": 2
+  }
+}

@@ -25,7 +25,7 @@ function runProcess(executable, arguments_, input) {
 
 export async function copyToClipboard(text, screenshotPath, clipboardBridgePath) {
   if (screenshotPath && !clipboardBridgePath) {
-    throw new Error('multi-item clipboard bridge path is missing');
+    throw new Error('text-and-image clipboard bridge path is missing');
   }
   const result = screenshotPath
     ? await runProcess(clipboardBridgePath, [screenshotPath], text)
@@ -39,6 +39,7 @@ export async function copyToClipboard(text, screenshotPath, clipboardBridgePath)
   return {
     status: 'copied',
     includesScreenshot: Boolean(screenshotPath),
+    format: screenshotPath ? 'text-and-png' : 'plain-text',
   };
 }
 

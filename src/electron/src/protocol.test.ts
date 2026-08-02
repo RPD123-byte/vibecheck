@@ -7,6 +7,7 @@ function snapshot(): RuntimeSnapshot {
     features: {
       revision: 2,
       notch_enabled: true,
+      component_reactions_enabled: false,
       integrations: { codex_enabled: false },
       paused: false,
     },

@@ -26,9 +26,11 @@ uv export \
   --extra macos \
   --extra release \
   --no-emit-project |
-  uv pip install --python "${release_venv}/bin/python" --requirements -
+uv pip install --python "${release_venv}/bin/python" --requirements -
 uv pip install --python "${release_venv}/bin/python" --no-deps "${repo_root}"
+export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=${repo_root}=. --remap-path-prefix=${HOME}=/usr/local/src"
 cargo build --release --locked --manifest-path "${rust_manifest}"
+strip -S "${rust_binary}"
 
 export VIBECHECK_MODEL_SOURCE="${model_source}"
 export VIBECHECK_RUST_BINARY="${rust_binary}"

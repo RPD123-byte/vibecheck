@@ -27,7 +27,7 @@ Options:
   --debug         Print target and injection details
   --quiet         Suppress transient renderer-waiting messages
   --context-mode MODE  Context delivery: off, clipboard, or codex (default: off)
-  --clipboard-bridge FILE  Multi-item macOS clipboard writer executable
+  --clipboard-bridge FILE  macOS text-and-PNG clipboard writer executable
   --context-bridge FILE  Experiment-local Codex bridge executable
   --help          Show this help`);
 }

@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "id": "fixture-command",
+  "type": "append_bundle",
+  "text": "Save changes",
+  "png_path": "/private/runtime/fixture-event.png"
+}

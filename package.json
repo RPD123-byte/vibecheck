@@ -1,6 +1,6 @@
 {
   "name": "vibecheck",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "workspaces": [
     "src/electron"
@@ -9,14 +9,17 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "app:dev": "npm run start --workspace @vibecheck/menubar",
-    "app:package": "npm run package --workspace @vibecheck/menubar",
-    "app:make": "npm run make --workspace @vibecheck/menubar",
+    "app:dev": "npm run component:build && npm run start --workspace @vibecheck/menubar",
+    "browser:build": "npm run browser:build --workspace @vibecheck/menubar",
+    "browser:test-build": "bash scripts/test_browser_build_independence.sh",
+    "component:build": "npm run browser:build && npm run safari:build --workspace @vibecheck/menubar && bash scripts/verify_browser_extension.sh && bash scripts/build_component_companion.sh",
+    "app:package": "npm run component:build && npm run package --workspace @vibecheck/menubar",
+    "app:make": "npm run component:build && npm run make --workspace @vibecheck/menubar",
     "js:format": "npm run format --workspace @vibecheck/menubar",
     "js:format:check": "npm run format:check --workspace @vibecheck/menubar",
     "js:typecheck": "npm run typecheck --workspace @vibecheck/menubar",
     "js:test": "npm run test --workspace @vibecheck/menubar",
-    "js:test:e2e": "npm run test:e2e --workspace @vibecheck/menubar",
+    "js:test:e2e": "npm run component:build && npm run test:e2e --workspace @vibecheck/menubar",
     "js:audit": "npm audit --omit=dev --audit-level=high"
   }
 }

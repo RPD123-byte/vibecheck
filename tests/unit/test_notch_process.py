@@ -93,3 +93,25 @@ def test_frozen_owner_dispatches_workers_without_interpreter_mode(
     ]
     assert "-m" not in workers["inference"].command
     assert "-m" not in workers["notch"].command
+
+
+def test_electron_controller_is_the_single_codex_gui_launch_owner(
+    tmp_path: Path,
+) -> None:
+    interruption = tmp_path / "vibecheck-expression-interruption"
+    interruption.write_bytes(b"fixture")
+    interruption.chmod(0o755)
+    owner = RuntimeOwner(
+        RuntimeConfig(manage_codex_gui=True),
+        python=sys.executable,
+        project_root=tmp_path,
+        interruption_binary=interruption,
+        controller_mode=True,
+    )
+    owner.runtime_dir = tmp_path
+
+    command = owner.configure_workers()["interruption"].command
+
+    assert "--ensure-daemon" in command
+    assert "--no-manage-gui" in command
+    assert "--manage-gui" not in command

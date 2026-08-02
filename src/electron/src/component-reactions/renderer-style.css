@@ -1,0 +1,559 @@
+#vibecheck-reaction-layer {
+  all: initial;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  color: #3a3a3c;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+
+#vibecheck-reaction-outline {
+  position: fixed;
+  display: none;
+  box-sizing: border-box;
+  border: 2px solid #64d2ff;
+  border-radius: 8px;
+  background: rgb(10 132 255 / 12%);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 70%),
+    0 0 0 4px rgb(10 132 255 / 22%),
+    0 0 0 9999px rgb(0 0 0 / 56%);
+  pointer-events: none;
+  transition:
+    left 70ms ease-out,
+    top 70ms ease-out,
+    width 70ms ease-out,
+    height 70ms ease-out;
+}
+
+#vibecheck-reaction-outline[data-state="hover"] {
+  border-style: dashed;
+  background: rgb(100 210 255 / 12%);
+}
+
+#vibecheck-reaction-outline[data-state="locked"] {
+  border-color: #0a84ff;
+  border-style: solid;
+  background: rgb(10 132 255 / 9%);
+}
+
+#vibecheck-reaction-popover {
+  --vibecheck-tapback-surface: rgb(249 249 249 / 96%);
+  --vibecheck-tapback-raised: rgb(250 250 250 / 98%);
+  --vibecheck-tapback-border: rgb(0 0 0 / 8%);
+  --vibecheck-tapback-highlight: rgb(255 255 255 / 86%);
+  --vibecheck-tapback-ink: #3a3a3c;
+  position: fixed;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  color: var(--vibecheck-tapback-ink);
+  filter: drop-shadow(0 8px 20px rgb(0 0 0 / 28%));
+  pointer-events: auto;
+  isolation: isolate;
+  transform-origin: 50% bottom;
+  animation: vibecheck-reaction-present 180ms cubic-bezier(0.2, 0.82, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  #vibecheck-reaction-popover {
+    --vibecheck-tapback-surface: rgb(35 35 37 / 96%);
+    --vibecheck-tapback-raised: rgb(45 45 47 / 97%);
+    --vibecheck-tapback-border: rgb(255 255 255 / 10%);
+    --vibecheck-tapback-highlight: rgb(255 255 255 / 10%);
+    --vibecheck-tapback-ink: #f2f2f7;
+  }
+}
+
+@keyframes vibecheck-reaction-present {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#vibecheck-reaction-strip {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 4px 8px;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--vibecheck-tapback-border);
+  border-radius: 18px;
+  background: var(--vibecheck-tapback-surface);
+  box-shadow:
+    inset 0 1px 0 var(--vibecheck-tapback-highlight),
+    0 2px 8px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(40px) saturate(180%);
+}
+
+#vibecheck-reaction-strip::after {
+  position: absolute;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  border-right: 1px solid var(--vibecheck-tapback-border);
+  border-bottom: 1px solid var(--vibecheck-tapback-border);
+  background: var(--vibecheck-tapback-surface);
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+}
+
+#vibecheck-reaction-popover[data-placement="above"]
+  #vibecheck-reaction-strip::after {
+  bottom: -5px;
+}
+
+#vibecheck-reaction-popover[data-placement="below"]
+  #vibecheck-reaction-strip::after {
+  top: -5px;
+  transform: translateX(-50%) rotate(225deg);
+}
+
+.vibecheck-reaction-button {
+  all: unset;
+  display: grid;
+  box-sizing: border-box;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vibecheck-tapback-ink);
+  cursor: pointer;
+  font:
+    19px/1 Apple Color Emoji,
+    "Segoe UI Emoji",
+    sans-serif;
+  transition:
+    background 100ms ease,
+    box-shadow 100ms ease,
+    transform 130ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.vibecheck-reaction-button:hover {
+  background: rgb(120 120 128 / 12%);
+  transform: translateY(-3px) scale(1.18);
+}
+
+.vibecheck-reaction-button:focus-visible {
+  outline: 2px solid #64d2ff;
+  outline-offset: 2px;
+}
+
+.vibecheck-reaction-glyph {
+  display: grid;
+  width: 22px;
+  height: 26px;
+  place-items: center;
+  pointer-events: none;
+}
+
+.vibecheck-reaction-glyph[data-kind="heart"] {
+  background: linear-gradient(145deg, #ffb1d0 5%, #ff6aa7 48%, #ff2d78 100%);
+  background-clip: text;
+  color: transparent;
+  font:
+    900 26px/1 -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vibecheck-reaction-glyph[data-kind="thumbs-up"],
+.vibecheck-reaction-glyph[data-kind="thumbs-down"] {
+  font:
+    20px/1 Apple Color Emoji,
+    "Segoe UI Emoji",
+    sans-serif;
+}
+
+.vibecheck-reaction-glyph[data-kind="haha"] {
+  color: #32ade6;
+  font:
+    950 7.5px/0.68 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Rounded",
+    sans-serif;
+  letter-spacing: -0.07em;
+  text-align: center;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 52%),
+    0 1px 2px rgb(0 0 0 / 12%);
+  transform: scaleX(0.9);
+}
+
+.vibecheck-reaction-glyph[data-kind="exclamation"],
+.vibecheck-reaction-glyph[data-kind="question"] {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 34%),
+    0 1px 2px rgb(0 0 0 / 10%);
+}
+
+.vibecheck-reaction-glyph[data-kind="exclamation"] {
+  color: #ff6257;
+  letter-spacing: -0.14em;
+}
+
+.vibecheck-reaction-glyph[data-kind="question"] {
+  color: #bf5af2;
+  font-size: 24px;
+}
+
+.vibecheck-reaction-glyph[data-system-asset="true"] {
+  display: block;
+  width: 20px;
+  height: 27px;
+  background: var(--vibecheck-tapback-fill);
+  background-clip: border-box;
+  color: transparent;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 16%));
+  font: initial;
+  -webkit-background-clip: border-box;
+  -webkit-mask: var(--vibecheck-tapback-mask) center / contain no-repeat;
+  -webkit-text-fill-color: initial;
+  mask: var(--vibecheck-tapback-mask) center / contain no-repeat;
+  text-shadow: none;
+  transform: none;
+}
+
+.vibecheck-reaction-glyph[data-system-asset="true"][data-kind="heart"] {
+  --vibecheck-tapback-fill: linear-gradient(
+    145deg,
+    #ffb1d0 5%,
+    #ff6aa7 48%,
+    #ff2d78 100%
+  );
+}
+
+.vibecheck-reaction-glyph[data-system-asset="true"][data-kind^="thumbs"] {
+  --vibecheck-tapback-fill: linear-gradient(
+    155deg,
+    #ffe782 4%,
+    #ffc43d 56%,
+    #f2a51b 100%
+  );
+}
+
+.vibecheck-reaction-glyph[data-system-asset="true"][data-kind="haha"] {
+  --vibecheck-tapback-fill: linear-gradient(
+    180deg,
+    #6fd8ff 0%,
+    #32ade6 48%,
+    #0a84ff 100%
+  );
+  width: 21px;
+}
+
+.vibecheck-reaction-glyph[data-system-asset="true"][data-kind="exclamation"] {
+  --vibecheck-tapback-fill: linear-gradient(
+    180deg,
+    #ffaaa3 0%,
+    #ff6961 48%,
+    #ff453a 100%
+  );
+  width: 15px;
+}
+
+.vibecheck-reaction-glyph[data-system-asset="true"][data-kind="question"] {
+  --vibecheck-tapback-fill: linear-gradient(
+    180deg,
+    #dc91ff 0%,
+    #bf5af2 48%,
+    #af52de 100%
+  );
+  width: 12px;
+}
+
+#vibecheck-reaction-more {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  overflow: visible;
+  border: 1px solid var(--vibecheck-tapback-border);
+  background: var(--vibecheck-tapback-raised);
+  color: #8e8e93;
+  box-shadow:
+    inset 0 1px 0 var(--vibecheck-tapback-highlight),
+    0 2px 8px rgb(0 0 0 / 14%);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+  backdrop-filter: blur(40px) saturate(180%);
+}
+
+#vibecheck-reaction-more::before,
+#vibecheck-reaction-more::after {
+  position: absolute;
+  border-radius: 999px;
+  background: rgb(58 58 60 / 96%);
+  content: "";
+  pointer-events: none;
+}
+
+#vibecheck-reaction-more::before {
+  right: 2px;
+  bottom: -7px;
+  width: 11px;
+  height: 11px;
+}
+
+#vibecheck-reaction-more::after {
+  right: -4px;
+  bottom: -13px;
+  width: 6px;
+  height: 6px;
+}
+
+#vibecheck-reaction-popover[data-placement="below"]
+  #vibecheck-reaction-more::before {
+  top: -7px;
+  bottom: auto;
+}
+
+#vibecheck-reaction-popover[data-placement="below"]
+  #vibecheck-reaction-more::after {
+  top: -13px;
+  bottom: auto;
+}
+
+#vibecheck-reaction-popover[data-expanded="true"] {
+  width: min(332px, calc(100vw - 24px));
+  flex-direction: column;
+}
+
+#vibecheck-reaction-popover[data-expanded="true"][data-placement="above"] {
+  flex-direction: column-reverse;
+}
+
+#vibecheck-reaction-popover[data-expanded="true"] #vibecheck-reaction-strip {
+  display: none;
+}
+
+#vibecheck-reaction-popover[data-expanded="true"]
+  #vibecheck-reaction-more::before {
+  display: none;
+}
+
+#vibecheck-reaction-popover[data-expanded="true"]
+  #vibecheck-reaction-more::after {
+  top: -5px;
+  right: -5px;
+  bottom: auto;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  background: #3a3a3c;
+  color: #fff;
+  content: "×";
+  font:
+    15px/17px -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+#vibecheck-emoji-panel {
+  --vibecheck-picker-surface: rgb(246 246 246 / 97%);
+  --vibecheck-picker-border: rgb(0 0 0 / 11%);
+  --vibecheck-picker-ink: #1c1c1e;
+  --vibecheck-picker-secondary: rgb(60 60 67 / 62%);
+  --vibecheck-picker-control: rgb(118 118 128 / 12%);
+  display: none;
+  box-sizing: border-box;
+  width: min(332px, calc(100vw - 24px));
+  max-height: min(398px, calc(100vh - 24px));
+  overflow: hidden;
+  border: 1px solid var(--vibecheck-picker-border);
+  border-radius: 15px;
+  background: var(--vibecheck-picker-surface);
+  color: var(--vibecheck-picker-ink);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 58%),
+    0 18px 50px rgb(0 0 0 / 38%);
+  backdrop-filter: blur(42px) saturate(180%);
+}
+
+@media (prefers-color-scheme: dark) {
+  #vibecheck-emoji-panel {
+    --vibecheck-picker-surface: rgb(42 42 44 / 97%);
+    --vibecheck-picker-border: rgb(255 255 255 / 12%);
+    --vibecheck-picker-ink: #f2f2f7;
+    --vibecheck-picker-secondary: rgb(235 235 245 / 60%);
+    --vibecheck-picker-control: rgb(118 118 128 / 24%);
+  }
+}
+
+#vibecheck-emoji-panel[data-open="true"] {
+  display: block;
+}
+
+#vibecheck-emoji-grid {
+  display: block;
+  max-height: min(307px, calc(100vh - 115px));
+  padding: 8px 9px 12px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#vibecheck-emoji-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.vibecheck-emoji-section + .vibecheck-emoji-section {
+  margin-top: 8px;
+}
+
+.vibecheck-emoji-heading {
+  margin: 0;
+  padding: 7px 5px 5px;
+  color: var(--vibecheck-picker-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.vibecheck-emoji-section-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.vibecheck-emoji-section-grid .vibecheck-reaction-button {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  font:
+    25px/1 Apple Color Emoji,
+    "Segoe UI Emoji",
+    sans-serif;
+}
+
+.vibecheck-emoji-section-grid .vibecheck-reaction-button:hover {
+  background: var(--vibecheck-picker-control);
+  transform: scale(1.12);
+}
+
+#vibecheck-picker-footer {
+  padding: 7px 9px 9px;
+  border-top: 1px solid var(--vibecheck-picker-border);
+  background: color-mix(
+    in srgb,
+    var(--vibecheck-picker-surface) 92%,
+    transparent
+  );
+}
+
+#vibecheck-picker-categories {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 1px;
+  margin-bottom: 7px;
+}
+
+.vibecheck-picker-category {
+  all: unset;
+  display: grid;
+  height: 23px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--vibecheck-picker-secondary);
+  cursor: pointer;
+  font:
+    14px/1 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    sans-serif;
+}
+
+.vibecheck-picker-category:hover,
+.vibecheck-picker-category:focus-visible,
+.vibecheck-picker-category[aria-current="true"] {
+  background: var(--vibecheck-picker-control);
+  color: #0a84ff;
+}
+
+#vibecheck-emoji-search {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  height: 28px;
+  padding: 0 10px 0 28px;
+  border-radius: 7px;
+  background:
+    linear-gradient(
+        45deg,
+        transparent 47%,
+        var(--vibecheck-picker-secondary) 48% 54%,
+        transparent 55%
+      )
+      17px 17px / 7px 7px no-repeat,
+    radial-gradient(
+        circle at 11px 11px,
+        transparent 5px,
+        var(--vibecheck-picker-secondary) 5.5px 6.5px,
+        transparent 7px
+      )
+      4px 3px / 21px 21px no-repeat,
+    var(--vibecheck-picker-control);
+  color: var(--vibecheck-picker-ink);
+  font:
+    13px/1 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    sans-serif;
+}
+
+#vibecheck-emoji-search:focus {
+  box-shadow: 0 0 0 2px #0a84ff;
+}
+
+#vibecheck-emoji-search::placeholder {
+  color: var(--vibecheck-picker-secondary);
+}
+
+#vibecheck-receipt {
+  position: fixed;
+  display: none;
+  padding: 9px 12px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 11px;
+  background: rgb(35 35 37 / 96%);
+  color: #fff;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 32%);
+  font:
+    600 12px/1.2 -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    sans-serif;
+  pointer-events: auto;
+  backdrop-filter: blur(28px) saturate(180%);
+}
+
+::highlight(vibecheck-component-selection) {
+  background: rgb(255 214 10 / 42%);
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgb(255 184 0 / 85%);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}

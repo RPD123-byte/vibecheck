@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "event_id": "fixture-event",
+  "captured_at_ms": 1,
+  "source_application_name": "Fixture",
+  "source_bundle_id": "com.example.fixture",
+  "reaction_emoji": "🎯",
+  "reaction_label": "Target",
+  "copy_text": "Save changes",
+  "screenshot_path": "/private/runtime/fixture-event.png"
+}

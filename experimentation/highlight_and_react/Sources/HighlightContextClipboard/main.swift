@@ -1,11 +1,11 @@
 import AppKit
 import Foundation
+import HighlightCore
 
 enum ClipboardWriterError: LocalizedError {
     case missingScreenshotPath
     case unreadableText
     case unreadableScreenshot(String)
-    case writeFailed
 
     var errorDescription: String? {
         switch self {
@@ -15,8 +15,6 @@ enum ClipboardWriterError: LocalizedError {
             "could not read context text from standard input"
         case let .unreadableScreenshot(path):
             "could not read PNG screenshot at \(path)"
-        case .writeFailed:
-            "macOS pasteboard rejected the context items"
         }
     }
 }
@@ -36,29 +34,8 @@ func writeContextClipboard(arguments: [String]) throws {
         throw ClipboardWriterError.unreadableScreenshot(screenshotPath)
     }
 
-    let textItem = NSPasteboardItem()
-    textItem.setString(text, forType: .string)
-    let richContext = NSMutableAttributedString(string: "\(text)\n\n")
-    let attachment = NSTextAttachment(
-        data: screenshot,
-        ofType: NSPasteboard.PasteboardType.png.rawValue
-    )
-    richContext.append(NSAttributedString(attachment: attachment))
-    let richData = try richContext.data(
-        from: NSRange(location: 0, length: richContext.length),
-        documentAttributes: [
-            .documentType: NSAttributedString.DocumentType.rtfd,
-        ]
-    )
-    textItem.setData(richData, forType: .rtfd)
-    let screenshotItem = NSPasteboardItem()
-    screenshotItem.setData(screenshot, forType: .png)
-
-    let pasteboard = NSPasteboard.general
-    pasteboard.clearContents()
-    guard pasteboard.writeObjects([textItem, screenshotItem]) else {
-        throw ClipboardWriterError.writeFailed
-    }
+    let newEntry = ClipboardContextEntry(text: text, png: screenshot)
+    try ClipboardContextPasteboard.append(newEntry)
 }
 
 do {
