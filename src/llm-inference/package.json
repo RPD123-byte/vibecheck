@@ -1,0 +1,36 @@
+{
+  "name": "@vibecheck/llm-inference",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" \"*.ts\" \"*.json\" \"*.md\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" \"*.ts\" \"*.json\" \"*.md\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "RUN_GEMINI_LIVE_TEST=1 vitest run tests/gemini-live.test.ts",
+    "test:migration": "vitest run tests/migration-contract.test.ts",
+    "test:supabase": "RUN_SUPABASE_INTEGRATION=1 vitest run tests/supabase-job-store.integration.test.ts",
+    "trigger:dev": "trigger.dev dev",
+    "trigger:deploy": "trigger.dev deploy"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "4.0.32",
+    "@supabase/supabase-js": "2.112.0",
+    "@trigger.dev/sdk": "4.5.9",
+    "ai": "7.0.50",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@trigger.dev/build": "4.5.9",
+    "@types/node": "24.10.1",
+    "prettier": "3.9.6",
+    "trigger.dev": "4.5.9",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  }
+}

@@ -3,7 +3,8 @@
   "version": "0.2.2",
   "private": true,
   "workspaces": [
-    "src/electron"
+    "src/electron",
+    "src/llm-inference"
   ],
   "engines": {
     "node": ">=22.0.0"
@@ -17,6 +18,20 @@
     "js:typecheck": "npm run typecheck --workspace @vibecheck/menubar",
     "js:test": "npm run test --workspace @vibecheck/menubar",
     "js:test:e2e": "npm run test:e2e --workspace @vibecheck/menubar",
-    "js:audit": "npm audit --omit=dev --audit-level=high"
+    "js:audit": "npm audit --omit=dev --audit-level=high",
+    "llm:format": "npm run format --workspace @vibecheck/llm-inference",
+    "llm:format:check": "npm run format:check --workspace @vibecheck/llm-inference",
+    "llm:typecheck": "npm run typecheck --workspace @vibecheck/llm-inference",
+    "llm:test": "npm run test --workspace @vibecheck/llm-inference",
+    "llm:test:migration": "npm run test:migration --workspace @vibecheck/llm-inference",
+    "llm:test:database": "supabase test db",
+    "llm:test:supabase": "npm run test:supabase --workspace @vibecheck/llm-inference",
+    "llm:test:live": "npm run test:live --workspace @vibecheck/llm-inference",
+    "db:types:generate": "scripts/generate_supabase_types.sh",
+    "db:types:check": "scripts/check_supabase_types.sh",
+    "llm:verify": "npm run llm:format:check && npm run llm:typecheck && npm run llm:test"
+  },
+  "devDependencies": {
+    "supabase": "2.111.0"
   }
 }

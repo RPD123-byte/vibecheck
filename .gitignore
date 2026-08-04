@@ -26,6 +26,8 @@ node_modules/
 /src/electron/playwright-report/
 /src/electron/blob-report/
 /src/electron/coverage/
+/supabase/.branches/
+/supabase/.temp/
 
 # Rust tooling
 target/
